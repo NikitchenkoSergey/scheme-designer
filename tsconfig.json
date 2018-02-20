@@ -1,0 +1,10 @@
+{
+  "files": [
+    "src/SchemeObject.ts",
+    "src/SchemeDesigner.ts"
+  ],
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "target": "es5"
+  }
+}

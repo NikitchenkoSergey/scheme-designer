@@ -1,0 +1,21 @@
+{
+  "name": "scheme-designer",
+  "version": "1.0.0",
+  "description": "Canvas scheme designer, scheme constructor on javascript (typescript)",
+  "main": "scheme-designer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nikitchenko Sergey",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-typescript": "^4.0.1",
+    "gulp-uglify": "^3.0.0",
+    "gulp-watch": "^5.0.0",
+    "pump": "^3.0.0",
+    "typescript": "^2.7.2"
+  }
+}

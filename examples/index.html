@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example</title>
+    <script src="../dist/scheme-designer.js"></script>
+</head>
+<body>
+<div style="margin: 20px auto; max-width: 1000px;">
+    <h2>Hall scheme example</h2>
+    <canvas id="canvas1" width="800" height="400"></canvas>
+</div>
+<script>
+    var canvas = document.getElementById('canvas1');
+    var schemeDesigner = new SchemeDesigner(canvas);
+
+    var placesCount = 2000;
+    var placesInRow = 60;
+    var placeMargin = 5;
+
+    var placeWidth = 10;
+    var placeHeight = 10;
+
+    /**
+     * Render place function
+     * @param {SchemeObject} schemeObject
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    var renderPlace = function (schemeObject, schemeDesigner) {
+        var context = schemeDesigner.getCanvas2DContext();
+
+        context.beginPath();
+        context.lineWidth = 1;
+        context.strokeStyle = '#B143B0';
+        context.fillStyle = 'white';
+
+        if (schemeObject.isSelected) {
+            context.fillStyle = '#B143B0';
+        }
+        else if (schemeObject.isHovered) {
+            context.fillStyle = 'rgba(100, 50, 95, 0.5)';
+        }
+
+        context.rect(schemeObject.x, schemeObject.y, schemeObject.width, schemeObject.height);
+
+        context.fill();
+        context.stroke();
+
+    };
+
+    /**
+     * Creating places
+     */
+    for (var i = 0; i < placesCount; i++)
+    {
+        var leftOffset = (i % placesInRow) * (placeMargin + placeWidth);
+        var topOffset = Math.floor(i / placesInRow) * (placeMargin + placeHeight);
+
+        var place = new SchemeObject({
+            /**
+             * Required params
+             */
+            x: 10.5 + leftOffset,
+            y: 10.5 + topOffset,
+            width: placeWidth,
+            height: placeHeight,
+            renderFunction: renderPlace,
+
+            /**
+             * Custom params (any names and count)
+             */
+            id: 'place_' + i,
+            price: 100,
+            placeNumber: i,
+            sectorName: 'Sector ' + (i % placesInRow)
+        });
+
+        schemeDesigner.addObject(place);
+    }
+
+
+    schemeDesigner.requestRenderAll();
+
+    canvas.addEventListener('schemeDesigner.renderAllStart', function (e) {
+        console.time('renderAll');
+        console.log(e);
+
+    }, false);
+
+    canvas.addEventListener('schemeDesigner.renderAllEnd', function (e) {
+        console.timeEnd('renderAll');
+        console.log(e);
+    }, false);
+</script>
+</body>
+</html>
