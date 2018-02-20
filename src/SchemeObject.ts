@@ -26,12 +26,12 @@ class SchemeObject
     /**
      * Is hovered
      */
-    protected isHovered: boolean = false;
+    public isHovered: boolean = false;
 
     /**
      * Is selected
      */
-    protected isSelected: boolean = false;
+    public isSelected: boolean = false;
 
     /**
      * Render function
@@ -64,5 +64,19 @@ class SchemeObject
     public render(schemeDesigner: SchemeDesigner): void
     {
         this.renderFunction(this, schemeDesigner);
+    }
+
+    /**
+     * Bounding rect
+     * @returns {{left: number, top: number, right: number, bottom: number}}
+     */
+    public getBoundingRect(): any
+    {
+        return {
+            left: this.x,
+            top: this.y,
+            right: this.x + this.width,
+            bottom: this.y + this.height
+        };
     }
 }

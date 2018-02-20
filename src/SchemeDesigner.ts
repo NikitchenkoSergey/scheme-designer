@@ -34,6 +34,11 @@ class SchemeDesigner
     protected renderAllRequested: boolean = false;
 
     /**
+     * Hovered objects
+     */
+    protected hoveredObjects: SchemeObject[] = [];
+
+    /**
      * Constructor
      * @param {HTMLCanvasElement} canvas
      */
@@ -46,6 +51,8 @@ class SchemeDesigner
         this.canvas2DContext = this.canvas.getContext('2d');
 
         this.resetFrameInterval();
+
+        this.bindEvents();
     }
 
     /**
@@ -169,5 +176,186 @@ class SchemeDesigner
     {
         this.frameIntervalDelay = frameIntervalDelay;
         return this;
+    }
+
+    /**
+     * Bind events
+     */
+    protected bindEvents(): void {
+        // mouse events
+        this.canvas.addEventListener('mousedown', (e: MouseEvent) => {this.onMouseDown(e)});
+        this.canvas.addEventListener('click', (e: MouseEvent) => {this.onClick(e)});
+        this.canvas.addEventListener('dblclick', (e: MouseEvent) => {this.onDoubleClick(e)});
+        this.canvas.addEventListener('mousemove', (e: MouseEvent) => {this.onMouseMove(e)});
+        this.canvas.addEventListener('mouseout', (e: MouseEvent) => {this.onMouseOut(e)});
+        this.canvas.addEventListener('mouseenter', (e: MouseEvent) => {this.onMouseEnter(e)});
+        this.canvas.addEventListener('wheel', (e: MouseEvent) => {this.onMouseWheel(e)});
+        this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {this.onContextMenu(e)});
+
+        // touch events
+        // todo touchstart
+        // todo touchmove
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onMouseDown(e: MouseEvent)
+    {
+
+    }
+
+    /**
+     * On click
+     * @param e
+     */
+    protected onClick(e: MouseEvent)
+    {
+        let objects = this.findObjectsForEvent(e);
+        for (let schemeObject of objects) {
+            schemeObject.isSelected = !schemeObject.isSelected;
+
+            this.sendEvent('clickOnObject', schemeObject);
+        }
+        if (objects.length) {
+            this.requestRenderAll();
+        }
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onDoubleClick(e: MouseEvent)
+    {
+
+    }
+
+    /**
+     * On mouse move
+     * @param e
+     */
+    protected onMouseMove(e: MouseEvent)
+    {
+        let objects = this.findObjectsForEvent(e);
+        let mustReRender = false;
+        let hasNewHovers = false;
+
+        if (this.hoveredObjects.length) {
+            for (let schemeHoveredObject of this.hoveredObjects) {
+                // already hovered
+                let alreadyHovered = false;
+
+                for (let schemeObject of objects) {
+                    if (schemeObject == schemeHoveredObject) {
+                        alreadyHovered = true;
+                    }
+                }
+
+                if (!alreadyHovered) {
+                    schemeHoveredObject.isHovered = false;
+                    mustReRender = true;
+                    hasNewHovers = true;
+                }
+            }
+        }
+
+        if (!this.hoveredObjects.length || hasNewHovers) {
+            for (let schemeObject of objects) {
+                schemeObject.isHovered = true;
+                mustReRender = true;
+                this.sendEvent('hoverOnObject', schemeObject);
+            }
+        }
+
+        this.hoveredObjects = objects;
+
+        if (mustReRender) {
+            this.requestRenderAll();
+        }
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onMouseOut(e: MouseEvent)
+    {
+
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onMouseEnter(e: MouseEvent)
+    {
+
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onMouseWheel(e: MouseEvent)
+    {
+
+    }
+
+    /**
+     * todo
+     * @param e
+     */
+    protected onContextMenu(e: MouseEvent)
+    {
+
+    }
+
+
+    /**
+     * Find objects by event
+     * @param e
+     * @returns {SchemeObject[]}
+     */
+    protected findObjectsForEvent(e: MouseEvent)
+    {
+        let coordinates = this.getCoordinatesFromEvent(e);
+        return this.findObjectsByCoordinates(coordinates[0], coordinates[1]);
+    }
+
+    /**
+     * Get coordinates from event
+     * @param e
+     * @returns {number[]}
+     */
+    protected getCoordinatesFromEvent(e: MouseEvent): [number, number]
+    {
+        let clientRect = this.canvas.getBoundingClientRect();
+        let x = e.clientX - clientRect.left;
+        let y = e.clientY - clientRect.top;
+
+        return [x, y];
+    }
+
+    /**
+     * find objects by coordinates
+     * @param x
+     * @param y
+     * @returns {SchemeObject[]}
+     */
+    protected findObjectsByCoordinates(x: number, y: number): SchemeObject[]
+    {
+        let result: SchemeObject[] = [];
+
+        for (let schemeObject of this.objects) {
+            let boundingRect = schemeObject.getBoundingRect();
+            if (boundingRect.left <= x && boundingRect.right >= x
+                && boundingRect.top <= y && boundingRect.bottom >= y) {
+                result.push(schemeObject)
+            }
+        }
+
+        return result;
     }
 }

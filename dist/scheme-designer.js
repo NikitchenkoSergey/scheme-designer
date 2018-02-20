@@ -15,10 +15,15 @@ var SchemeDesigner = /** @class */ (function () {
          * Requested render all
          */
         this.renderAllRequested = false;
+        /**
+         * Hovered objects
+         */
+        this.hoveredObjects = [];
         this.objects = [];
         this.canvas = canvas;
         this.canvas2DContext = this.canvas.getContext('2d');
         this.resetFrameInterval();
+        this.bindEvents();
     }
     /**
      * Frame controller
@@ -119,6 +124,152 @@ var SchemeDesigner = /** @class */ (function () {
         this.frameIntervalDelay = frameIntervalDelay;
         return this;
     };
+    /**
+     * Bind events
+     */
+    SchemeDesigner.prototype.bindEvents = function () {
+        var _this = this;
+        // mouse events
+        this.canvas.addEventListener('mousedown', function (e) { _this.onMouseDown(e); });
+        this.canvas.addEventListener('click', function (e) { _this.onClick(e); });
+        this.canvas.addEventListener('dblclick', function (e) { _this.onDoubleClick(e); });
+        this.canvas.addEventListener('mousemove', function (e) { _this.onMouseMove(e); });
+        this.canvas.addEventListener('mouseout', function (e) { _this.onMouseOut(e); });
+        this.canvas.addEventListener('mouseenter', function (e) { _this.onMouseEnter(e); });
+        this.canvas.addEventListener('wheel', function (e) { _this.onMouseWheel(e); });
+        this.canvas.addEventListener('contextmenu', function (e) { _this.onContextMenu(e); });
+        // touch events
+        // todo touchstart
+        // todo touchmove
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseDown = function (e) {
+    };
+    /**
+     * On click
+     * @param e
+     */
+    SchemeDesigner.prototype.onClick = function (e) {
+        var objects = this.findObjectsForEvent(e);
+        for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
+            var schemeObject = objects_1[_i];
+            schemeObject.isSelected = !schemeObject.isSelected;
+            this.sendEvent('clickOnObject', schemeObject);
+        }
+        if (objects.length) {
+            this.requestRenderAll();
+        }
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onDoubleClick = function (e) {
+    };
+    /**
+     * On mouse move
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseMove = function (e) {
+        var objects = this.findObjectsForEvent(e);
+        var mustReRender = false;
+        var hasNewHovers = false;
+        if (this.hoveredObjects.length) {
+            for (var _i = 0, _a = this.hoveredObjects; _i < _a.length; _i++) {
+                var schemeHoveredObject = _a[_i];
+                // already hovered
+                var alreadyHovered = false;
+                for (var _b = 0, objects_2 = objects; _b < objects_2.length; _b++) {
+                    var schemeObject = objects_2[_b];
+                    if (schemeObject == schemeHoveredObject) {
+                        alreadyHovered = true;
+                    }
+                }
+                if (!alreadyHovered) {
+                    schemeHoveredObject.isHovered = false;
+                    mustReRender = true;
+                    hasNewHovers = true;
+                }
+            }
+        }
+        if (!this.hoveredObjects.length || hasNewHovers) {
+            for (var _c = 0, objects_3 = objects; _c < objects_3.length; _c++) {
+                var schemeObject = objects_3[_c];
+                schemeObject.isHovered = true;
+                mustReRender = true;
+                this.sendEvent('hoverOnObject', schemeObject);
+            }
+        }
+        this.hoveredObjects = objects;
+        if (mustReRender) {
+            this.requestRenderAll();
+        }
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseOut = function (e) {
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseEnter = function (e) {
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseWheel = function (e) {
+    };
+    /**
+     * todo
+     * @param e
+     */
+    SchemeDesigner.prototype.onContextMenu = function (e) {
+    };
+    /**
+     * Find objects by event
+     * @param e
+     * @returns {SchemeObject[]}
+     */
+    SchemeDesigner.prototype.findObjectsForEvent = function (e) {
+        var coordinates = this.getCoordinatesFromEvent(e);
+        return this.findObjectsByCoordinates(coordinates[0], coordinates[1]);
+    };
+    /**
+     * Get coordinates from event
+     * @param e
+     * @returns {number[]}
+     */
+    SchemeDesigner.prototype.getCoordinatesFromEvent = function (e) {
+        var clientRect = this.canvas.getBoundingClientRect();
+        var x = e.clientX - clientRect.left;
+        var y = e.clientY - clientRect.top;
+        return [x, y];
+    };
+    /**
+     * find objects by coordinates
+     * @param x
+     * @param y
+     * @returns {SchemeObject[]}
+     */
+    SchemeDesigner.prototype.findObjectsByCoordinates = function (x, y) {
+        var result = [];
+        for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+            var schemeObject = _a[_i];
+            var boundingRect = schemeObject.getBoundingRect();
+            if (boundingRect.left <= x && boundingRect.right >= x
+                && boundingRect.top <= y && boundingRect.bottom >= y) {
+                result.push(schemeObject);
+            }
+        }
+        return result;
+    };
     return SchemeDesigner;
 }());
 
@@ -151,6 +302,18 @@ var SchemeObject = /** @class */ (function () {
      */
     SchemeObject.prototype.render = function (schemeDesigner) {
         this.renderFunction(this, schemeDesigner);
+    };
+    /**
+     * Bounding rect
+     * @returns {{left: number, top: number, right: number, bottom: number}}
+     */
+    SchemeObject.prototype.getBoundingRect = function () {
+        return {
+            left: this.x,
+            top: this.y,
+            right: this.x + this.width,
+            bottom: this.y + this.height
+        };
     };
     return SchemeObject;
 }());
