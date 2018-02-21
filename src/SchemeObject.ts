@@ -76,6 +76,36 @@ class SchemeObject
     }
 
     /**
+     * Click on object
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    public click(e: MouseEvent, schemeDesigner: SchemeDesigner): void
+    {
+
+    }
+
+    /**
+     * Mouse over
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    public mouseOver(e: MouseEvent, schemeDesigner: SchemeDesigner): void
+    {
+
+    }
+
+    /**
+     * Mouse leave
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    public mouseLeave(e: MouseEvent, schemeDesigner: SchemeDesigner): void
+    {
+
+    }
+
+    /**
      * Bounding rect
      * @returns {{left: number, top: number, right: number, bottom: number}}
      */

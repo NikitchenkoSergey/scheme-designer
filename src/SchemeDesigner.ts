@@ -44,16 +44,35 @@ class SchemeDesigner
     protected defaultCursorStyle: string = 'default';
 
     /**
+     * Last client x
+     */
+    protected lastClientX: number;
+
+    /**
+     * Last client Y
+     */
+    protected lastClientY: number;
+
+    /**
+     * Current scale
+     */
+    protected scale: number = 1;
+
+    /**
      * Constructor
      * @param {HTMLCanvasElement} canvas
+     * @param {Object} params
      */
-    constructor (canvas: HTMLCanvasElement)
+    constructor (canvas: HTMLCanvasElement, params?: any)
     {
         this.objects = [];
 
         this.canvas = canvas;
 
         this.canvas2DContext = this.canvas.getContext('2d');
+
+        this.lastClientX = this.canvas.width / 2;
+        this.lastClientY = this.canvas.height / 2;
 
         this.resetFrameInterval();
 
@@ -87,7 +106,12 @@ class SchemeDesigner
      */
     public clearContext(): this
     {
-        this.canvas2DContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.canvas2DContext.clearRect(
+            0,
+            0,
+            this.canvas.width / this.scale,
+            this.canvas.height / this.scale
+        );
         return this;
     }
 
@@ -101,6 +125,7 @@ class SchemeDesigner
     }
 
     /**
+     * todo render only visible objects
      * Render all objects
      */
     protected renderAll(): void
@@ -215,7 +240,7 @@ class SchemeDesigner
         this.canvas.addEventListener('mousemove', (e: MouseEvent) => {this.onMouseMove(e)});
         this.canvas.addEventListener('mouseout', (e: MouseEvent) => {this.onMouseOut(e)});
         this.canvas.addEventListener('mouseenter', (e: MouseEvent) => {this.onMouseEnter(e)});
-        this.canvas.addEventListener('wheel', (e: MouseEvent) => {this.onMouseWheel(e)});
+        this.canvas.addEventListener('wheel', (e: MouseWheelEvent) => {this.onMouseWheel(e)});
         this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {this.onContextMenu(e)});
 
         // touch events
@@ -264,6 +289,9 @@ class SchemeDesigner
      */
     protected onMouseMove(e: MouseEvent)
     {
+        this.lastClientX = e.clientX;
+        this.lastClientY = e.clientY;
+
         let objects = this.findObjectsForEvent(e);
         let mustReRender = false;
         let hasNewHovers = false;
@@ -329,12 +357,29 @@ class SchemeDesigner
     }
 
     /**
-     * todo
+     * Zoom by wheel
      * @param e
      */
-    protected onMouseWheel(e: MouseEvent)
+    protected onMouseWheel(e: MouseWheelEvent)
     {
+        let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
+        if (delta) {
+            this.setScale(delta);
+        }
 
+        return e.preventDefault() && false;
+    }
+
+    /**
+     * Set scale
+     * @param {number} delta
+     */
+    public setScale(delta: number): void
+    {
+        let factor = Math.pow(1.03, delta);
+        this.canvas2DContext.scale(factor, factor);
+        this.scale = this.scale * factor;
+        this.requestRenderAll();
     }
 
     /**
@@ -381,6 +426,10 @@ class SchemeDesigner
     protected findObjectsByCoordinates(x: number, y: number): SchemeObject[]
     {
         let result: SchemeObject[] = [];
+
+        // scale modification
+        x = x / this.scale;
+        y = y / this.scale;
 
         for (let schemeObject of this.objects) {
             let boundingRect = schemeObject.getBoundingRect();

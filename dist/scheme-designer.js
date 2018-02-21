@@ -5,8 +5,9 @@ var SchemeDesigner = /** @class */ (function () {
     /**
      * Constructor
      * @param {HTMLCanvasElement} canvas
+     * @param {Object} params
      */
-    function SchemeDesigner(canvas) {
+    function SchemeDesigner(canvas, params) {
         /**
          * Frame interval delay
          */
@@ -23,9 +24,15 @@ var SchemeDesigner = /** @class */ (function () {
          * Default cursor style
          */
         this.defaultCursorStyle = 'default';
+        /**
+         * Current scale
+         */
+        this.scale = 1;
         this.objects = [];
         this.canvas = canvas;
         this.canvas2DContext = this.canvas.getContext('2d');
+        this.lastClientX = this.canvas.width / 2;
+        this.lastClientY = this.canvas.height / 2;
         this.resetFrameInterval();
         this.bindEvents();
     }
@@ -52,7 +59,7 @@ var SchemeDesigner = /** @class */ (function () {
      * Clear canvas context
      */
     SchemeDesigner.prototype.clearContext = function () {
-        this.canvas2DContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
         return this;
     };
     /**
@@ -63,6 +70,7 @@ var SchemeDesigner = /** @class */ (function () {
         return this;
     };
     /**
+     * todo render only visible objects
      * Render all objects
      */
     SchemeDesigner.prototype.renderAll = function () {
@@ -195,6 +203,8 @@ var SchemeDesigner = /** @class */ (function () {
      * @param e
      */
     SchemeDesigner.prototype.onMouseMove = function (e) {
+        this.lastClientX = e.clientX;
+        this.lastClientY = e.clientY;
         var objects = this.findObjectsForEvent(e);
         var mustReRender = false;
         var hasNewHovers = false;
@@ -247,10 +257,25 @@ var SchemeDesigner = /** @class */ (function () {
     SchemeDesigner.prototype.onMouseEnter = function (e) {
     };
     /**
-     * todo
+     * Zoom by wheel
      * @param e
      */
     SchemeDesigner.prototype.onMouseWheel = function (e) {
+        var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
+        if (delta) {
+            this.setScale(delta);
+        }
+        return e.preventDefault() && false;
+    };
+    /**
+     * Set scale
+     * @param {number} delta
+     */
+    SchemeDesigner.prototype.setScale = function (delta) {
+        var factor = Math.pow(1.03, delta);
+        this.canvas2DContext.scale(factor, factor);
+        this.scale = this.scale * factor;
+        this.requestRenderAll();
     };
     /**
      * todo
@@ -286,6 +311,9 @@ var SchemeDesigner = /** @class */ (function () {
      */
     SchemeDesigner.prototype.findObjectsByCoordinates = function (x, y) {
         var result = [];
+        // scale modification
+        x = x / this.scale;
+        y = y / this.scale;
         for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
             var schemeObject = _a[_i];
             var boundingRect = schemeObject.getBoundingRect();
@@ -335,6 +363,27 @@ var SchemeObject = /** @class */ (function () {
      */
     SchemeObject.prototype.render = function (schemeDesigner) {
         this.renderFunction(this, schemeDesigner);
+    };
+    /**
+     * Click on object
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    SchemeObject.prototype.click = function (e, schemeDesigner) {
+    };
+    /**
+     * Mouse over
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    SchemeObject.prototype.mouseOver = function (e, schemeDesigner) {
+    };
+    /**
+     * Mouse leave
+     * @param {MouseEvent} e
+     * @param {SchemeDesigner} schemeDesigner
+     */
+    SchemeObject.prototype.mouseLeave = function (e, schemeDesigner) {
     };
     /**
      * Bounding rect
