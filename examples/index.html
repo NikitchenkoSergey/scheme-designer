@@ -17,7 +17,7 @@
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner(canvas);
 
-    var placesCount = 2100;
+    var placesCount = 2000;
     var placesInRow = 50;
     var placeMargin = 5;
 
@@ -50,7 +50,13 @@
         context.stroke();
 
         context.font = '8px Arial';
-        context.fillStyle = 'black';
+
+        if (schemeObject.isSelected) {
+            context.fillStyle = 'white';
+        } else {
+            context.fillStyle = 'black';
+        }
+        
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(schemeObject.params.placeNumber, schemeObject.x + (schemeObject.width/ 2), schemeObject.y + (schemeObject.height / 2));
@@ -102,8 +108,12 @@
         console.log('clickOnObject', e.detail);
     }, false);
 
-    canvas.addEventListener('schemeDesigner.hoverOnObject', function (e) {
-        console.log('hoverOnObject', e.detail);
+    canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
+        console.log('mouseOverObject', e.detail);
+    }, false);
+
+    canvas.addEventListener('schemeDesigner.mouseLeaveObject', function (e) {
+        console.log('mouseLeaveObject', e.detail);
     }, false);
 </script>
 </body>

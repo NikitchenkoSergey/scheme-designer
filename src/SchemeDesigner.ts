@@ -26,7 +26,7 @@ class SchemeDesigner
     /**
      * Frame interval delay
      */
-    protected frameIntervalDelay: number = 20;
+    protected frameIntervalDelay: number = 15;
 
     /**
      * Requested render all
@@ -37,6 +37,11 @@ class SchemeDesigner
      * Hovered objects
      */
     protected hoveredObjects: SchemeObject[] = [];
+
+    /**
+     * Default cursor style
+     */
+    protected defaultCursorStyle: string = 'default';
 
     /**
      * Constructor
@@ -117,10 +122,20 @@ class SchemeDesigner
      */
     protected sendEvent(eventName: string, data?: any): void
     {
-        let event = new CustomEvent('schemeDesigner.' + eventName, {
-            detail: data
-        });
-        this.canvas.dispatchEvent(event);
+        let fullEventName = 'schemeDesigner.' + eventName;
+
+        if (typeof CustomEvent === 'function') {
+            let event = new CustomEvent(fullEventName, {
+                detail: data
+            });
+            this.canvas.dispatchEvent(event);
+        } else {
+            let event = document.createEvent('CustomEvent');
+            event.initCustomEvent(fullEventName, false, false, data);
+            this.canvas.dispatchEvent(event);
+        }
+
+
     }
 
     /**
@@ -175,6 +190,17 @@ class SchemeDesigner
     public setFrameIntervalDelay(frameIntervalDelay: number): this
     {
         this.frameIntervalDelay = frameIntervalDelay;
+        return this;
+    }
+
+    /**
+     * Set cursor style
+     * @param {string} cursor
+     * @returns {SchemeDesigner}
+     */
+    public setCursorStyle(cursor: string): this
+    {
+        this.canvas.style.cursor = cursor;
         return this;
     }
 
@@ -255,6 +281,8 @@ class SchemeDesigner
 
                 if (!alreadyHovered) {
                     schemeHoveredObject.isHovered = false;
+                    this.sendEvent('mouseLeaveObject', schemeHoveredObject);
+
                     mustReRender = true;
                     hasNewHovers = true;
                 }
@@ -265,11 +293,17 @@ class SchemeDesigner
             for (let schemeObject of objects) {
                 schemeObject.isHovered = true;
                 mustReRender = true;
-                this.sendEvent('hoverOnObject', schemeObject);
+                this.setCursorStyle(schemeObject.cursorStyle);
+
+                this.sendEvent('mouseOverObject', schemeObject);
             }
         }
 
         this.hoveredObjects = objects;
+
+        if (!objects.length) {
+            this.setCursorStyle(this.defaultCursorStyle);
+        }
 
         if (mustReRender) {
             this.requestRenderAll();

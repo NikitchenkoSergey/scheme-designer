@@ -10,7 +10,7 @@ var SchemeDesigner = /** @class */ (function () {
         /**
          * Frame interval delay
          */
-        this.frameIntervalDelay = 20;
+        this.frameIntervalDelay = 15;
         /**
          * Requested render all
          */
@@ -19,6 +19,10 @@ var SchemeDesigner = /** @class */ (function () {
          * Hovered objects
          */
         this.hoveredObjects = [];
+        /**
+         * Default cursor style
+         */
+        this.defaultCursorStyle = 'default';
         this.objects = [];
         this.canvas = canvas;
         this.canvas2DContext = this.canvas.getContext('2d');
@@ -76,10 +80,18 @@ var SchemeDesigner = /** @class */ (function () {
      * @param data
      */
     SchemeDesigner.prototype.sendEvent = function (eventName, data) {
-        var event = new CustomEvent('schemeDesigner.' + eventName, {
-            detail: data
-        });
-        this.canvas.dispatchEvent(event);
+        var fullEventName = 'schemeDesigner.' + eventName;
+        if (typeof CustomEvent === 'function') {
+            var event_1 = new CustomEvent(fullEventName, {
+                detail: data
+            });
+            this.canvas.dispatchEvent(event_1);
+        }
+        else {
+            var event_2 = document.createEvent('CustomEvent');
+            event_2.initCustomEvent(fullEventName, false, false, data);
+            this.canvas.dispatchEvent(event_2);
+        }
     };
     /**
      * Add object
@@ -122,6 +134,15 @@ var SchemeDesigner = /** @class */ (function () {
      */
     SchemeDesigner.prototype.setFrameIntervalDelay = function (frameIntervalDelay) {
         this.frameIntervalDelay = frameIntervalDelay;
+        return this;
+    };
+    /**
+     * Set cursor style
+     * @param {string} cursor
+     * @returns {SchemeDesigner}
+     */
+    SchemeDesigner.prototype.setCursorStyle = function (cursor) {
+        this.canvas.style.cursor = cursor;
         return this;
     };
     /**
@@ -190,6 +211,7 @@ var SchemeDesigner = /** @class */ (function () {
                 }
                 if (!alreadyHovered) {
                     schemeHoveredObject.isHovered = false;
+                    this.sendEvent('mouseLeaveObject', schemeHoveredObject);
                     mustReRender = true;
                     hasNewHovers = true;
                 }
@@ -200,10 +222,14 @@ var SchemeDesigner = /** @class */ (function () {
                 var schemeObject = objects_3[_c];
                 schemeObject.isHovered = true;
                 mustReRender = true;
-                this.sendEvent('hoverOnObject', schemeObject);
+                this.setCursorStyle(schemeObject.cursorStyle);
+                this.sendEvent('mouseOverObject', schemeObject);
             }
         }
         this.hoveredObjects = objects;
+        if (!objects.length) {
+            this.setCursorStyle(this.defaultCursorStyle);
+        }
         if (mustReRender) {
             this.requestRenderAll();
         }
@@ -290,11 +316,18 @@ var SchemeObject = /** @class */ (function () {
          * Is selected
          */
         this.isSelected = false;
+        /**
+         * Cursor style
+         */
+        this.cursorStyle = 'pointer';
         this.x = params.x;
         this.y = params.y;
         this.width = params.width;
         this.height = params.height;
         this.renderFunction = params.renderFunction;
+        if (params.cursorStyle) {
+            this.cursorStyle = params.cursorStyle;
+        }
         this.params = params;
     }
     /**

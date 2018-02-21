@@ -34,6 +34,11 @@ class SchemeObject
     public isSelected: boolean = false;
 
     /**
+     * Cursor style
+     */
+    public cursorStyle: string = 'pointer';
+
+    /**
      * Render function
      */
     protected renderFunction: any;
@@ -54,6 +59,10 @@ class SchemeObject
         this.width = params.width;
         this.height = params.height;
         this.renderFunction = params.renderFunction;
+
+        if (params.cursorStyle) {
+            this.cursorStyle = params.cursorStyle;
+        }
 
         this.params = params;
     }
