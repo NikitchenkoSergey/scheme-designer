@@ -36,6 +36,10 @@ var SchemeDesigner = /** @class */ (function () {
          * Scroll top
          */
         this.scrollTop = 0;
+        /**
+         * Is dragging
+         */
+        this.isDragging = false;
         this.objects = [];
         this.canvas = canvas;
         this.canvas2DContext = this.canvas.getContext('2d');
@@ -168,6 +172,7 @@ var SchemeDesigner = /** @class */ (function () {
         var _this = this;
         // mouse events
         this.canvas.addEventListener('mousedown', function (e) { _this.onMouseDown(e); });
+        this.canvas.addEventListener('mouseup', function (e) { _this.onMouseUp(e); });
         this.canvas.addEventListener('click', function (e) { _this.onClick(e); });
         this.canvas.addEventListener('dblclick', function (e) { _this.onDoubleClick(e); });
         this.canvas.addEventListener('mousemove', function (e) { _this.onMouseMove(e); });
@@ -181,24 +186,38 @@ var SchemeDesigner = /** @class */ (function () {
         // todo touchmove
     };
     /**
-     * todo
+     * Mouse down
      * @param e
      */
     SchemeDesigner.prototype.onMouseDown = function (e) {
+        this.setLastClientPosition(e);
+        this.setCursorStyle('move');
+        this.isDragging = true;
+    };
+    /**
+     * Mouse up
+     * @param e
+     */
+    SchemeDesigner.prototype.onMouseUp = function (e) {
+        this.setLastClientPosition(e);
+        this.setCursorStyle(this.defaultCursorStyle);
+        this.isDragging = false;
     };
     /**
      * On click
      * @param e
      */
     SchemeDesigner.prototype.onClick = function (e) {
-        var objects = this.findObjectsForEvent(e);
-        for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
-            var schemeObject = objects_1[_i];
-            schemeObject.isSelected = !schemeObject.isSelected;
-            this.sendEvent('clickOnObject', schemeObject);
-        }
-        if (objects.length) {
-            this.requestRenderAll();
+        if (!this.isDragging) {
+            var objects = this.findObjectsForEvent(e);
+            for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
+                var schemeObject = objects_1[_i];
+                schemeObject.isSelected = !schemeObject.isSelected;
+                this.sendEvent('clickOnObject', schemeObject);
+            }
+            if (objects.length) {
+                this.requestRenderAll();
+            }
         }
     };
     /**
@@ -212,9 +231,19 @@ var SchemeDesigner = /** @class */ (function () {
      * @param e
      */
     SchemeDesigner.prototype.onMouseMove = function (e) {
-        var coordinates = this.getCoordinatesFromEvent(e);
-        this.lastClientX = coordinates[0];
-        this.lastClientY = coordinates[1];
+        if (!this.isDragging) {
+            this.handleHover(e);
+        }
+        else {
+            this.handleDragging(e);
+        }
+    };
+    /**
+     * Handling hover
+     * @param e
+     */
+    SchemeDesigner.prototype.handleHover = function (e) {
+        this.setLastClientPosition(e);
         var objects = this.findObjectsForEvent(e);
         var mustReRender = false;
         var hasNewHovers = false;
@@ -255,10 +284,25 @@ var SchemeDesigner = /** @class */ (function () {
         }
     };
     /**
-     * todo
+     * Handle dragging
+     * @param e
+     */
+    SchemeDesigner.prototype.handleDragging = function (e) {
+        var lastClientX = this.lastClientX;
+        var lastClientY = this.lastClientY;
+        this.setLastClientPosition(e);
+        var scrollLeft = lastClientX - this.lastClientX + this.scrollLeft;
+        var scrollTop = lastClientY - this.lastClientY + this.scrollTop;
+        this.scroll(scrollLeft, scrollTop);
+    };
+    /**
+     * Mouse out
      * @param e
      */
     SchemeDesigner.prototype.onMouseOut = function (e) {
+        this.setLastClientPosition(e);
+        this.isDragging = false;
+        this.requestRenderAll();
     };
     /**
      * todo
@@ -273,11 +317,25 @@ var SchemeDesigner = /** @class */ (function () {
     SchemeDesigner.prototype.onMouseWheel = function (e) {
         var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
         if (delta) {
+            var oldScale = this.scale;
             this.zoom(delta);
-            // todo scroll to cursor
-            //this.scroll(mousePointTo.x, mousePointTo.y);
+            this.setLastClientPosition(e);
+            // scroll to cursor
+            var k = 0.2 / this.scale;
+            var leftOffsetDelta = (this.lastClientX - (this.canvas.width / 2)) * k;
+            var topOffsetDelta = (this.lastClientY - (this.canvas.height / 2)) * k;
+            this.scroll(this.scrollLeft + leftOffsetDelta, this.scrollTop + topOffsetDelta);
         }
         return e.preventDefault() && false;
+    };
+    /**
+     * Set last clent position
+     * @param e
+     */
+    SchemeDesigner.prototype.setLastClientPosition = function (e) {
+        var coordinates = this.getCoordinatesFromEvent(e);
+        this.lastClientX = coordinates[0];
+        this.lastClientY = coordinates[1];
     };
     /**
      * Set zoom
@@ -285,9 +343,29 @@ var SchemeDesigner = /** @class */ (function () {
      */
     SchemeDesigner.prototype.zoom = function (delta) {
         var factor = Math.pow(1.03, delta);
-        this.canvas2DContext.scale(factor, factor);
-        this.scale = this.scale * factor;
-        this.requestRenderAll();
+        var boundingRect = this.getObjectsBoundingRect();
+        var canScaleX = true;
+        var canScaleY = true;
+        if (factor < 1) {
+            canScaleX = this.canvas.width / 1.5 < boundingRect.right * this.scale;
+            canScaleY = this.canvas.height / 1.5 < boundingRect.bottom * this.scale;
+        }
+        else {
+            canScaleX = true;
+            canScaleY = true;
+        }
+        if (canScaleX || canScaleY) {
+            this.canvas2DContext.scale(factor, factor);
+            this.scale = this.scale * factor;
+            this.requestRenderAll();
+        }
+    };
+    /**
+     * Get scale
+     * @returns {number}
+     */
+    SchemeDesigner.prototype.getScale = function () {
+        return this.scale;
     };
     /**
      * todo
@@ -323,12 +401,12 @@ var SchemeDesigner = /** @class */ (function () {
      */
     SchemeDesigner.prototype.findObjectsByCoordinates = function (x, y) {
         var result = [];
-        // scroll
-        x = x + this.scrollLeft;
-        y = y + this.scrollTop;
         // scale
         x = x / this.scale;
         y = y / this.scale;
+        // scroll
+        x = x + this.scrollLeft;
+        y = y + this.scrollTop;
         for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
             var schemeObject = _a[_i];
             var boundingRect = schemeObject.getBoundingRect();
@@ -362,6 +440,56 @@ var SchemeDesigner = /** @class */ (function () {
         this.scrollLeft = left;
         this.scrollTop = top;
         this.requestRenderAll();
+    };
+    /**
+     * All objects
+     * @returns {SchemeObject[]}
+     */
+    SchemeDesigner.prototype.getObjects = function () {
+        return this.objects;
+    };
+    /**
+     * Get bounding rect of all objects
+     * @returns {{left: number, top: number, right: number, bottom: number}}
+     */
+    SchemeDesigner.prototype.getObjectsBoundingRect = function () {
+        var top;
+        var left;
+        var right;
+        var bottom;
+        for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+            var schemeObject = _a[_i];
+            var schemeObjectBoundingRect = schemeObject.getBoundingRect();
+            if (top == undefined || schemeObjectBoundingRect.top < top) {
+                top = schemeObjectBoundingRect.top;
+            }
+            if (left == undefined || schemeObjectBoundingRect.left < left) {
+                left = schemeObjectBoundingRect.left;
+            }
+            if (right == undefined || schemeObjectBoundingRect.right > right) {
+                right = schemeObjectBoundingRect.right;
+            }
+            if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                bottom = schemeObjectBoundingRect.bottom;
+            }
+        }
+        return {
+            left: left,
+            top: top,
+            right: right,
+            bottom: bottom
+        };
+    };
+    /**
+     * Set scheme to center og objects
+     */
+    SchemeDesigner.prototype.toCenter = function () {
+        var boundingRect = this.getObjectsBoundingRect();
+        var widthDelta = (boundingRect.right / this.scale) - this.canvas.width;
+        var heightDelta = (boundingRect.bottom / this.scale) - this.canvas.height;
+        var scrollLeft = -(widthDelta / 2);
+        var scrollTop = -(heightDelta / 2);
+        this.scroll(scrollLeft, scrollTop);
     };
     return SchemeDesigner;
 }());

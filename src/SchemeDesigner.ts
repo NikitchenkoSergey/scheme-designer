@@ -69,6 +69,11 @@ class SchemeDesigner
     protected scrollTop: number = 0;
 
     /**
+     * Is dragging
+     */
+    protected isDragging: boolean = false;
+
+    /**
      * Constructor
      * @param {HTMLCanvasElement} canvas
      * @param {Object} params
@@ -242,9 +247,11 @@ class SchemeDesigner
     /**
      * Bind events
      */
-    protected bindEvents(): void {
+    protected bindEvents(): void
+    {
         // mouse events
         this.canvas.addEventListener('mousedown', (e: MouseEvent) => {this.onMouseDown(e)});
+        this.canvas.addEventListener('mouseup', (e: MouseEvent) => {this.onMouseUp(e)});
         this.canvas.addEventListener('click', (e: MouseEvent) => {this.onClick(e)});
         this.canvas.addEventListener('dblclick', (e: MouseEvent) => {this.onDoubleClick(e)});
         this.canvas.addEventListener('mousemove', (e: MouseEvent) => {this.onMouseMove(e)});
@@ -261,28 +268,43 @@ class SchemeDesigner
     }
 
     /**
-     * todo
+     * Mouse down
      * @param e
      */
-    protected onMouseDown(e: MouseEvent)
+    protected onMouseDown(e: MouseEvent): void
     {
+        this.setLastClientPosition(e);
+        this.setCursorStyle('move');
+        this.isDragging = true;
+    }
 
+    /**
+     * Mouse up
+     * @param e
+     */
+    protected onMouseUp(e: MouseEvent): void
+    {
+        this.setLastClientPosition(e);
+        this.setCursorStyle(this.defaultCursorStyle);
+        this.isDragging = false;
     }
 
     /**
      * On click
      * @param e
      */
-    protected onClick(e: MouseEvent)
+    protected onClick(e: MouseEvent): void
     {
-        let objects = this.findObjectsForEvent(e);
-        for (let schemeObject of objects) {
-            schemeObject.isSelected = !schemeObject.isSelected;
+        if (!this.isDragging) {
+            let objects = this.findObjectsForEvent(e);
+            for (let schemeObject of objects) {
+                schemeObject.isSelected = !schemeObject.isSelected;
 
-            this.sendEvent('clickOnObject', schemeObject);
-        }
-        if (objects.length) {
-            this.requestRenderAll();
+                this.sendEvent('clickOnObject', schemeObject);
+            }
+            if (objects.length) {
+                this.requestRenderAll();
+            }
         }
     }
 
@@ -290,7 +312,7 @@ class SchemeDesigner
      * todo
      * @param e
      */
-    protected onDoubleClick(e: MouseEvent)
+    protected onDoubleClick(e: MouseEvent): void
     {
 
     }
@@ -299,11 +321,22 @@ class SchemeDesigner
      * On mouse move
      * @param e
      */
-    protected onMouseMove(e: MouseEvent)
+    protected onMouseMove(e: MouseEvent): void
     {
-        let coordinates = this.getCoordinatesFromEvent(e);
-        this.lastClientX = coordinates[0];
-        this.lastClientY = coordinates[1];
+        if (!this.isDragging) {
+            this.handleHover(e);
+        } else {
+            this.handleDragging(e);
+        }
+    }
+
+    /**
+     * Handling hover
+     * @param e
+     */
+    protected handleHover(e: MouseEvent): void
+    {
+        this.setLastClientPosition(e);
 
         let objects = this.findObjectsForEvent(e);
         let mustReRender = false;
@@ -352,19 +385,36 @@ class SchemeDesigner
     }
 
     /**
-     * todo
+     * Handle dragging
      * @param e
      */
-    protected onMouseOut(e: MouseEvent)
+    protected handleDragging(e: MouseEvent): void
     {
+        let lastClientX = this.lastClientX;
+        let lastClientY = this.lastClientY;
+        this.setLastClientPosition(e);
+        let scrollLeft = lastClientX - this.lastClientX + this.scrollLeft;
+        let scrollTop = lastClientY - this.lastClientY + this.scrollTop;
 
+        this.scroll(scrollLeft, scrollTop);
+    }
+
+    /**
+     * Mouse out
+     * @param e
+     */
+    protected onMouseOut(e: MouseEvent): void
+    {
+        this.setLastClientPosition(e);
+        this.isDragging = false;
+        this.requestRenderAll();
     }
 
     /**
      * todo
      * @param e
      */
-    protected onMouseEnter(e: MouseEvent)
+    protected onMouseEnter(e: MouseEvent): void
     {
 
     }
@@ -373,17 +423,36 @@ class SchemeDesigner
      * Zoom by wheel
      * @param e
      */
-    protected onMouseWheel(e: MouseWheelEvent)
+    protected onMouseWheel(e: MouseWheelEvent): void
     {
         let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
         if (delta) {
+            let oldScale = this.scale;
+
             this.zoom(delta);
 
-            // todo scroll to cursor
-            //this.scroll(mousePointTo.x, mousePointTo.y);
+            this.setLastClientPosition(e);
+
+            // scroll to cursor
+            let k = 0.2 / this.scale;
+            let leftOffsetDelta = (this.lastClientX - (this.canvas.width / 2)) * k;
+            let topOffsetDelta = (this.lastClientY - (this.canvas.height / 2)) * k;
+
+            this.scroll(this.scrollLeft + leftOffsetDelta, this.scrollTop + topOffsetDelta);
         }
 
         return e.preventDefault() && false;
+    }
+
+    /**
+     * Set last clent position
+     * @param e
+     */
+    protected setLastClientPosition(e: MouseEvent): void
+    {
+        let coordinates = this.getCoordinatesFromEvent(e);
+        this.lastClientX = coordinates[0];
+        this.lastClientY = coordinates[1];
     }
 
     /**
@@ -394,10 +463,32 @@ class SchemeDesigner
     {
         let factor = Math.pow(1.03, delta);
 
-        this.canvas2DContext.scale(factor, factor);
-        this.scale = this.scale * factor;
+        let boundingRect = this.getObjectsBoundingRect();
 
-        this.requestRenderAll();
+        let canScaleX = true;
+        let canScaleY = true;
+        if (factor < 1) {
+            canScaleX = this.canvas.width / 1.5 < boundingRect.right * this.scale;
+            canScaleY = this.canvas.height / 1.5 < boundingRect.bottom * this.scale;
+        } else {
+            canScaleX = true;
+            canScaleY = true;
+        }
+
+        if (canScaleX || canScaleY) {
+            this.canvas2DContext.scale(factor, factor);
+            this.scale = this.scale * factor;
+            this.requestRenderAll();
+        }
+    }
+
+    /**
+     * Get scale
+     * @returns {number}
+     */
+    public getScale(): number
+    {
+        return this.scale;
     }
 
     /**
@@ -445,13 +536,13 @@ class SchemeDesigner
     {
         let result: SchemeObject[] = [];
 
-        // scroll
-        x = x + this.scrollLeft;
-        y = y + this.scrollTop;
-
         // scale
         x = x / this.scale;
         y = y / this.scale;
+
+        // scroll
+        x = x + this.scrollLeft;
+        y = y + this.scrollTop;
 
 
         for (let schemeObject of this.objects) {
@@ -493,5 +584,71 @@ class SchemeDesigner
         this.scrollLeft = left;
         this.scrollTop = top;
         this.requestRenderAll();
+    }
+
+    /**
+     * All objects
+     * @returns {SchemeObject[]}
+     */
+    public getObjects(): SchemeObject[]
+    {
+        return this.objects;
+    }
+
+
+    /**
+     * Get bounding rect of all objects
+     * @returns {{left: number, top: number, right: number, bottom: number}}
+     */
+    public getObjectsBoundingRect(): any
+    {
+        let top: number;
+        let left: number;
+        let right: number;
+        let bottom: number;
+
+        for (let schemeObject of this.objects) {
+            let schemeObjectBoundingRect = schemeObject.getBoundingRect();
+
+            if (top == undefined || schemeObjectBoundingRect.top < top) {
+                top = schemeObjectBoundingRect.top;
+            }
+
+            if (left == undefined || schemeObjectBoundingRect.left < left) {
+                left = schemeObjectBoundingRect.left;
+            }
+
+            if (right == undefined || schemeObjectBoundingRect.right > right) {
+                right = schemeObjectBoundingRect.right;
+            }
+
+            if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                bottom = schemeObjectBoundingRect.bottom;
+            }
+        }
+
+        return {
+            left: left,
+            top: top,
+            right: right,
+            bottom: bottom
+        };
+    }
+
+
+    /**
+     * Set scheme to center og objects
+     */
+    public toCenter(): void
+    {
+        let boundingRect = this.getObjectsBoundingRect();
+
+        let widthDelta = (boundingRect.right / this.scale) - this.canvas.width;
+        let heightDelta = (boundingRect.bottom / this.scale) - this.canvas.height;
+
+        let scrollLeft = -(widthDelta / 2);
+        let scrollTop = -(heightDelta / 2);
+
+        this.scroll(scrollLeft, scrollTop);
     }
 }
