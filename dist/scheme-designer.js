@@ -165,8 +165,9 @@ var SchemeDesigner = /** @class */ (function () {
         this.canvas.addEventListener('mousemove', function (e) { _this.onMouseMove(e); });
         this.canvas.addEventListener('mouseout', function (e) { _this.onMouseOut(e); });
         this.canvas.addEventListener('mouseenter', function (e) { _this.onMouseEnter(e); });
-        this.canvas.addEventListener('wheel', function (e) { _this.onMouseWheel(e); });
         this.canvas.addEventListener('contextmenu', function (e) { _this.onContextMenu(e); });
+        // wheel
+        this.canvas.addEventListener('mousewheel', function (e) { _this.onMouseWheel(e); });
         // touch events
         // todo touchstart
         // todo touchmove

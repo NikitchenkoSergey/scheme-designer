@@ -240,8 +240,10 @@ class SchemeDesigner
         this.canvas.addEventListener('mousemove', (e: MouseEvent) => {this.onMouseMove(e)});
         this.canvas.addEventListener('mouseout', (e: MouseEvent) => {this.onMouseOut(e)});
         this.canvas.addEventListener('mouseenter', (e: MouseEvent) => {this.onMouseEnter(e)});
-        this.canvas.addEventListener('wheel', (e: MouseWheelEvent) => {this.onMouseWheel(e)});
         this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {this.onContextMenu(e)});
+
+        // wheel
+        this.canvas.addEventListener('mousewheel', (e: MouseWheelEvent) => {this.onMouseWheel(e)});
 
         // touch events
         // todo touchstart
