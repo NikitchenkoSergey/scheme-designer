@@ -44,7 +44,10 @@
             context.fillStyle = 'rgba(100, 50, 95, 0.5)';
         }
 
-        context.rect(schemeObject.x, schemeObject.y, schemeObject.width, schemeObject.height);
+        var relativeX = schemeObject.x - schemeDesigner.getScrollLeft();
+        var relativeY = schemeObject.y - schemeDesigner.getScrollTop();
+
+        context.rect(relativeX, relativeY, schemeObject.width, schemeObject.height);
 
         context.fill();
         context.stroke();
@@ -59,7 +62,7 @@
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(schemeObject.params.placeNumber, schemeObject.x + (schemeObject.width/ 2), schemeObject.y + (schemeObject.height / 2));
+        context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width/ 2), relativeY + (schemeObject.height / 2));
 
     };
 

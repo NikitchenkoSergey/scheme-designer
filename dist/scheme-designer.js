@@ -28,6 +28,14 @@ var SchemeDesigner = /** @class */ (function () {
          * Current scale
          */
         this.scale = 1;
+        /**
+         * Scroll left
+         */
+        this.scrollLeft = 0;
+        /**
+         * Scroll top
+         */
+        this.scrollTop = 0;
         this.objects = [];
         this.canvas = canvas;
         this.canvas2DContext = this.canvas.getContext('2d');
@@ -204,8 +212,9 @@ var SchemeDesigner = /** @class */ (function () {
      * @param e
      */
     SchemeDesigner.prototype.onMouseMove = function (e) {
-        this.lastClientX = e.clientX;
-        this.lastClientY = e.clientY;
+        var coordinates = this.getCoordinatesFromEvent(e);
+        this.lastClientX = coordinates[0];
+        this.lastClientY = coordinates[1];
         var objects = this.findObjectsForEvent(e);
         var mustReRender = false;
         var hasNewHovers = false;
@@ -264,15 +273,17 @@ var SchemeDesigner = /** @class */ (function () {
     SchemeDesigner.prototype.onMouseWheel = function (e) {
         var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
         if (delta) {
-            this.setScale(delta);
+            this.zoom(delta);
+            // todo scroll to cursor
+            //this.scroll(mousePointTo.x, mousePointTo.y);
         }
         return e.preventDefault() && false;
     };
     /**
-     * Set scale
+     * Set zoom
      * @param {number} delta
      */
-    SchemeDesigner.prototype.setScale = function (delta) {
+    SchemeDesigner.prototype.zoom = function (delta) {
         var factor = Math.pow(1.03, delta);
         this.canvas2DContext.scale(factor, factor);
         this.scale = this.scale * factor;
@@ -312,7 +323,10 @@ var SchemeDesigner = /** @class */ (function () {
      */
     SchemeDesigner.prototype.findObjectsByCoordinates = function (x, y) {
         var result = [];
-        // scale modification
+        // scroll
+        x = x + this.scrollLeft;
+        y = y + this.scrollTop;
+        // scale
         x = x / this.scale;
         y = y / this.scale;
         for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
@@ -324,6 +338,30 @@ var SchemeDesigner = /** @class */ (function () {
             }
         }
         return result;
+    };
+    /**
+     * Get scroll left
+     * @returns {number}
+     */
+    SchemeDesigner.prototype.getScrollLeft = function () {
+        return this.scrollLeft;
+    };
+    /**
+     * Get scroll top
+     * @returns {number}
+     */
+    SchemeDesigner.prototype.getScrollTop = function () {
+        return this.scrollTop;
+    };
+    /**
+     * Set scroll
+     * @param {number} left
+     * @param {number} top
+     */
+    SchemeDesigner.prototype.scroll = function (left, top) {
+        this.scrollLeft = left;
+        this.scrollTop = top;
+        this.requestRenderAll();
     };
     return SchemeDesigner;
 }());

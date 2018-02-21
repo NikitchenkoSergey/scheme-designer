@@ -59,6 +59,16 @@ class SchemeDesigner
     protected scale: number = 1;
 
     /**
+     * Scroll left
+     */
+    protected scrollLeft: number = 0;
+
+    /**
+     * Scroll top
+     */
+    protected scrollTop: number = 0;
+
+    /**
      * Constructor
      * @param {HTMLCanvasElement} canvas
      * @param {Object} params
@@ -291,8 +301,9 @@ class SchemeDesigner
      */
     protected onMouseMove(e: MouseEvent)
     {
-        this.lastClientX = e.clientX;
-        this.lastClientY = e.clientY;
+        let coordinates = this.getCoordinatesFromEvent(e);
+        this.lastClientX = coordinates[0];
+        this.lastClientY = coordinates[1];
 
         let objects = this.findObjectsForEvent(e);
         let mustReRender = false;
@@ -366,21 +377,26 @@ class SchemeDesigner
     {
         let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
         if (delta) {
-            this.setScale(delta);
+            this.zoom(delta);
+
+            // todo scroll to cursor
+            //this.scroll(mousePointTo.x, mousePointTo.y);
         }
 
         return e.preventDefault() && false;
     }
 
     /**
-     * Set scale
+     * Set zoom
      * @param {number} delta
      */
-    public setScale(delta: number): void
+    public zoom(delta: number): void
     {
         let factor = Math.pow(1.03, delta);
+
         this.canvas2DContext.scale(factor, factor);
         this.scale = this.scale * factor;
+
         this.requestRenderAll();
     }
 
@@ -429,9 +445,14 @@ class SchemeDesigner
     {
         let result: SchemeObject[] = [];
 
-        // scale modification
+        // scroll
+        x = x + this.scrollLeft;
+        y = y + this.scrollTop;
+
+        // scale
         x = x / this.scale;
         y = y / this.scale;
+
 
         for (let schemeObject of this.objects) {
             let boundingRect = schemeObject.getBoundingRect();
@@ -442,5 +463,35 @@ class SchemeDesigner
         }
 
         return result;
+    }
+
+    /**
+     * Get scroll left
+     * @returns {number}
+     */
+    public getScrollLeft(): number
+    {
+        return this.scrollLeft;
+    }
+
+    /**
+     * Get scroll top
+     * @returns {number}
+     */
+    public getScrollTop(): number
+    {
+        return this.scrollTop;
+    }
+
+    /**
+     * Set scroll
+     * @param {number} left
+     * @param {number} top
+     */
+    public scroll(left: number, top: number): void
+    {
+        this.scrollLeft = left;
+        this.scrollTop = top;
+        this.requestRenderAll();
     }
 }
