@@ -1,7 +1,8 @@
 {
   "files": [
+    "src/Scheme.ts",
     "src/SchemeObject.ts",
-    "src/SchemeDesigner.ts"
+    "src/EventManager.ts"
   ],
   "compilerOptions": {
     "noImplicitAny": true,

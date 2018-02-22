@@ -1,121 +1,124 @@
-/**
- * SchemeObject class
- */
-class SchemeObject
-{
+namespace SchemeDesigner {
     /**
-     * X position
+     * SchemeObject class
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
      */
-    protected x: number;
-
-    /**
-     * Y position
-     */
-    protected y: number;
-
-    /**
-     * Width
-     */
-    protected width: number;
-
-    /**
-     * Height
-     */
-    protected height: number;
-
-    /**
-     * Is hovered
-     */
-    public isHovered: boolean = false;
-
-    /**
-     * Is selected
-     */
-    public isSelected: boolean = false;
-
-    /**
-     * Cursor style
-     */
-    public cursorStyle: string = 'pointer';
-
-    /**
-     * Render function
-     */
-    protected renderFunction: any;
-
-    /**
-     * All params of object
-     */
-    protected params: any;
-
-    /**
-     * Constructor
-     * @param {Object} params
-     */
-    constructor(params: any)
+    export class SchemeObject
     {
-        this.x = params.x;
-        this.y = params.y;
-        this.width = params.width;
-        this.height = params.height;
-        this.renderFunction = params.renderFunction;
+        /**
+         * X position
+         */
+        protected x: number;
 
-        if (params.cursorStyle) {
-            this.cursorStyle = params.cursorStyle;
+        /**
+         * Y position
+         */
+        protected y: number;
+
+        /**
+         * Width
+         */
+        protected width: number;
+
+        /**
+         * Height
+         */
+        protected height: number;
+
+        /**
+         * Is hovered
+         */
+        public isHovered: boolean = false;
+
+        /**
+         * Is selected
+         */
+        public isSelected: boolean = false;
+
+        /**
+         * Cursor style
+         */
+        public cursorStyle: string = 'pointer';
+
+        /**
+         * Render function
+         */
+        protected renderFunction: any;
+
+        /**
+         * All params of object
+         */
+        protected params: any;
+
+        /**
+         * Constructor
+         * @param {Object} params
+         */
+        constructor(params: any)
+        {
+            this.x = params.x;
+            this.y = params.y;
+            this.width = params.width;
+            this.height = params.height;
+            this.renderFunction = params.renderFunction;
+
+            if (params.cursorStyle) {
+                this.cursorStyle = params.cursorStyle;
+            }
+
+            this.params = params;
         }
 
-        this.params = params;
-    }
+        /**
+         * Rendering object
+         */
+        public render(Scheme: Scheme): void
+        {
+            this.renderFunction(this, Scheme);
+        }
 
-    /**
-     * Rendering object
-     */
-    public render(schemeDesigner: SchemeDesigner): void
-    {
-        this.renderFunction(this, schemeDesigner);
-    }
+        /**
+         * Click on object
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        public click(e: MouseEvent, schemeDesigner: Scheme): void
+        {
 
-    /**
-     * Click on object
-     * @param {MouseEvent} e
-     * @param {SchemeDesigner} schemeDesigner
-     */
-    public click(e: MouseEvent, schemeDesigner: SchemeDesigner): void
-    {
+        }
 
-    }
+        /**
+         * Mouse over
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        public mouseOver(e: MouseEvent, schemeDesigner: Scheme): void
+        {
 
-    /**
-     * Mouse over
-     * @param {MouseEvent} e
-     * @param {SchemeDesigner} schemeDesigner
-     */
-    public mouseOver(e: MouseEvent, schemeDesigner: SchemeDesigner): void
-    {
+        }
 
-    }
+        /**
+         * Mouse leave
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        public mouseLeave(e: MouseEvent, schemeDesigner: Scheme): void
+        {
 
-    /**
-     * Mouse leave
-     * @param {MouseEvent} e
-     * @param {SchemeDesigner} schemeDesigner
-     */
-    public mouseLeave(e: MouseEvent, schemeDesigner: SchemeDesigner): void
-    {
+        }
 
-    }
-
-    /**
-     * Bounding rect
-     * @returns {{left: number, top: number, right: number, bottom: number}}
-     */
-    public getBoundingRect(): any
-    {
-        return {
-            left: this.x,
-            top: this.y,
-            right: this.x + this.width,
-            bottom: this.y + this.height
-        };
+        /**
+         * Bounding rect
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        public getBoundingRect(): any
+        {
+            return {
+                left: this.x,
+                top: this.y,
+                right: this.x + this.width,
+                bottom: this.y + this.height
+            };
+        }
     }
 }

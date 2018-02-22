@@ -15,7 +15,7 @@
 </div>
 <script>
     var canvas = document.getElementById('canvas1');
-    var schemeDesigner = new SchemeDesigner(canvas);
+    var schemeDesigner = new SchemeDesigner.Scheme(canvas);
 
     var placesCount = 2000;
     var placesInRow = 50;
@@ -27,7 +27,7 @@
     /**
      * Render place function
      * @param {SchemeObject} schemeObject
-     * @param {SchemeDesigner} schemeDesigner
+     * @param {Scheme} schemeDesigner
      */
     var renderPlace = function (schemeObject, schemeDesigner) {
         var context = schemeDesigner.getCanvas2DContext();
@@ -74,7 +74,7 @@
         var leftOffset = (i % placesInRow) * (placeMargin + placeWidth);
         var topOffset = Math.floor(i / placesInRow) * (placeMargin + placeHeight);
 
-        var place = new SchemeObject({
+        var place = new SchemeDesigner.SchemeObject({
             /**
              * Required params
              */
