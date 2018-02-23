@@ -80,15 +80,25 @@ namespace SchemeDesigner {
             });
 
             // touch events
-            // todo touchstart
-            // todo touchmove
+            this.scheme.getCanvas().addEventListener('touchstart', (e: TouchEvent) => {
+                this.onMouseDown(e)
+            });
+            this.scheme.getCanvas().addEventListener('touchmove', (e: TouchEvent) => {
+                this.onMouseMove(e)
+            });
+            this.scheme.getCanvas().addEventListener('touchend', (e: TouchEvent) => {
+                this.onMouseUp(e)
+            });
+            this.scheme.getCanvas().addEventListener('touchcancel', (e: TouchEvent) => {
+                this.onMouseUp(e)
+            });
         }
 
         /**
          * Mouse down
          * @param e
          */
-        protected onMouseDown(e: MouseEvent): void
+        protected onMouseDown(e: MouseEvent | TouchEvent): void
         {
             this.leftButtonDown = true;
             this.setLastClientPositionFromEvent(e);
@@ -98,7 +108,7 @@ namespace SchemeDesigner {
          * Mouse up
          * @param e
          */
-        protected onMouseUp(e: MouseEvent): void
+        protected onMouseUp(e: MouseEvent | TouchEvent): void
         {
             this.leftButtonDown = false;
             this.setLastClientPositionFromEvent(e);
@@ -152,7 +162,7 @@ namespace SchemeDesigner {
          * On mouse move
          * @param e
          */
-        protected onMouseMove(e: MouseEvent): void
+        protected onMouseMove(e: MouseEvent | TouchEvent): void
         {
             if (this.leftButtonDown) {
                 let newCoordinates = this.getCoordinatesFromEvent(e);
@@ -174,10 +184,27 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Get pointer from event
+         * @param e
+         * @param clientProp
+         * @returns {number}
+         */
+        protected getPointer(e: MouseEvent | TouchEvent, clientProp: string): number
+        {
+        let touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
+
+        let event = (e as any);
+
+        return (event[touchProp] && event[touchProp][0]
+            ? event[touchProp][0][clientProp]
+            : event[clientProp]);
+        }
+
+        /**
          * Handling hover
          * @param e
          */
-        protected handleHover(e: MouseEvent): void
+        protected handleHover(e: MouseEvent | TouchEvent): void
         {
             this.setLastClientPositionFromEvent(e);
 
@@ -282,7 +309,7 @@ namespace SchemeDesigner {
          * Set last clent position
          * @param e
          */
-        public setLastClientPositionFromEvent(e: MouseEvent): void
+        public setLastClientPositionFromEvent(e: MouseEvent | TouchEvent): void
         {
             let coordinates = this.getCoordinatesFromEvent(e);
             this.setLastClientPosition(coordinates);
@@ -293,7 +320,7 @@ namespace SchemeDesigner {
          * @param e
          * @returns {SchemeObject[]}
          */
-        protected findObjectsForEvent(e: MouseEvent): SchemeObject[]
+        protected findObjectsForEvent(e: MouseEvent | TouchEvent): SchemeObject[]
         {
             let coordinates = this.getCoordinatesFromEvent(e);
             return this.scheme.findObjectsByCoordinates(coordinates);
@@ -304,11 +331,11 @@ namespace SchemeDesigner {
          * @param e
          * @returns {number[]}
          */
-        protected getCoordinatesFromEvent(e: MouseEvent): Coordinates
+        protected getCoordinatesFromEvent(e: MouseEvent | TouchEvent): Coordinates
         {
             let clientRect = this.scheme.getCanvas().getBoundingClientRect();
-            let x = e.clientX - clientRect.left;
-            let y = e.clientY - clientRect.top;
+            let x = this.getPointer(e, 'clientX') - clientRect.left;
+            let y = this.getPointer(e, 'clientY') - clientRect.top;
 
             return {x, y};
         }

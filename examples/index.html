@@ -10,7 +10,9 @@
     <h2>Hall scheme example</h2>
 
     <div>
-        <canvas id="canvas1" width="1000" height="800" style="border: 1px solid #ccc;"></canvas>
+        <canvas id="canvas1" width="1000" height="800" style="border: 1px solid #ccc;">
+            Ваш браузер не поддерживает элемент canvas.
+        </canvas>
     </div>
 </div>
 <script>
@@ -18,7 +20,7 @@
     var schemeDesigner = new SchemeDesigner.Scheme(canvas);
 
     var placesCount = 2000;
-    var placesInRow = 50;
+    var placesInRow = 60;
     var placeMargin = 5;
 
     var placeWidth = 13;
@@ -35,34 +37,47 @@
         context.beginPath();
         context.lineWidth = 1;
         context.strokeStyle = '#B143B0';
-        context.fillStyle = 'white';
 
-        if (schemeObject.isSelected) {
+        context.fillStyle = '#B143B0';
+        if (schemeObject.isSelected && schemeObject.isHovered) {
             context.fillStyle = '#B143B0';
-        }
-        else if (schemeObject.isHovered) {
-            context.fillStyle = 'rgba(100, 50, 95, 0.5)';
+        } else if (schemeObject.isHovered) {
+            context.fillStyle = 'white';
+        } else if (schemeObject.isSelected) {
+            context.fillStyle = '#B143B0';
         }
 
         var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
         var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
+        var width = schemeObject.width;
+        var height = schemeObject.height;
+        if (!schemeObject.isHovered && !schemeObject.isSelected) {
+            relativeX = relativeX + 2;
+            relativeY = relativeY + 2;
+            width = width - 4;
+            height = height - 4;
+        }
 
-        context.rect(relativeX, relativeY, schemeObject.width, schemeObject.height);
+        context.rect(relativeX, relativeY, width, height);
 
         context.fill();
         context.stroke();
 
-        context.font = '8px Arial';
+        context.font = '6px Arial';
 
-        if (schemeObject.isSelected) {
+        if (schemeObject.isSelected && schemeObject.isHovered) {
             context.fillStyle = 'white';
-        } else {
-            context.fillStyle = 'black';
+        } else if (schemeObject.isHovered) {
+            context.fillStyle = '#B143B0';
+        } else if (schemeObject.isSelected) {
+            context.fillStyle = 'white';
         }
 
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width/ 2), relativeY + (schemeObject.height / 2));
+        if (schemeObject.isSelected || schemeObject.isHovered) {
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+        }
 
     };
 
@@ -78,8 +93,8 @@
             /**
              * Required params
              */
-            x: 10.5 + leftOffset,
-            y: 10.5 + topOffset,
+            x: 100.5 + leftOffset,
+            y: 100.5 + topOffset,
             width: placeWidth,
             height: placeHeight,
             renderFunction: renderPlace,
@@ -98,6 +113,14 @@
 
 
     schemeDesigner.requestRenderAll();
+
+    /**
+     * Set scheme to center with scale for all oblects
+     */
+    schemeDesigner.getZoomManager().setScale(schemeDesigner.getZoomManager().getScaleWithAllObjects());
+    schemeDesigner.getScrollManager().toCenter();
+
+
 
     canvas.addEventListener('schemeDesigner.beforeRenderAll', function (e) {
         console.time('renderAll');

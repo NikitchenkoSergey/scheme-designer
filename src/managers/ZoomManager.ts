@@ -32,6 +32,42 @@ namespace SchemeDesigner {
         {
             let factor = Math.pow(1.03, delta);
 
+            return this.zoomByFactor(factor);
+        }
+
+        /**
+         * Set scale
+         * @param scale
+         * @returns {boolean}
+         */
+        public setScale(scale: number): boolean
+        {
+            let factor =  this.scale / scale;
+
+            return this.zoomByFactor(factor);
+        }
+
+        /**
+         * Scale with all objects visible + padding 10%
+         * @returns {number}
+         */
+        public getScaleWithAllObjects(): number
+        {
+            let boundingRect = this.scheme.getObjectsBoundingRect();
+
+            let maxScaleX = ((boundingRect.right - boundingRect.left) * 1.1) / this.scheme.getCanvas().width;
+            let maxScaleY = ((boundingRect.bottom - boundingRect.top) * 1.1) / this.scheme.getCanvas().height;
+
+            return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
+        }
+
+        /**
+         * Zoom by factor
+         * @param factor
+         * @returns {boolean}
+         */
+        public zoomByFactor(factor: number): boolean
+        {
             let boundingRect = this.scheme.getObjectsBoundingRect();
 
             let canScaleX = true;

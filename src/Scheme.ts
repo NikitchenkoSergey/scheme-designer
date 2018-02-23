@@ -77,7 +77,7 @@ namespace SchemeDesigner {
 
             this.disableCanvasSelection();
 
-            this.canvas2DContext = this.canvas.getContext('2d');
+            this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
 
             this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = this.getCancelAnimationFunction();

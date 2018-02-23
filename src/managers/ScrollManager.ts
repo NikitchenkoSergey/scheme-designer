@@ -68,11 +68,19 @@ namespace SchemeDesigner {
         {
             let boundingRect = this.scheme.getObjectsBoundingRect();
 
-            let widthDelta = (boundingRect.right / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().width;
-            let heightDelta = (boundingRect.bottom / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().height;
+            let boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
+            let boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
 
-            let scrollLeft = widthDelta / 2;
-            let scrollTop = heightDelta / 2;
+            let widthDelta =  this.scheme.getCanvas().width - boundingRectWidth;
+            let heightDelta = this.scheme.getCanvas().height - boundingRectHeight;
+
+            let scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
+            let scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();
+
+
+            // left and top empty space
+            scrollLeft = scrollLeft  - boundingRect.left;
+            scrollTop = scrollTop  - boundingRect.top;
 
             this.scroll(scrollLeft, scrollTop);
         }
@@ -81,7 +89,7 @@ namespace SchemeDesigner {
          * Handle dragging
          * @param e
          */
-        public handleDragging(e: MouseEvent): void
+        public handleDragging(e: MouseEvent | TouchEvent): void
         {
             let lastClientX = this.scheme.getEventManager().getLastClientX();
             let lastClientY = this.scheme.getEventManager().getLastClientY();

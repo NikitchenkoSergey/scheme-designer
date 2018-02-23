@@ -25,7 +25,7 @@ var SchemeDesigner;
             this.objects = [];
             this.canvas = canvas;
             this.disableCanvasSelection();
-            this.canvas2DContext = this.canvas.getContext('2d');
+            this.canvas2DContext = this.canvas.getContext('2d', { alpha: false });
             this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = this.getCancelAnimationFunction();
             this.devicePixelRatio = this.getDevicePixelRatio();
@@ -453,8 +453,18 @@ var SchemeDesigner;
                 _this.onMouseWheel(e);
             });
             // touch events
-            // todo touchstart
-            // todo touchmove
+            this.scheme.getCanvas().addEventListener('touchstart', function (e) {
+                _this.onMouseDown(e);
+            });
+            this.scheme.getCanvas().addEventListener('touchmove', function (e) {
+                _this.onMouseMove(e);
+            });
+            this.scheme.getCanvas().addEventListener('touchend', function (e) {
+                _this.onMouseUp(e);
+            });
+            this.scheme.getCanvas().addEventListener('touchcancel', function (e) {
+                _this.onMouseUp(e);
+            });
         };
         /**
          * Mouse down
@@ -512,6 +522,7 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onMouseMove = function (e) {
+            console.log(e);
             if (this.leftButtonDown) {
                 var newCoordinates = this.getCoordinatesFromEvent(e);
                 var deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
@@ -528,6 +539,19 @@ var SchemeDesigner;
             else {
                 this.scheme.getScrollManager().handleDragging(e);
             }
+        };
+        /**
+         * Get pointer from event
+         * @param e
+         * @param clientProp
+         * @returns {number}
+         */
+        EventManager.prototype.getPointer = function (e, clientProp) {
+            var touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
+            var event = e;
+            return (event[touchProp] && event[touchProp][0]
+                ? event[touchProp][0][clientProp]
+                : event[clientProp]);
         };
         /**
          * Handling hover
@@ -633,8 +657,8 @@ var SchemeDesigner;
          */
         EventManager.prototype.getCoordinatesFromEvent = function (e) {
             var clientRect = this.scheme.getCanvas().getBoundingClientRect();
-            var x = e.clientX - clientRect.left;
-            var y = e.clientY - clientRect.top;
+            var x = this.getPointer(e, 'clientX') - clientRect.left;
+            var y = this.getPointer(e, 'clientY') - clientRect.top;
             return { x: x, y: y };
         };
         /**
@@ -735,10 +759,15 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.toCenter = function () {
             var boundingRect = this.scheme.getObjectsBoundingRect();
-            var widthDelta = (boundingRect.right / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().width;
-            var heightDelta = (boundingRect.bottom / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().height;
-            var scrollLeft = widthDelta / 2;
-            var scrollTop = heightDelta / 2;
+            var boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
+            var boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
+            var widthDelta = this.scheme.getCanvas().width - boundingRectWidth;
+            var heightDelta = this.scheme.getCanvas().height - boundingRectHeight;
+            var scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
+            var scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();
+            // left and top empty space
+            scrollLeft = scrollLeft - boundingRect.left;
+            scrollTop = scrollTop - boundingRect.top;
             this.scroll(scrollLeft, scrollTop);
         };
         /**
@@ -788,6 +817,33 @@ var SchemeDesigner;
          */
         ZoomManager.prototype.zoom = function (delta) {
             var factor = Math.pow(1.03, delta);
+            return this.zoomByFactor(factor);
+        };
+        /**
+         * Set scale
+         * @param scale
+         * @returns {boolean}
+         */
+        ZoomManager.prototype.setScale = function (scale) {
+            var factor = this.scale / scale;
+            return this.zoomByFactor(factor);
+        };
+        /**
+         * Scale with all objects visible + padding 10%
+         * @returns {number}
+         */
+        ZoomManager.prototype.getScaleWithAllObjects = function () {
+            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var maxScaleX = ((boundingRect.right - boundingRect.left) * 1.1) / this.scheme.getCanvas().width;
+            var maxScaleY = ((boundingRect.bottom - boundingRect.top) * 1.1) / this.scheme.getCanvas().height;
+            return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
+        };
+        /**
+         * Zoom by factor
+         * @param factor
+         * @returns {boolean}
+         */
+        ZoomManager.prototype.zoomByFactor = function (factor) {
             var boundingRect = this.scheme.getObjectsBoundingRect();
             var canScaleX = true;
             var canScaleY = true;
