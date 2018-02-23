@@ -20,6 +20,11 @@ namespace SchemeDesigner {
         protected scrollTop: number = 0;
 
         /**
+         * Max hidden part on scroll
+         */
+        protected maxHiddenPart: number = 0.85;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -54,7 +59,35 @@ namespace SchemeDesigner {
         public scroll(left: number, top: number): void
         {
             let boundingRect = this.scheme.getObjectsBoundingRect();
-            let leftScrollDelta = this.scrollLeft - left;
+
+            let maxScrollLeft = this.scheme.getCanvas().width / this.scheme.getZoomManager().getScale() - boundingRect.left;
+            let maxScrollTop = this.scheme.getCanvas().height / this.scheme.getZoomManager().getScale() - boundingRect.top;
+
+            let minScrollLeft = -boundingRect.right;
+            let minScrollTop = -boundingRect.bottom;
+
+
+            maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
+            maxScrollTop = maxScrollTop * this.maxHiddenPart;
+            minScrollLeft = minScrollLeft * this.maxHiddenPart;
+            minScrollTop = minScrollTop * this.maxHiddenPart;
+
+
+            if (left > maxScrollLeft) {
+                left = maxScrollLeft;
+            }
+
+            if (top > maxScrollTop) {
+                top = maxScrollTop;
+            }
+
+            if (left < minScrollLeft) {
+                left = minScrollLeft;
+            }
+
+            if (top < minScrollTop) {
+                top = minScrollTop;
+            }
 
             this.scrollLeft = left;
             this.scrollTop = top;
@@ -93,6 +126,7 @@ namespace SchemeDesigner {
         {
             let lastClientX = this.scheme.getEventManager().getLastClientX();
             let lastClientY = this.scheme.getEventManager().getLastClientY();
+
             this.scheme.getEventManager().setLastClientPositionFromEvent(e);
 
             let leftCenterOffset =  this.scheme.getEventManager().getLastClientX() - lastClientX;
@@ -106,6 +140,15 @@ namespace SchemeDesigner {
             let scrollTop = topCenterOffset + this.getScrollTop();
 
             this.scroll(scrollLeft, scrollTop);
+        }
+
+        /**
+         * Set max hidden part
+         * @param value
+         */
+        public setMaxHiddenPart(value: number): void
+        {
+            this.maxHiddenPart = value;
         }
     }
 }

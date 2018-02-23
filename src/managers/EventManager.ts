@@ -281,32 +281,11 @@ namespace SchemeDesigner {
          */
         protected onMouseWheel(e: MouseWheelEvent): void
         {
-            let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
-
-            if (delta) {
-                let zoomed = this.scheme.getZoomManager().zoom(delta);
-
-                this.setLastClientPositionFromEvent(e);
-
-                if (zoomed) {
-                    // scroll to cursor, param for calc delta
-                    let k = 0.18 / this.scheme.getZoomManager().getScale();
-
-                    let leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.getLastClientX()) * k;
-                    let topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.getLastClientY()) * k;
-
-                    this.scheme.getScrollManager().scroll(
-                        this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta,
-                        this.scheme.getScrollManager().getScrollTop() + topOffsetDelta
-                    );
-                }
-            }
-
-            return e.preventDefault() && false;
+           return this.scheme.getZoomManager().handleMouseWheel(e);
         }
 
         /**
-         * Set last clent position
+         * Set last client position
          * @param e
          */
         public setLastClientPositionFromEvent(e: MouseEvent | TouchEvent): void

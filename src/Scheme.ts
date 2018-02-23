@@ -68,14 +68,13 @@ namespace SchemeDesigner {
         /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
+         * @param {Object} params
          */
-        constructor(canvas: HTMLCanvasElement)
+        constructor(canvas: HTMLCanvasElement, params?: any)
         {
             this.objects = [];
 
             this.canvas = canvas;
-
-            this.disableCanvasSelection();
 
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
 
@@ -91,6 +90,23 @@ namespace SchemeDesigner {
             this.zoomManager = new ZoomManager(this);
 
             this.eventManager = new EventManager(this);
+
+
+            /**
+             * Configure
+             */
+            if (params) {
+                Tools.configure(this.scrollManager, params.scroll);
+            }
+
+            /**
+             * Disable selections on canvas
+             */
+            this.disableCanvasSelection();
+
+            /**
+             * Bind events
+             */
             this.eventManager.bindEvents();
         }
 

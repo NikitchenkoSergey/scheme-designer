@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Example</title>
-    <script src="../dist/scheme-designer.js?1"></script>
+    <script src="../dist/scheme-designer.min.js?1"></script>
 </head>
 <body>
 <div style="margin: 20px auto; max-width: 1000px;">
@@ -17,7 +17,11 @@
 </div>
 <script>
     var canvas = document.getElementById('canvas1');
-    var schemeDesigner = new SchemeDesigner.Scheme(canvas);
+    var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
+        scroll: {
+            maxHiddenPart: 0.7
+        }
+    });
 
     var placesCount = 2000;
     var placesInRow = 60;
@@ -93,8 +97,8 @@
             /**
              * Required params
              */
-            x: 100.5 + leftOffset,
-            y: 100.5 + topOffset,
+            x: 0.5 + leftOffset,
+            y: 0.5 + topOffset,
             width: placeWidth,
             height: placeHeight,
             renderFunction: renderPlace,
