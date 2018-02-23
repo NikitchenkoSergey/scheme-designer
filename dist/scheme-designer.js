@@ -1,6 +1,406 @@
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
+     * Scheme
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
+     */
+    var Scheme = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param {HTMLCanvasElement} canvas
+         * @param {Object} params
+         */
+        function Scheme(canvas, params) {
+            /**
+             * Current number of rendering request
+             */
+            this.renderingRequestId = 0;
+            /**
+             * Device Pixel Ratio
+             */
+            this.devicePixelRatio = 1;
+            /**
+             * Default cursor style
+             */
+            this.defaultCursorStyle = 'default';
+            /**
+             * Current scale
+             */
+            this.scale = 1;
+            this.objects = [];
+            this.canvas = canvas;
+            this.canvas2DContext = this.canvas.getContext('2d');
+            this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = this.getCancelAnimationFunction();
+            this.devicePixelRatio = this.getDevicePixelRatio();
+            /**
+             * Managers
+             */
+            this.scrollManager = new SchemeDesigner.ScrollManager(this);
+            this.eventManager = new SchemeDesigner.EventManager(this);
+            this.eventManager.bindEvents();
+        }
+        /**
+         * Get event manager
+         * @returns {EventManager}
+         */
+        Scheme.prototype.getEventManager = function () {
+            return this.eventManager;
+        };
+        /**
+         * Get scroll manager
+         * @returns {ScrollManager}
+         */
+        Scheme.prototype.getScrollManager = function () {
+            return this.scrollManager;
+        };
+        /**
+         * Get request animation frame function, polyfill
+         * @returns {Object}
+         */
+        Scheme.prototype.getRequestAnimationFrameFunction = function () {
+            var variables = [
+                'requestAnimationFrame',
+                'webkitRequestAnimationFrame',
+                'mozRequestAnimationFrame',
+                'oRequestAnimationFrame',
+                'msRequestAnimationFrame'
+            ];
+            for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+                var variableName = variables_1[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return function (callback) {
+                return window.setTimeout(callback, 1000 / 60);
+            };
+        };
+        /**
+         * Get cancel animation function, polyfill
+         * @returns {(handle:number)=>void}
+         */
+        Scheme.prototype.getCancelAnimationFunction = function () {
+            return window.cancelAnimationFrame || window.clearTimeout;
+        };
+        /**
+         * Get device pixel radio, polyfill
+         * @returns {number}
+         */
+        Scheme.prototype.getDevicePixelRatio = function () {
+            var variables = [
+                'devicePixelRatio',
+                'webkitDevicePixelRatio',
+                'mozDevicePixelRatio'
+            ];
+            for (var _i = 0, variables_2 = variables; _i < variables_2.length; _i++) {
+                var variableName = variables_2[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return 1;
+        };
+        /**
+         * Request animation
+         * @param requestId
+         * @returns {any}
+         */
+        Scheme.prototype.requestFrameAnimationApply = function (requestId) {
+            return this.requestFrameAnimation.apply(window, [requestId]);
+        };
+        /**
+         * Cancel animation
+         * @param requestId
+         * @returns {any}
+         */
+        Scheme.prototype.cancelAnimationFrameApply = function (requestId) {
+            return this.cancelFrameAnimation.apply(window, [requestId]);
+        };
+        /**
+         * Clear canvas context
+         */
+        Scheme.prototype.clearContext = function () {
+            this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+            return this;
+        };
+        /**
+         * Request render all
+         */
+        Scheme.prototype.requestRenderAll = function () {
+            var _this = this;
+            if (!this.renderingRequestId) {
+                this.renderingRequestId = this.requestFrameAnimationApply(function () { _this.renderAll(); });
+            }
+            return this;
+        };
+        /**
+         * todo render only visible objects
+         * Render all objects
+         */
+        Scheme.prototype.renderAll = function () {
+            if (this.renderingRequestId) {
+                this.cancelAnimationFrameApply(this.renderingRequestId);
+                this.renderingRequestId = 0;
+            }
+            this.eventManager.sendEvent('beforeRenderAll');
+            this.clearContext();
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var schemeObject = _a[_i];
+                schemeObject.render(this);
+            }
+            this.eventManager.sendEvent('afterRenderAll');
+        };
+        /**
+         * Add object
+         * @param {SchemeObject} object
+         */
+        Scheme.prototype.addObject = function (object) {
+            this.objects.push(object);
+            this.reCalcObjectsBoundingRect();
+        };
+        /**
+         * Remove object
+         * @param {SchemeObject} object
+         */
+        Scheme.prototype.removeObject = function (object) {
+            this.objects.filter(function (existObject) { return existObject !== object; });
+            this.reCalcObjectsBoundingRect();
+        };
+        /**
+         * Remove all objects
+         */
+        Scheme.prototype.removeObjects = function () {
+            this.objects = [];
+        };
+        /**
+         * Canvas getter
+         * @returns {HTMLCanvasElement}
+         */
+        Scheme.prototype.getCanvas = function () {
+            return this.canvas;
+        };
+        /**
+         * Canvas context getter
+         * @returns {CanvasRenderingContext2D}
+         */
+        Scheme.prototype.getCanvas2DContext = function () {
+            return this.canvas2DContext;
+        };
+        /**
+         * Set cursor style
+         * @param {string} cursor
+         * @returns {SchemeDesigner}
+         */
+        Scheme.prototype.setCursorStyle = function (cursor) {
+            this.canvas.style.cursor = cursor;
+            return this;
+        };
+        /**
+         * Set zoom
+         * @param {number} delta
+         * @returns {boolean}
+         */
+        Scheme.prototype.zoom = function (delta) {
+            var factor = Math.pow(1.03, delta);
+            var boundingRect = this.getObjectsBoundingRect();
+            var canScaleX = true;
+            var canScaleY = true;
+            if (factor < 1) {
+                canScaleX = this.canvas.width / 1.3 < boundingRect.right * this.scale;
+                canScaleY = this.canvas.height / 1.3 < boundingRect.bottom * this.scale;
+            }
+            else {
+                canScaleX = true;
+                canScaleY = true;
+            }
+            if (canScaleX || canScaleY) {
+                this.canvas2DContext.scale(factor, factor);
+                this.scale = this.scale * factor;
+                this.requestRenderAll();
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Get scale
+         * @returns {number}
+         */
+        Scheme.prototype.getScale = function () {
+            return this.scale;
+        };
+        /**
+         * find objects by coordinates
+         * @param x
+         * @param y
+         * @returns {SchemeObject[]}
+         */
+        Scheme.prototype.findObjectsByCoordinates = function (x, y) {
+            var result = [];
+            // scale
+            x = x / this.scale;
+            y = y / this.scale;
+            // scroll
+            x = x - this.scrollManager.getScrollLeft();
+            y = y - this.scrollManager.getScrollTop();
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var schemeObject = _a[_i];
+                var boundingRect = schemeObject.getBoundingRect();
+                if (boundingRect.left <= x && boundingRect.right >= x
+                    && boundingRect.top <= y && boundingRect.bottom >= y) {
+                    result.push(schemeObject);
+                }
+            }
+            return result;
+        };
+        /**
+         * All objects
+         * @returns {SchemeObject[]}
+         */
+        Scheme.prototype.getObjects = function () {
+            return this.objects;
+        };
+        /**
+         * Get default cursor style
+         * @returns {string}
+         */
+        Scheme.prototype.getDefaultCursorStyle = function () {
+            return this.defaultCursorStyle;
+        };
+        /**
+         * Get bounding rect of all objects
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        Scheme.prototype.getObjectsBoundingRect = function () {
+            if (!this.objectsBoundingRect) {
+                this.objectsBoundingRect = this.calculateObjectsBoundingRect();
+            }
+            return this.objectsBoundingRect;
+        };
+        /**
+         * Recalculate bounding rect
+         */
+        Scheme.prototype.reCalcObjectsBoundingRect = function () {
+            this.objectsBoundingRect = null;
+        };
+        /**
+         * Get bounding rect of all objects
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        Scheme.prototype.calculateObjectsBoundingRect = function () {
+            var top;
+            var left;
+            var right;
+            var bottom;
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var schemeObject = _a[_i];
+                var schemeObjectBoundingRect = schemeObject.getBoundingRect();
+                if (top == undefined || schemeObjectBoundingRect.top < top) {
+                    top = schemeObjectBoundingRect.top;
+                }
+                if (left == undefined || schemeObjectBoundingRect.left < left) {
+                    left = schemeObjectBoundingRect.left;
+                }
+                if (right == undefined || schemeObjectBoundingRect.right > right) {
+                    right = schemeObjectBoundingRect.right;
+                }
+                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                    bottom = schemeObjectBoundingRect.bottom;
+                }
+            }
+            return {
+                left: left,
+                top: top,
+                right: right,
+                bottom: bottom
+            };
+        };
+        return Scheme;
+    }());
+    SchemeDesigner.Scheme = Scheme;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * SchemeObject class
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
+     */
+    var SchemeObject = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param {Object} params
+         */
+        function SchemeObject(params) {
+            /**
+             * Is hovered
+             */
+            this.isHovered = false;
+            /**
+             * Is selected
+             */
+            this.isSelected = false;
+            /**
+             * Cursor style
+             */
+            this.cursorStyle = 'pointer';
+            this.x = params.x;
+            this.y = params.y;
+            this.width = params.width;
+            this.height = params.height;
+            this.renderFunction = params.renderFunction;
+            if (params.cursorStyle) {
+                this.cursorStyle = params.cursorStyle;
+            }
+            this.params = params;
+        }
+        /**
+         * Rendering object
+         */
+        SchemeObject.prototype.render = function (Scheme) {
+            this.renderFunction(this, Scheme);
+        };
+        /**
+         * Click on object
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        SchemeObject.prototype.click = function (e, schemeDesigner) {
+        };
+        /**
+         * Mouse over
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        SchemeObject.prototype.mouseOver = function (e, schemeDesigner) {
+        };
+        /**
+         * Mouse leave
+         * @param {MouseEvent} e
+         * @param {Scheme} schemeDesigner
+         */
+        SchemeObject.prototype.mouseLeave = function (e, schemeDesigner) {
+        };
+        /**
+         * Bounding rect
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        SchemeObject.prototype.getBoundingRect = function () {
+            return {
+                left: this.x,
+                top: this.y,
+                right: this.x + this.width,
+                bottom: this.y + this.height
+            };
+        };
+        return SchemeObject;
+    }());
+    SchemeDesigner.SchemeObject = SchemeObject;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
      * Event manager
      * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
      */
@@ -88,7 +488,7 @@ var SchemeDesigner;
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                     var schemeObject = objects_1[_i];
                     schemeObject.isSelected = !schemeObject.isSelected;
-                    this.scheme.sendEvent('clickOnObject', schemeObject);
+                    this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
                     this.scheme.requestRenderAll();
@@ -96,13 +496,13 @@ var SchemeDesigner;
             }
         };
         /**
-         * todo
+         * Double click
          * @param e
          */
         EventManager.prototype.onDoubleClick = function (e) {
         };
         /**
-         * todo
+         * Right click
          * @param e
          */
         EventManager.prototype.onContextMenu = function (e) {
@@ -116,7 +516,7 @@ var SchemeDesigner;
                 this.handleHover(e);
             }
             else {
-                this.handleDragging(e);
+                this.scheme.getScrollManager().handleDragging(e);
             }
         };
         /**
@@ -141,7 +541,7 @@ var SchemeDesigner;
                     }
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
-                        this.scheme.sendEvent('mouseLeaveObject', schemeHoveredObject);
+                        this.sendEvent('mouseLeaveObject', schemeHoveredObject);
                         mustReRender = true;
                         hasNewHovers = true;
                     }
@@ -153,7 +553,7 @@ var SchemeDesigner;
                     schemeObject.isHovered = true;
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
-                    this.scheme.sendEvent('mouseOverObject', schemeObject);
+                    this.sendEvent('mouseOverObject', schemeObject);
                 }
             }
             this.hoveredObjects = objects;
@@ -165,23 +565,6 @@ var SchemeDesigner;
             }
         };
         /**
-         * Handle dragging
-         * @param e
-         */
-        EventManager.prototype.handleDragging = function (e) {
-            var lastClientX = this.lastClientX;
-            var lastClientY = this.lastClientY;
-            this.setLastClientPosition(e);
-            var leftCenterOffset = lastClientX - this.lastClientX;
-            var topCenterOffset = lastClientY - this.lastClientY;
-            // scale
-            leftCenterOffset = Math.round(leftCenterOffset / this.scheme.getScale());
-            topCenterOffset = Math.round(topCenterOffset / this.scheme.getScale());
-            var scrollLeft = leftCenterOffset + this.scheme.getScrollLeft();
-            var scrollTop = topCenterOffset + this.scheme.getScrollTop();
-            this.scheme.scroll(scrollLeft, scrollTop);
-        };
-        /**
          * Mouse out
          * @param e
          */
@@ -191,7 +574,7 @@ var SchemeDesigner;
             this.scheme.requestRenderAll();
         };
         /**
-         * todo
+         * Mouse enter
          * @param e
          */
         EventManager.prototype.onMouseEnter = function (e) {
@@ -203,14 +586,15 @@ var SchemeDesigner;
         EventManager.prototype.onMouseWheel = function (e) {
             var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
             if (delta) {
-                var oldScale = this.scheme.getScale();
-                this.scheme.zoom(delta);
+                var zoomed = this.scheme.zoom(delta);
                 this.setLastClientPosition(e);
-                // scroll to cursor
-                var k = 0.2 / this.scheme.getScale();
-                var leftOffsetDelta = (this.lastClientX - (this.scheme.getCanvas().width / 2)) * k;
-                var topOffsetDelta = (this.lastClientY - (this.scheme.getCanvas().height / 2)) * k;
-                this.scheme.scroll(this.scheme.getScrollLeft() + leftOffsetDelta, this.scheme.getScrollTop() + topOffsetDelta);
+                if (zoomed) {
+                    // scroll to cursor, param for calc delta
+                    var k = 0.18 / this.scheme.getScale();
+                    var leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.lastClientX) * k;
+                    var topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.lastClientY) * k;
+                    this.scheme.getScrollManager().scroll(this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta, this.scheme.getScrollManager().getScrollTop() + topOffsetDelta);
+                }
             }
             return e.preventDefault() && false;
         };
@@ -257,6 +641,25 @@ var SchemeDesigner;
         EventManager.prototype.getLastClientY = function () {
             return this.lastClientY;
         };
+        /**
+         * Send event
+         * @param {string} eventName
+         * @param data
+         */
+        EventManager.prototype.sendEvent = function (eventName, data) {
+            var fullEventName = 'schemeDesigner.' + eventName;
+            if (typeof CustomEvent === 'function') {
+                var event_1 = new CustomEvent(fullEventName, {
+                    detail: data
+                });
+                this.scheme.getCanvas().dispatchEvent(event_1);
+            }
+            else {
+                var event_2 = document.createEvent('CustomEvent');
+                event_2.initCustomEvent(fullEventName, false, false, data);
+                this.scheme.getCanvas().dispatchEvent(event_2);
+            }
+        };
         return EventManager;
     }());
     SchemeDesigner.EventManager = EventManager;
@@ -265,32 +668,15 @@ var SchemeDesigner;
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
-     * Scheme
+     * Scroll manager
      * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
      */
-    var Scheme = /** @class */ (function () {
+    var ScrollManager = /** @class */ (function () {
         /**
          * Constructor
-         * @param {HTMLCanvasElement} canvas
-         * @param {Object} params
+         * @param {SchemeDesigner.Scheme} scheme
          */
-        function Scheme(canvas, params) {
-            /**
-             * Frame interval delay
-             */
-            this.frameIntervalDelay = 10;
-            /**
-             * Requested render all
-             */
-            this.renderAllRequested = false;
-            /**
-             * Default cursor style
-             */
-            this.defaultCursorStyle = 'default';
-            /**
-             * Current scale
-             */
-            this.scale = 1;
+        function ScrollManager(scheme) {
             /**
              * Scroll left
              */
@@ -299,196 +685,20 @@ var SchemeDesigner;
              * Scroll top
              */
             this.scrollTop = 0;
-            this.objects = [];
-            this.canvas = canvas;
-            this.canvas2DContext = this.canvas.getContext('2d');
-            this.resetFrameInterval();
-            this.eventManager = new SchemeDesigner.EventManager(this);
-            this.eventManager.bindEvents();
+            this.scheme = scheme;
         }
-        /**
-         * Frame controller
-         */
-        Scheme.prototype.frame = function () {
-            if (this.renderAllRequested) {
-                this.renderAll();
-                this.renderAllRequested = false;
-            }
-        };
-        /**
-         * Reset frame interval
-         */
-        Scheme.prototype.resetFrameInterval = function () {
-            var _this = this;
-            if (this.frameIntervalToken) {
-                clearInterval(this.frameIntervalToken);
-            }
-            this.frameIntervalToken = setInterval(function () { return _this.frame(); }, this.frameIntervalDelay);
-        };
-        /**
-         * Clear canvas context
-         */
-        Scheme.prototype.clearContext = function () {
-            this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
-            return this;
-        };
-        /**
-         * Request render all
-         */
-        Scheme.prototype.requestRenderAll = function () {
-            this.renderAllRequested = true;
-            return this;
-        };
-        /**
-         * todo render only visible objects
-         * Render all objects
-         */
-        Scheme.prototype.renderAll = function () {
-            this.sendEvent('renderAllStart');
-            this.clearContext();
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                schemeObject.render(this);
-            }
-            this.sendEvent('renderAllEnd');
-        };
-        /**
-         * Send event
-         * @param {string} eventName
-         * @param data
-         */
-        Scheme.prototype.sendEvent = function (eventName, data) {
-            var fullEventName = 'schemeDesigner.' + eventName;
-            if (typeof CustomEvent === 'function') {
-                var event_1 = new CustomEvent(fullEventName, {
-                    detail: data
-                });
-                this.canvas.dispatchEvent(event_1);
-            }
-            else {
-                var event_2 = document.createEvent('CustomEvent');
-                event_2.initCustomEvent(fullEventName, false, false, data);
-                this.canvas.dispatchEvent(event_2);
-            }
-        };
-        /**
-         * Add object
-         * @param {SchemeObject} object
-         */
-        Scheme.prototype.addObject = function (object) {
-            this.objects.push(object);
-        };
-        /**
-         * Remove object
-         * @param {SchemeObject} object
-         */
-        Scheme.prototype.removeObject = function (object) {
-            this.objects.filter(function (existObject) { return existObject !== object; });
-        };
-        /**
-         * Remove all objects
-         */
-        Scheme.prototype.removeObjects = function () {
-            this.objects = [];
-        };
-        /**
-         * Canvas getter
-         * @returns {HTMLCanvasElement}
-         */
-        Scheme.prototype.getCanvas = function () {
-            return this.canvas;
-        };
-        /**
-         * Canvas context getter
-         * @returns {CanvasRenderingContext2D}
-         */
-        Scheme.prototype.getCanvas2DContext = function () {
-            return this.canvas2DContext;
-        };
-        /**
-         * Set frame interval delay
-         * @param frameIntervalDelay
-         * @returns {SchemeDesigner}
-         */
-        Scheme.prototype.setFrameIntervalDelay = function (frameIntervalDelay) {
-            this.frameIntervalDelay = frameIntervalDelay;
-            return this;
-        };
-        /**
-         * Set cursor style
-         * @param {string} cursor
-         * @returns {SchemeDesigner}
-         */
-        Scheme.prototype.setCursorStyle = function (cursor) {
-            this.canvas.style.cursor = cursor;
-            return this;
-        };
-        /**
-         * Set zoom
-         * @param {number} delta
-         */
-        Scheme.prototype.zoom = function (delta) {
-            var factor = Math.pow(1.03, delta);
-            var boundingRect = this.getObjectsBoundingRect();
-            var canScaleX = true;
-            var canScaleY = true;
-            if (factor < 1) {
-                canScaleX = this.canvas.width / 1.5 < boundingRect.right * this.scale;
-                canScaleY = this.canvas.height / 1.5 < boundingRect.bottom * this.scale;
-            }
-            else {
-                canScaleX = true;
-                canScaleY = true;
-            }
-            if (canScaleX || canScaleY) {
-                this.canvas2DContext.scale(factor, factor);
-                this.scale = this.scale * factor;
-                this.requestRenderAll();
-            }
-        };
-        /**
-         * Get scale
-         * @returns {number}
-         */
-        Scheme.prototype.getScale = function () {
-            return this.scale;
-        };
-        /**
-         * find objects by coordinates
-         * @param x
-         * @param y
-         * @returns {SchemeObject[]}
-         */
-        Scheme.prototype.findObjectsByCoordinates = function (x, y) {
-            var result = [];
-            // scale
-            x = x / this.scale;
-            y = y / this.scale;
-            // scroll
-            x = x + this.scrollLeft;
-            y = y + this.scrollTop;
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                var boundingRect = schemeObject.getBoundingRect();
-                if (boundingRect.left <= x && boundingRect.right >= x
-                    && boundingRect.top <= y && boundingRect.bottom >= y) {
-                    result.push(schemeObject);
-                }
-            }
-            return result;
-        };
         /**
          * Get scroll left
          * @returns {number}
          */
-        Scheme.prototype.getScrollLeft = function () {
+        ScrollManager.prototype.getScrollLeft = function () {
             return this.scrollLeft;
         };
         /**
          * Get scroll top
          * @returns {number}
          */
-        Scheme.prototype.getScrollTop = function () {
+        ScrollManager.prototype.getScrollTop = function () {
             return this.scrollTop;
         };
         /**
@@ -496,147 +706,42 @@ var SchemeDesigner;
          * @param {number} left
          * @param {number} top
          */
-        Scheme.prototype.scroll = function (left, top) {
+        ScrollManager.prototype.scroll = function (left, top) {
+            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var leftScrollDelta = this.scrollLeft - left;
             this.scrollLeft = left;
             this.scrollTop = top;
-            this.requestRenderAll();
-        };
-        /**
-         * All objects
-         * @returns {SchemeObject[]}
-         */
-        Scheme.prototype.getObjects = function () {
-            return this.objects;
-        };
-        /**
-         * Get default cursor style
-         * @returns {string}
-         */
-        Scheme.prototype.getDefaultCursorStyle = function () {
-            return this.defaultCursorStyle;
-        };
-        /**
-         * Get bounding rect of all objects
-         * @returns {{left: number, top: number, right: number, bottom: number}}
-         */
-        Scheme.prototype.getObjectsBoundingRect = function () {
-            var top;
-            var left;
-            var right;
-            var bottom;
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                var schemeObjectBoundingRect = schemeObject.getBoundingRect();
-                if (top == undefined || schemeObjectBoundingRect.top < top) {
-                    top = schemeObjectBoundingRect.top;
-                }
-                if (left == undefined || schemeObjectBoundingRect.left < left) {
-                    left = schemeObjectBoundingRect.left;
-                }
-                if (right == undefined || schemeObjectBoundingRect.right > right) {
-                    right = schemeObjectBoundingRect.right;
-                }
-                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
-                    bottom = schemeObjectBoundingRect.bottom;
-                }
-            }
-            return {
-                left: left,
-                top: top,
-                right: right,
-                bottom: bottom
-            };
+            this.scheme.requestRenderAll();
         };
         /**
          * Set scheme to center og objects
          */
-        Scheme.prototype.toCenter = function () {
-            var boundingRect = this.getObjectsBoundingRect();
-            var widthDelta = (boundingRect.right / this.scale) - this.canvas.width;
-            var heightDelta = (boundingRect.bottom / this.scale) - this.canvas.height;
-            var scrollLeft = -(widthDelta / 2);
-            var scrollTop = -(heightDelta / 2);
+        ScrollManager.prototype.toCenter = function () {
+            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var widthDelta = (boundingRect.right / this.scheme.getScale()) - this.scheme.getCanvas().width;
+            var heightDelta = (boundingRect.bottom / this.scheme.getScale()) - this.scheme.getCanvas().height;
+            var scrollLeft = widthDelta / 2;
+            var scrollTop = heightDelta / 2;
             this.scroll(scrollLeft, scrollTop);
         };
-        return Scheme;
+        /**
+         * Handle dragging
+         * @param e
+         */
+        ScrollManager.prototype.handleDragging = function (e) {
+            var lastClientX = this.scheme.getEventManager().getLastClientX();
+            var lastClientY = this.scheme.getEventManager().getLastClientY();
+            this.scheme.getEventManager().setLastClientPosition(e);
+            var leftCenterOffset = this.scheme.getEventManager().getLastClientX() - lastClientX;
+            var topCenterOffset = this.scheme.getEventManager().getLastClientY() - lastClientY;
+            // scale
+            leftCenterOffset = leftCenterOffset / this.scheme.getScale();
+            topCenterOffset = topCenterOffset / this.scheme.getScale();
+            var scrollLeft = leftCenterOffset + this.getScrollLeft();
+            var scrollTop = topCenterOffset + this.getScrollTop();
+            this.scroll(scrollLeft, scrollTop);
+        };
+        return ScrollManager;
     }());
-    SchemeDesigner.Scheme = Scheme;
-})(SchemeDesigner || (SchemeDesigner = {}));
-
-var SchemeDesigner;
-(function (SchemeDesigner) {
-    /**
-     * SchemeObject class
-     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
-     */
-    var SchemeObject = /** @class */ (function () {
-        /**
-         * Constructor
-         * @param {Object} params
-         */
-        function SchemeObject(params) {
-            /**
-             * Is hovered
-             */
-            this.isHovered = false;
-            /**
-             * Is selected
-             */
-            this.isSelected = false;
-            /**
-             * Cursor style
-             */
-            this.cursorStyle = 'pointer';
-            this.x = params.x;
-            this.y = params.y;
-            this.width = params.width;
-            this.height = params.height;
-            this.renderFunction = params.renderFunction;
-            if (params.cursorStyle) {
-                this.cursorStyle = params.cursorStyle;
-            }
-            this.params = params;
-        }
-        /**
-         * Rendering object
-         */
-        SchemeObject.prototype.render = function (Scheme) {
-            this.renderFunction(this, Scheme);
-        };
-        /**
-         * Click on object
-         * @param {MouseEvent} e
-         * @param {Scheme} schemeDesigner
-         */
-        SchemeObject.prototype.click = function (e, schemeDesigner) {
-        };
-        /**
-         * Mouse over
-         * @param {MouseEvent} e
-         * @param {Scheme} schemeDesigner
-         */
-        SchemeObject.prototype.mouseOver = function (e, schemeDesigner) {
-        };
-        /**
-         * Mouse leave
-         * @param {MouseEvent} e
-         * @param {Scheme} schemeDesigner
-         */
-        SchemeObject.prototype.mouseLeave = function (e, schemeDesigner) {
-        };
-        /**
-         * Bounding rect
-         * @returns {{left: number, top: number, right: number, bottom: number}}
-         */
-        SchemeObject.prototype.getBoundingRect = function () {
-            return {
-                left: this.x,
-                top: this.y,
-                right: this.x + this.width,
-                bottom: this.y + this.height
-            };
-        };
-        return SchemeObject;
-    }());
-    SchemeDesigner.SchemeObject = SchemeObject;
+    SchemeDesigner.ScrollManager = ScrollManager;
 })(SchemeDesigner || (SchemeDesigner = {}));

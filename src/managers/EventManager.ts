@@ -115,7 +115,7 @@ namespace SchemeDesigner {
                 for (let schemeObject of objects) {
                     schemeObject.isSelected = !schemeObject.isSelected;
 
-                    this.scheme.sendEvent('clickOnObject', schemeObject);
+                    this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
                     this.scheme.requestRenderAll();
@@ -124,7 +124,7 @@ namespace SchemeDesigner {
         }
 
         /**
-         * todo
+         * Double click
          * @param e
          */
         protected onDoubleClick(e: MouseEvent): void
@@ -133,7 +133,7 @@ namespace SchemeDesigner {
         }
 
         /**
-         * todo
+         * Right click
          * @param e
          */
         protected onContextMenu(e: MouseEvent): void
@@ -150,7 +150,7 @@ namespace SchemeDesigner {
             if (!this.isDragging) {
                 this.handleHover(e);
             } else {
-                this.handleDragging(e);
+                this.scheme.getScrollManager().handleDragging(e);
             }
         }
 
@@ -179,7 +179,7 @@ namespace SchemeDesigner {
 
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
-                        this.scheme.sendEvent('mouseLeaveObject', schemeHoveredObject);
+                        this.sendEvent('mouseLeaveObject', schemeHoveredObject);
 
                         mustReRender = true;
                         hasNewHovers = true;
@@ -193,7 +193,7 @@ namespace SchemeDesigner {
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
 
-                    this.scheme.sendEvent('mouseOverObject', schemeObject);
+                    this.sendEvent('mouseOverObject', schemeObject);
                 }
             }
 
@@ -209,29 +209,6 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Handle dragging
-         * @param e
-         */
-        protected handleDragging(e: MouseEvent): void
-        {
-            let lastClientX = this.lastClientX;
-            let lastClientY = this.lastClientY;
-            this.setLastClientPosition(e);
-
-            let leftCenterOffset = lastClientX - this.lastClientX;
-            let topCenterOffset = lastClientY - this.lastClientY;
-
-            // scale
-            leftCenterOffset = Math.round(leftCenterOffset / this.scheme.getScale());
-            topCenterOffset = Math.round(topCenterOffset / this.scheme.getScale());
-
-            let scrollLeft = leftCenterOffset + this.scheme.getScrollLeft();
-            let scrollTop = topCenterOffset + this.scheme.getScrollTop();
-
-            this.scheme.scroll(scrollLeft, scrollTop);
-        }
-
-        /**
          * Mouse out
          * @param e
          */
@@ -243,7 +220,7 @@ namespace SchemeDesigner {
         }
 
         /**
-         * todo
+         * Mouse enter
          * @param e
          */
         protected onMouseEnter(e: MouseEvent): void
@@ -258,22 +235,24 @@ namespace SchemeDesigner {
         protected onMouseWheel(e: MouseWheelEvent): void
         {
             let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
-            if (delta) {
-                let oldScale = this.scheme.getScale();
 
-                this.scheme.zoom(delta);
+            if (delta) {
+                let zoomed = this.scheme.zoom(delta);
 
                 this.setLastClientPosition(e);
 
-                // scroll to cursor
-                let k = 0.2 / this.scheme.getScale();
-                let leftOffsetDelta = (this.lastClientX - (this.scheme.getCanvas().width / 2)) * k;
-                let topOffsetDelta = (this.lastClientY - (this.scheme.getCanvas().height / 2)) * k;
+                if (zoomed) {
+                    // scroll to cursor, param for calc delta
+                    let k = 0.18 / this.scheme.getScale();
 
-                this.scheme.scroll(
-                    this.scheme.getScrollLeft() + leftOffsetDelta,
-                    this.scheme.getScrollTop() + topOffsetDelta
-                );
+                    let leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.lastClientX) * k;
+                    let topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.lastClientY) * k;
+
+                    this.scheme.getScrollManager().scroll(
+                        this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta,
+                        this.scheme.getScrollManager().getScrollTop() + topOffsetDelta
+                    );
+                }
             }
 
             return e.preventDefault() && false;
@@ -283,7 +262,7 @@ namespace SchemeDesigner {
          * Set last clent position
          * @param e
          */
-        protected setLastClientPosition(e: MouseEvent): void
+        public setLastClientPosition(e: MouseEvent): void
         {
             let coordinates = this.getCoordinatesFromEvent(e);
             this.lastClientX = coordinates[0];
@@ -331,6 +310,27 @@ namespace SchemeDesigner {
         public getLastClientY(): number
         {
             return this.lastClientY;
+        }
+
+        /**
+         * Send event
+         * @param {string} eventName
+         * @param data
+         */
+        public sendEvent(eventName: string, data?: any): void
+        {
+            let fullEventName = 'schemeDesigner.' + eventName;
+
+            if (typeof CustomEvent === 'function') {
+                let event = new CustomEvent(fullEventName, {
+                    detail: data
+                });
+                this.scheme.getCanvas().dispatchEvent(event);
+            } else {
+                let event = document.createEvent('CustomEvent');
+                event.initCustomEvent(fullEventName, false, false, data);
+                this.scheme.getCanvas().dispatchEvent(event);
+            }
         }
     }
 }

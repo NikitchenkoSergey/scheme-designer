@@ -5,11 +5,6 @@ namespace SchemeDesigner {
      */
     export class Scheme {
         /**
-         * All objects
-         */
-        protected objects: SchemeObject[];
-
-        /**
          * Canvas element
          */
         protected canvas: HTMLCanvasElement;
@@ -20,24 +15,45 @@ namespace SchemeDesigner {
         protected canvas2DContext: CanvasRenderingContext2D;
 
         /**
-         * Frame interval
+         * All objects
          */
-        protected frameIntervalToken: number;
+        protected objects: SchemeObject[];
 
         /**
-         * Frame interval delay
+         * Objects bounding rect
          */
-        protected frameIntervalDelay: number = 10;
+        protected objectsBoundingRect: any;
 
         /**
-         * Requested render all
+         * Frame animation
          */
-        protected renderAllRequested: boolean = false;
+        protected requestFrameAnimation: any;
+
+        /**
+         * Cancel animation
+         */
+        protected cancelFrameAnimation: any;
+
+        /**
+         * Current number of rendering request
+         */
+        protected renderingRequestId: number = 0;
+
+
+        /**
+         * Device Pixel Ratio
+         */
+        protected devicePixelRatio: number = 1;
 
         /**
          * Event manager
          */
         protected eventManager: EventManager;
+
+        /**
+         * Scroll manager
+         */
+        protected scrollManager: ScrollManager;
 
         /**
          * Default cursor style
@@ -50,57 +66,129 @@ namespace SchemeDesigner {
         protected scale: number = 1;
 
         /**
-         * Scroll left
-         */
-        protected scrollLeft: number = 0;
-
-        /**
-         * Scroll top
-         */
-        protected scrollTop: number = 0;
-
-        /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
          * @param {Object} params
          */
-        constructor(canvas: HTMLCanvasElement, params?: any) {
+        constructor(canvas: HTMLCanvasElement, params?: any)
+        {
             this.objects = [];
 
             this.canvas = canvas;
 
             this.canvas2DContext = this.canvas.getContext('2d');
 
-            this.resetFrameInterval();
+            this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = this.getCancelAnimationFunction();
+            this.devicePixelRatio = this.getDevicePixelRatio();
+
+            /**
+             * Managers
+             */
+            this.scrollManager = new ScrollManager(this);
 
             this.eventManager = new EventManager(this);
             this.eventManager.bindEvents();
         }
 
         /**
-         * Frame controller
+         * Get event manager
+         * @returns {EventManager}
          */
-        protected frame(): void {
-            if (this.renderAllRequested) {
-                this.renderAll();
-                this.renderAllRequested = false;
-            }
+        public getEventManager(): EventManager
+        {
+            return this.eventManager;
         }
 
         /**
-         * Reset frame interval
+         * Get scroll manager
+         * @returns {ScrollManager}
          */
-        protected resetFrameInterval(): void {
-            if (this.frameIntervalToken) {
-                clearInterval(this.frameIntervalToken);
+        public getScrollManager(): ScrollManager
+        {
+            return this.scrollManager;
+        }
+
+        /**
+         * Get request animation frame function, polyfill
+         * @returns {Object}
+         */
+        protected getRequestAnimationFrameFunction(): any
+        {
+            let variables: string[] = [
+                'requestAnimationFrame',
+                'webkitRequestAnimationFrame',
+                'mozRequestAnimationFrame',
+                'oRequestAnimationFrame',
+                'msRequestAnimationFrame'
+            ];
+
+            for (let variableName of variables) {
+                if (window.hasOwnProperty(variableName)) {
+                    return (window as any)[variableName];
+                }
             }
-            this.frameIntervalToken = setInterval(() => this.frame(), this.frameIntervalDelay);
+
+            return function (callback: any) {
+                return window.setTimeout(callback, 1000 / 60);
+            };
+        }
+
+        /**
+         * Get cancel animation function, polyfill
+         * @returns {(handle:number)=>void}
+         */
+        protected getCancelAnimationFunction(): any
+        {
+            return window.cancelAnimationFrame || window.clearTimeout;
+        }
+
+        /**
+         * Get device pixel radio, polyfill
+         * @returns {number}
+         */
+        protected getDevicePixelRatio(): number
+        {
+            let variables: string[] = [
+                'devicePixelRatio',
+                'webkitDevicePixelRatio',
+                'mozDevicePixelRatio'
+            ];
+
+            for (let variableName of variables) {
+                if (window.hasOwnProperty(variableName)) {
+                    return (window as any)[variableName];
+                }
+            }
+
+            return 1;
+        }
+
+        /**
+         * Request animation
+         * @param requestId
+         * @returns {any}
+         */
+        protected requestFrameAnimationApply(requestId: any): any
+        {
+            return this.requestFrameAnimation.apply(window, [requestId]);
+        }
+
+        /**
+         * Cancel animation
+         * @param requestId
+         * @returns {any}
+         */
+        protected cancelAnimationFrameApply(requestId: any): any
+        {
+            return this.cancelFrameAnimation.apply(window, [requestId]);
         }
 
         /**
          * Clear canvas context
          */
-        public clearContext(): this {
+        public clearContext(): this
+        {
             this.canvas2DContext.clearRect(
                 0,
                 0,
@@ -113,8 +201,12 @@ namespace SchemeDesigner {
         /**
          * Request render all
          */
-        public requestRenderAll(): this {
-            this.renderAllRequested = true;
+        public requestRenderAll(): this
+        {
+            if (!this.renderingRequestId) {
+                this.renderingRequestId = this.requestFrameAnimationApply(() => {this.renderAll()});
+            }
+
             return this;
         }
 
@@ -122,59 +214,49 @@ namespace SchemeDesigner {
          * todo render only visible objects
          * Render all objects
          */
-        protected renderAll(): void {
-            this.sendEvent('renderAllStart');
+        protected renderAll(): void
+        {
+            if (this.renderingRequestId) {
+                this.cancelAnimationFrameApply(this.renderingRequestId);
+                this.renderingRequestId = 0;
+            }
+
+            this.eventManager.sendEvent('beforeRenderAll');
 
             this.clearContext();
 
             for (let schemeObject of this.objects) {
                 schemeObject.render(this);
             }
-            this.sendEvent('renderAllEnd');
-        }
 
-        /**
-         * Send event
-         * @param {string} eventName
-         * @param data
-         */
-        public sendEvent(eventName: string, data?: any): void {
-            let fullEventName = 'schemeDesigner.' + eventName;
-
-            if (typeof CustomEvent === 'function') {
-                let event = new CustomEvent(fullEventName, {
-                    detail: data
-                });
-                this.canvas.dispatchEvent(event);
-            } else {
-                let event = document.createEvent('CustomEvent');
-                event.initCustomEvent(fullEventName, false, false, data);
-                this.canvas.dispatchEvent(event);
-            }
-
-
+            this.eventManager.sendEvent('afterRenderAll');
         }
 
         /**
          * Add object
          * @param {SchemeObject} object
          */
-        public addObject(object: SchemeObject): void {
+        public addObject(object: SchemeObject): void
+        {
             this.objects.push(object);
+            this.reCalcObjectsBoundingRect();
         }
 
         /**
          * Remove object
          * @param {SchemeObject} object
          */
-        public removeObject(object: SchemeObject): void {
+        public removeObject(object: SchemeObject): void
+        {
             this.objects.filter(existObject => existObject !== object);
+            this.reCalcObjectsBoundingRect();
         }
 
         /**
          * Remove all objects
          */
-        public removeObjects(): void {
+        public removeObjects(): void
+        {
             this.objects = [];
         }
 
@@ -182,7 +264,8 @@ namespace SchemeDesigner {
          * Canvas getter
          * @returns {HTMLCanvasElement}
          */
-        public getCanvas(): HTMLCanvasElement {
+        public getCanvas(): HTMLCanvasElement
+        {
             return this.canvas;
         }
 
@@ -190,18 +273,9 @@ namespace SchemeDesigner {
          * Canvas context getter
          * @returns {CanvasRenderingContext2D}
          */
-        public getCanvas2DContext(): CanvasRenderingContext2D {
+        public getCanvas2DContext(): CanvasRenderingContext2D
+        {
             return this.canvas2DContext;
-        }
-
-        /**
-         * Set frame interval delay
-         * @param frameIntervalDelay
-         * @returns {SchemeDesigner}
-         */
-        public setFrameIntervalDelay(frameIntervalDelay: number): this {
-            this.frameIntervalDelay = frameIntervalDelay;
-            return this;
         }
 
         /**
@@ -209,7 +283,8 @@ namespace SchemeDesigner {
          * @param {string} cursor
          * @returns {SchemeDesigner}
          */
-        public setCursorStyle(cursor: string): this {
+        public setCursorStyle(cursor: string): this
+        {
             this.canvas.style.cursor = cursor;
             return this;
         }
@@ -218,8 +293,10 @@ namespace SchemeDesigner {
         /**
          * Set zoom
          * @param {number} delta
+         * @returns {boolean}
          */
-        public zoom(delta: number): void {
+        public zoom(delta: number): boolean
+        {
             let factor = Math.pow(1.03, delta);
 
             let boundingRect = this.getObjectsBoundingRect();
@@ -227,8 +304,8 @@ namespace SchemeDesigner {
             let canScaleX = true;
             let canScaleY = true;
             if (factor < 1) {
-                canScaleX = this.canvas.width / 1.5 < boundingRect.right * this.scale;
-                canScaleY = this.canvas.height / 1.5 < boundingRect.bottom * this.scale;
+                canScaleX = this.canvas.width / 1.3 < boundingRect.right * this.scale;
+                canScaleY = this.canvas.height / 1.3 < boundingRect.bottom * this.scale;
             } else {
                 canScaleX = true;
                 canScaleY = true;
@@ -238,14 +315,18 @@ namespace SchemeDesigner {
                 this.canvas2DContext.scale(factor, factor);
                 this.scale = this.scale * factor;
                 this.requestRenderAll();
+                return true;
             }
+
+            return false;
         }
 
         /**
          * Get scale
          * @returns {number}
          */
-        public getScale(): number {
+        public getScale(): number
+        {
             return this.scale;
         }
 
@@ -255,7 +336,8 @@ namespace SchemeDesigner {
          * @param y
          * @returns {SchemeObject[]}
          */
-        public findObjectsByCoordinates(x: number, y: number): SchemeObject[] {
+        public findObjectsByCoordinates(x: number, y: number): SchemeObject[]
+        {
             let result: SchemeObject[] = [];
 
             // scale
@@ -263,8 +345,8 @@ namespace SchemeDesigner {
             y = y / this.scale;
 
             // scroll
-            x = x + this.scrollLeft;
-            y = y + this.scrollTop;
+            x = x - this.scrollManager.getScrollLeft();
+            y = y - this.scrollManager.getScrollTop();
 
 
             for (let schemeObject of this.objects) {
@@ -279,37 +361,11 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Get scroll left
-         * @returns {number}
-         */
-        public getScrollLeft(): number {
-            return this.scrollLeft;
-        }
-
-        /**
-         * Get scroll top
-         * @returns {number}
-         */
-        public getScrollTop(): number {
-            return this.scrollTop;
-        }
-
-        /**
-         * Set scroll
-         * @param {number} left
-         * @param {number} top
-         */
-        public scroll(left: number, top: number): void {
-            this.scrollLeft = left;
-            this.scrollTop = top;
-            this.requestRenderAll();
-        }
-
-        /**
          * All objects
          * @returns {SchemeObject[]}
          */
-        public getObjects(): SchemeObject[] {
+        public getObjects(): SchemeObject[]
+        {
             return this.objects;
         }
 
@@ -327,7 +383,29 @@ namespace SchemeDesigner {
          * Get bounding rect of all objects
          * @returns {{left: number, top: number, right: number, bottom: number}}
          */
-        public getObjectsBoundingRect(): any {
+        public getObjectsBoundingRect(): any
+        {
+            if (!this.objectsBoundingRect) {
+                this.objectsBoundingRect = this.calculateObjectsBoundingRect();
+            }
+            return this.objectsBoundingRect;
+        }
+
+        /**
+         * Recalculate bounding rect
+         */
+        public reCalcObjectsBoundingRect()
+        {
+            this.objectsBoundingRect = null;
+        }
+
+
+        /**
+         * Get bounding rect of all objects
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        public calculateObjectsBoundingRect(): any
+        {
             let top: number;
             let left: number;
             let right: number;
@@ -359,22 +437,6 @@ namespace SchemeDesigner {
                 right: right,
                 bottom: bottom
             };
-        }
-
-
-        /**
-         * Set scheme to center og objects
-         */
-        public toCenter(): void {
-            let boundingRect = this.getObjectsBoundingRect();
-
-            let widthDelta = (boundingRect.right / this.scale) - this.canvas.width;
-            let heightDelta = (boundingRect.bottom / this.scale) - this.canvas.height;
-
-            let scrollLeft = -(widthDelta / 2);
-            let scrollTop = -(heightDelta / 2);
-
-            this.scroll(scrollLeft, scrollTop);
         }
     }
 }

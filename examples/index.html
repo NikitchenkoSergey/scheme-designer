@@ -44,8 +44,8 @@
             context.fillStyle = 'rgba(100, 50, 95, 0.5)';
         }
 
-        var relativeX = schemeObject.x - schemeDesigner.getScrollLeft();
-        var relativeY = schemeObject.y - schemeDesigner.getScrollTop();
+        var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
+        var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
 
         context.rect(relativeX, relativeY, schemeObject.width, schemeObject.height);
 
@@ -99,11 +99,11 @@
 
     schemeDesigner.requestRenderAll();
 
-    canvas.addEventListener('schemeDesigner.renderAllStart', function (e) {
+    canvas.addEventListener('schemeDesigner.beforeRenderAll', function (e) {
         console.time('renderAll');
     }, false);
 
-    canvas.addEventListener('schemeDesigner.renderAllEnd', function (e) {
+    canvas.addEventListener('schemeDesigner.afterRenderAll', function (e) {
         console.timeEnd('renderAll');
     }, false);
 

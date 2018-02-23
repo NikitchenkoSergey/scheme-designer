@@ -1,10 +1,6 @@
 {
-  "files": [
-    "src/Scheme.ts",
-    "src/SchemeObject.ts",
-    "src/EventManager.ts"
-  ],
   "compilerOptions": {
+    "baseUrl": "src",
     "noImplicitAny": true,
     "target": "es5"
   }
