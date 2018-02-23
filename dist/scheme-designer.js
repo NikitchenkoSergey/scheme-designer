@@ -60,7 +60,7 @@ var SchemeDesigner;
         };
         /**
          * Get request animation frame function, polyfill
-         * @returns {Object}
+         * @returns {Function}
          */
         Scheme.prototype.getRequestAnimationFrameFunction = function () {
             var variables = [
@@ -82,7 +82,7 @@ var SchemeDesigner;
         };
         /**
          * Get cancel animation function, polyfill
-         * @returns {(handle:number)=>void}
+         * @returns {Function}
          */
         Scheme.prototype.getCancelAnimationFunction = function () {
             return window.cancelAnimationFrame || window.clearTimeout;
@@ -107,16 +107,15 @@ var SchemeDesigner;
         };
         /**
          * Request animation
-         * @param requestId
-         * @returns {any}
+         * @param animation
+         * @returns {number}
          */
-        Scheme.prototype.requestFrameAnimationApply = function (requestId) {
-            return this.requestFrameAnimation.apply(window, [requestId]);
+        Scheme.prototype.requestFrameAnimationApply = function (animation) {
+            return this.requestFrameAnimation.apply(window, [animation]);
         };
         /**
          * Cancel animation
          * @param requestId
-         * @returns {any}
          */
         Scheme.prototype.cancelAnimationFrameApply = function (requestId) {
             return this.cancelFrameAnimation.apply(window, [requestId]);

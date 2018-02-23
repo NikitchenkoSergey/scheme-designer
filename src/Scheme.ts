@@ -123,9 +123,9 @@ namespace SchemeDesigner {
 
         /**
          * Get request animation frame function, polyfill
-         * @returns {Object}
+         * @returns {Function}
          */
-        protected getRequestAnimationFrameFunction(): any
+        protected getRequestAnimationFrameFunction(): Function
         {
             let variables: string[] = [
                 'requestAnimationFrame',
@@ -148,9 +148,9 @@ namespace SchemeDesigner {
 
         /**
          * Get cancel animation function, polyfill
-         * @returns {(handle:number)=>void}
+         * @returns {Function}
          */
-        protected getCancelAnimationFunction(): any
+        protected getCancelAnimationFunction(): Function
         {
             return window.cancelAnimationFrame || window.clearTimeout;
         }
@@ -178,20 +178,19 @@ namespace SchemeDesigner {
 
         /**
          * Request animation
-         * @param requestId
-         * @returns {any}
+         * @param animation
+         * @returns {number}
          */
-        protected requestFrameAnimationApply(requestId: any): any
+        protected requestFrameAnimationApply(animation: Function): number
         {
-            return this.requestFrameAnimation.apply(window, [requestId]);
+            return this.requestFrameAnimation.apply(window, [animation]);
         }
 
         /**
          * Cancel animation
          * @param requestId
-         * @returns {any}
          */
-        protected cancelAnimationFrameApply(requestId: any): any
+        protected cancelAnimationFrameApply(requestId: number): void
         {
             return this.cancelFrameAnimation.apply(window, [requestId]);
         }
@@ -369,7 +368,7 @@ namespace SchemeDesigner {
         /**
          * Recalculate bounding rect
          */
-        public reCalcObjectsBoundingRect()
+        public reCalcObjectsBoundingRect(): void
         {
             this.objectsBoundingRect = null;
         }

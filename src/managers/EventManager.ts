@@ -293,7 +293,7 @@ namespace SchemeDesigner {
          * @param e
          * @returns {SchemeObject[]}
          */
-        protected findObjectsForEvent(e: MouseEvent)
+        protected findObjectsForEvent(e: MouseEvent): SchemeObject[]
         {
             let coordinates = this.getCoordinatesFromEvent(e);
             return this.scheme.findObjectsByCoordinates(coordinates);
