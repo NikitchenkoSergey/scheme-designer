@@ -22,7 +22,7 @@ namespace SchemeDesigner {
         /**
          * Objects bounding rect
          */
-        protected objectsBoundingRect: any;
+        protected objectsBoundingRect: BoundingRect;
 
         /**
          * Frame animation
@@ -56,25 +56,26 @@ namespace SchemeDesigner {
         protected scrollManager: ScrollManager;
 
         /**
+         * Zoom manager
+         */
+        protected zoomManager: ZoomManager;
+
+        /**
          * Default cursor style
          */
         protected defaultCursorStyle: string = 'default';
 
         /**
-         * Current scale
-         */
-        protected scale: number = 1;
-
-        /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
-         * @param {Object} params
          */
-        constructor(canvas: HTMLCanvasElement, params?: any)
+        constructor(canvas: HTMLCanvasElement)
         {
             this.objects = [];
 
             this.canvas = canvas;
+
+            this.disableCanvasSelection();
 
             this.canvas2DContext = this.canvas.getContext('2d');
 
@@ -86,6 +87,8 @@ namespace SchemeDesigner {
              * Managers
              */
             this.scrollManager = new ScrollManager(this);
+
+            this.zoomManager = new ZoomManager(this);
 
             this.eventManager = new EventManager(this);
             this.eventManager.bindEvents();
@@ -107,6 +110,15 @@ namespace SchemeDesigner {
         public getScrollManager(): ScrollManager
         {
             return this.scrollManager;
+        }
+
+        /**
+         * Get zoom manager
+         * @returns {ZoomManager}
+         */
+        public getZoomManager(): ZoomManager
+        {
+            return this.zoomManager;
         }
 
         /**
@@ -192,8 +204,8 @@ namespace SchemeDesigner {
             this.canvas2DContext.clearRect(
                 0,
                 0,
-                this.canvas.width / this.scale,
-                this.canvas.height / this.scale
+                this.canvas.width / this.zoomManager.getScale(),
+                this.canvas.height / this.zoomManager.getScale()
             );
             return this;
         }
@@ -290,59 +302,22 @@ namespace SchemeDesigner {
         }
 
 
-        /**
-         * Set zoom
-         * @param {number} delta
-         * @returns {boolean}
-         */
-        public zoom(delta: number): boolean
-        {
-            let factor = Math.pow(1.03, delta);
-
-            let boundingRect = this.getObjectsBoundingRect();
-
-            let canScaleX = true;
-            let canScaleY = true;
-            if (factor < 1) {
-                canScaleX = this.canvas.width / 1.3 < boundingRect.right * this.scale;
-                canScaleY = this.canvas.height / 1.3 < boundingRect.bottom * this.scale;
-            } else {
-                canScaleX = true;
-                canScaleY = true;
-            }
-
-            if (canScaleX || canScaleY) {
-                this.canvas2DContext.scale(factor, factor);
-                this.scale = this.scale * factor;
-                this.requestRenderAll();
-                return true;
-            }
-
-            return false;
-        }
-
-        /**
-         * Get scale
-         * @returns {number}
-         */
-        public getScale(): number
-        {
-            return this.scale;
-        }
 
         /**
          * find objects by coordinates
-         * @param x
-         * @param y
+         * @param coordinates Coordinates
          * @returns {SchemeObject[]}
          */
-        public findObjectsByCoordinates(x: number, y: number): SchemeObject[]
+        public findObjectsByCoordinates(coordinates: Coordinates): SchemeObject[]
         {
             let result: SchemeObject[] = [];
 
             // scale
-            x = x / this.scale;
-            y = y / this.scale;
+            let x = coordinates.x;
+            let y = coordinates.y;
+
+            x = x / this.zoomManager.getScale();
+            y = y / this.zoomManager.getScale();
 
             // scroll
             x = x - this.scrollManager.getScrollLeft();
@@ -381,9 +356,9 @@ namespace SchemeDesigner {
 
         /**
          * Get bounding rect of all objects
-         * @returns {{left: number, top: number, right: number, bottom: number}}
+         * @returns BoundingRect
          */
-        public getObjectsBoundingRect(): any
+        public getObjectsBoundingRect(): BoundingRect
         {
             if (!this.objectsBoundingRect) {
                 this.objectsBoundingRect = this.calculateObjectsBoundingRect();
@@ -404,7 +379,7 @@ namespace SchemeDesigner {
          * Get bounding rect of all objects
          * @returns {{left: number, top: number, right: number, bottom: number}}
          */
-        public calculateObjectsBoundingRect(): any
+        public calculateObjectsBoundingRect(): BoundingRect
         {
             let top: number;
             let left: number;
@@ -437,6 +412,25 @@ namespace SchemeDesigner {
                 right: right,
                 bottom: bottom
             };
+        }
+
+        /**
+         * Disable selection on canvas
+         */
+        protected disableCanvasSelection(): void
+        {
+            let styles = [
+                '-webkit-touch-callout',
+                '-webkit-user-select',
+                '-khtml-user-select',
+                '-moz-user-select',
+                '-ms-user-select',
+                'user-select',
+                'outline'
+            ];
+            for (let styleName of styles) {
+                (this.canvas.style as any)[styleName] = 'none';
+            }
         }
     }
 }

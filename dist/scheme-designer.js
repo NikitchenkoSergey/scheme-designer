@@ -8,9 +8,8 @@ var SchemeDesigner;
         /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
-         * @param {Object} params
          */
-        function Scheme(canvas, params) {
+        function Scheme(canvas) {
             /**
              * Current number of rendering request
              */
@@ -23,12 +22,9 @@ var SchemeDesigner;
              * Default cursor style
              */
             this.defaultCursorStyle = 'default';
-            /**
-             * Current scale
-             */
-            this.scale = 1;
             this.objects = [];
             this.canvas = canvas;
+            this.disableCanvasSelection();
             this.canvas2DContext = this.canvas.getContext('2d');
             this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = this.getCancelAnimationFunction();
@@ -37,6 +33,7 @@ var SchemeDesigner;
              * Managers
              */
             this.scrollManager = new SchemeDesigner.ScrollManager(this);
+            this.zoomManager = new SchemeDesigner.ZoomManager(this);
             this.eventManager = new SchemeDesigner.EventManager(this);
             this.eventManager.bindEvents();
         }
@@ -53,6 +50,13 @@ var SchemeDesigner;
          */
         Scheme.prototype.getScrollManager = function () {
             return this.scrollManager;
+        };
+        /**
+         * Get zoom manager
+         * @returns {ZoomManager}
+         */
+        Scheme.prototype.getZoomManager = function () {
+            return this.zoomManager;
         };
         /**
          * Get request animation frame function, polyfill
@@ -121,7 +125,7 @@ var SchemeDesigner;
          * Clear canvas context
          */
         Scheme.prototype.clearContext = function () {
-            this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+            this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.zoomManager.getScale(), this.canvas.height / this.zoomManager.getScale());
             return this;
         };
         /**
@@ -197,49 +201,17 @@ var SchemeDesigner;
             return this;
         };
         /**
-         * Set zoom
-         * @param {number} delta
-         * @returns {boolean}
-         */
-        Scheme.prototype.zoom = function (delta) {
-            var factor = Math.pow(1.03, delta);
-            var boundingRect = this.getObjectsBoundingRect();
-            var canScaleX = true;
-            var canScaleY = true;
-            if (factor < 1) {
-                canScaleX = this.canvas.width / 1.3 < boundingRect.right * this.scale;
-                canScaleY = this.canvas.height / 1.3 < boundingRect.bottom * this.scale;
-            }
-            else {
-                canScaleX = true;
-                canScaleY = true;
-            }
-            if (canScaleX || canScaleY) {
-                this.canvas2DContext.scale(factor, factor);
-                this.scale = this.scale * factor;
-                this.requestRenderAll();
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Get scale
-         * @returns {number}
-         */
-        Scheme.prototype.getScale = function () {
-            return this.scale;
-        };
-        /**
          * find objects by coordinates
-         * @param x
-         * @param y
+         * @param coordinates Coordinates
          * @returns {SchemeObject[]}
          */
-        Scheme.prototype.findObjectsByCoordinates = function (x, y) {
+        Scheme.prototype.findObjectsByCoordinates = function (coordinates) {
             var result = [];
             // scale
-            x = x / this.scale;
-            y = y / this.scale;
+            var x = coordinates.x;
+            var y = coordinates.y;
+            x = x / this.zoomManager.getScale();
+            y = y / this.zoomManager.getScale();
             // scroll
             x = x - this.scrollManager.getScrollLeft();
             y = y - this.scrollManager.getScrollTop();
@@ -269,7 +241,7 @@ var SchemeDesigner;
         };
         /**
          * Get bounding rect of all objects
-         * @returns {{left: number, top: number, right: number, bottom: number}}
+         * @returns BoundingRect
          */
         Scheme.prototype.getObjectsBoundingRect = function () {
             if (!this.objectsBoundingRect) {
@@ -314,6 +286,24 @@ var SchemeDesigner;
                 right: right,
                 bottom: bottom
             };
+        };
+        /**
+         * Disable selection on canvas
+         */
+        Scheme.prototype.disableCanvasSelection = function () {
+            var styles = [
+                '-webkit-touch-callout',
+                '-webkit-user-select',
+                '-khtml-user-select',
+                '-moz-user-select',
+                '-ms-user-select',
+                'user-select',
+                'outline'
+            ];
+            for (var _i = 0, styles_1 = styles; _i < styles_1.length; _i++) {
+                var styleName = styles_1[_i];
+                this.canvas.style[styleName] = 'none';
+            }
         };
         return Scheme;
     }());
@@ -383,7 +373,7 @@ var SchemeDesigner;
         };
         /**
          * Bounding rect
-         * @returns {{left: number, top: number, right: number, bottom: number}}
+         * @returns BoundingRect
          */
         SchemeObject.prototype.getBoundingRect = function () {
             return {
@@ -397,6 +387,7 @@ var SchemeDesigner;
     }());
     SchemeDesigner.SchemeObject = SchemeObject;
 })(SchemeDesigner || (SchemeDesigner = {}));
+
 
 var SchemeDesigner;
 (function (SchemeDesigner) {
@@ -415,12 +406,18 @@ var SchemeDesigner;
              */
             this.isDragging = false;
             /**
+             * Left button down
+             */
+            this.leftButtonDown = false;
+            /**
              * Hovered objects
              */
             this.hoveredObjects = [];
             this.scheme = scheme;
-            this.lastClientX = this.scheme.getCanvas().width / 2;
-            this.lastClientY = this.scheme.getCanvas().height / 2;
+            this.setLastClientPosition({
+                x: this.scheme.getCanvas().width / 2,
+                y: this.scheme.getCanvas().height / 2
+            });
         }
         /**
          * Bind events
@@ -465,18 +462,22 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onMouseDown = function (e) {
-            this.setLastClientPosition(e);
-            this.scheme.setCursorStyle('move');
-            this.isDragging = true;
+            this.leftButtonDown = true;
+            this.setLastClientPositionFromEvent(e);
         };
         /**
          * Mouse up
          * @param e
          */
         EventManager.prototype.onMouseUp = function (e) {
-            this.setLastClientPosition(e);
-            this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
-            this.isDragging = false;
+            var _this = this;
+            this.leftButtonDown = false;
+            this.setLastClientPositionFromEvent(e);
+            if (this.isDragging) {
+                this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
+            }
+            // defer for prevent trigger click on mouseUp
+            setTimeout(function () { _this.isDragging = false; }, 50);
         };
         /**
          * On click
@@ -512,6 +513,16 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onMouseMove = function (e) {
+            if (this.leftButtonDown) {
+                var newCoordinates = this.getCoordinatesFromEvent(e);
+                var deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
+                var deltaY = Math.abs(newCoordinates.y - this.getLastClientY());
+                // 1 - is click with offset - mis drag
+                if (deltaX > 1 || deltaY > 1) {
+                    this.isDragging = true;
+                    this.scheme.setCursorStyle('move');
+                }
+            }
             if (!this.isDragging) {
                 this.handleHover(e);
             }
@@ -524,7 +535,7 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.handleHover = function (e) {
-            this.setLastClientPosition(e);
+            this.setLastClientPositionFromEvent(e);
             var objects = this.findObjectsForEvent(e);
             var mustReRender = false;
             var hasNewHovers = false;
@@ -569,7 +580,8 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onMouseOut = function (e) {
-            this.setLastClientPosition(e);
+            this.setLastClientPositionFromEvent(e);
+            this.leftButtonDown = false;
             this.isDragging = false;
             this.scheme.requestRenderAll();
         };
@@ -586,13 +598,13 @@ var SchemeDesigner;
         EventManager.prototype.onMouseWheel = function (e) {
             var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
             if (delta) {
-                var zoomed = this.scheme.zoom(delta);
-                this.setLastClientPosition(e);
+                var zoomed = this.scheme.getZoomManager().zoom(delta);
+                this.setLastClientPositionFromEvent(e);
                 if (zoomed) {
                     // scroll to cursor, param for calc delta
-                    var k = 0.18 / this.scheme.getScale();
-                    var leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.lastClientX) * k;
-                    var topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.lastClientY) * k;
+                    var k = 0.18 / this.scheme.getZoomManager().getScale();
+                    var leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.getLastClientX()) * k;
+                    var topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.getLastClientY()) * k;
                     this.scheme.getScrollManager().scroll(this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta, this.scheme.getScrollManager().getScrollTop() + topOffsetDelta);
                 }
             }
@@ -602,10 +614,9 @@ var SchemeDesigner;
          * Set last clent position
          * @param e
          */
-        EventManager.prototype.setLastClientPosition = function (e) {
+        EventManager.prototype.setLastClientPositionFromEvent = function (e) {
             var coordinates = this.getCoordinatesFromEvent(e);
-            this.lastClientX = coordinates[0];
-            this.lastClientY = coordinates[1];
+            this.setLastClientPosition(coordinates);
         };
         /**
          * Find objects by event
@@ -614,7 +625,7 @@ var SchemeDesigner;
          */
         EventManager.prototype.findObjectsForEvent = function (e) {
             var coordinates = this.getCoordinatesFromEvent(e);
-            return this.scheme.findObjectsByCoordinates(coordinates[0], coordinates[1]);
+            return this.scheme.findObjectsByCoordinates(coordinates);
         };
         /**
          * Get coordinates from event
@@ -625,21 +636,28 @@ var SchemeDesigner;
             var clientRect = this.scheme.getCanvas().getBoundingClientRect();
             var x = e.clientX - clientRect.left;
             var y = e.clientY - clientRect.top;
-            return [x, y];
+            return { x: x, y: y };
+        };
+        /**
+         * Set last client position
+         * @param coordinates
+         */
+        EventManager.prototype.setLastClientPosition = function (coordinates) {
+            this.lastClientPosition = coordinates;
         };
         /**
          * Get last client x
          * @returns {number}
          */
         EventManager.prototype.getLastClientX = function () {
-            return this.lastClientX;
+            return this.lastClientPosition.x;
         };
         /**
          * Get last client y
          * @returns {number}
          */
         EventManager.prototype.getLastClientY = function () {
-            return this.lastClientY;
+            return this.lastClientPosition.y;
         };
         /**
          * Send event
@@ -647,7 +665,7 @@ var SchemeDesigner;
          * @param data
          */
         EventManager.prototype.sendEvent = function (eventName, data) {
-            var fullEventName = 'schemeDesigner.' + eventName;
+            var fullEventName = "schemeDesigner." + eventName;
             if (typeof CustomEvent === 'function') {
                 var event_1 = new CustomEvent(fullEventName, {
                     detail: data
@@ -718,8 +736,8 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.toCenter = function () {
             var boundingRect = this.scheme.getObjectsBoundingRect();
-            var widthDelta = (boundingRect.right / this.scheme.getScale()) - this.scheme.getCanvas().width;
-            var heightDelta = (boundingRect.bottom / this.scheme.getScale()) - this.scheme.getCanvas().height;
+            var widthDelta = (boundingRect.right / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().width;
+            var heightDelta = (boundingRect.bottom / this.scheme.getZoomManager().getScale()) - this.scheme.getCanvas().height;
             var scrollLeft = widthDelta / 2;
             var scrollTop = heightDelta / 2;
             this.scroll(scrollLeft, scrollTop);
@@ -731,12 +749,12 @@ var SchemeDesigner;
         ScrollManager.prototype.handleDragging = function (e) {
             var lastClientX = this.scheme.getEventManager().getLastClientX();
             var lastClientY = this.scheme.getEventManager().getLastClientY();
-            this.scheme.getEventManager().setLastClientPosition(e);
+            this.scheme.getEventManager().setLastClientPositionFromEvent(e);
             var leftCenterOffset = this.scheme.getEventManager().getLastClientX() - lastClientX;
             var topCenterOffset = this.scheme.getEventManager().getLastClientY() - lastClientY;
             // scale
-            leftCenterOffset = leftCenterOffset / this.scheme.getScale();
-            topCenterOffset = topCenterOffset / this.scheme.getScale();
+            leftCenterOffset = leftCenterOffset / this.scheme.getZoomManager().getScale();
+            topCenterOffset = topCenterOffset / this.scheme.getZoomManager().getScale();
             var scrollLeft = leftCenterOffset + this.getScrollLeft();
             var scrollTop = topCenterOffset + this.getScrollTop();
             this.scroll(scrollLeft, scrollTop);
@@ -744,4 +762,63 @@ var SchemeDesigner;
         return ScrollManager;
     }());
     SchemeDesigner.ScrollManager = ScrollManager;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * Zoom manager
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
+     */
+    var ZoomManager = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param {SchemeDesigner.Scheme} scheme
+         */
+        function ZoomManager(scheme) {
+            /**
+             * Current scale
+             */
+            this.scale = 1;
+            this.scheme = scheme;
+        }
+        /**
+         * Set zoom
+         * @param {number} delta
+         * @returns {boolean}
+         */
+        ZoomManager.prototype.zoom = function (delta) {
+            var factor = Math.pow(1.03, delta);
+            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var canScaleX = true;
+            var canScaleY = true;
+            if (factor < 1) {
+                /**
+                 * Cant zoom less that 70%
+                 */
+                canScaleX = this.scheme.getCanvas().width / 1.3 < boundingRect.right * this.scale;
+                canScaleY = this.scheme.getCanvas().height / 1.3 < boundingRect.bottom * this.scale;
+            }
+            else {
+                canScaleX = true;
+                canScaleY = true;
+            }
+            if (canScaleX || canScaleY) {
+                this.scheme.getCanvas2DContext().scale(factor, factor);
+                this.scale = this.scale * factor;
+                this.scheme.requestRenderAll();
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Get scale
+         * @returns {number}
+         */
+        ZoomManager.prototype.getScale = function () {
+            return this.scale;
+        };
+        return ZoomManager;
+    }());
+    SchemeDesigner.ZoomManager = ZoomManager;
 })(SchemeDesigner || (SchemeDesigner = {}));

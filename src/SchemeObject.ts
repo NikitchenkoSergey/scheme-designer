@@ -109,9 +109,9 @@ namespace SchemeDesigner {
 
         /**
          * Bounding rect
-         * @returns {{left: number, top: number, right: number, bottom: number}}
+         * @returns BoundingRect
          */
-        public getBoundingRect(): any
+        public getBoundingRect(): BoundingRect
         {
             return {
                 left: this.x,

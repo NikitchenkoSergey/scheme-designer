@@ -15,19 +15,19 @@ namespace SchemeDesigner {
         protected isDragging: boolean = false;
 
         /**
+         * Left button down
+         */
+        protected leftButtonDown: boolean = false;
+
+        /**
          * Hovered objects
          */
         protected hoveredObjects: SchemeObject[] = [];
 
         /**
-         * Last client x
+         * Last client position
          */
-        protected lastClientX: number;
-
-        /**
-         * Last client Y
-         */
-        protected lastClientY: number;
+        protected lastClientPosition: Coordinates;
 
         /**
          * Constructor
@@ -37,8 +37,10 @@ namespace SchemeDesigner {
         {
             this.scheme = scheme;
 
-            this.lastClientX = this.scheme.getCanvas().width / 2;
-            this.lastClientY = this.scheme.getCanvas().height / 2;
+            this.setLastClientPosition({
+                x: this.scheme.getCanvas().width / 2,
+                y: this.scheme.getCanvas().height / 2
+            });
         }
 
         /**
@@ -88,9 +90,8 @@ namespace SchemeDesigner {
          */
         protected onMouseDown(e: MouseEvent): void
         {
-            this.setLastClientPosition(e);
-            this.scheme.setCursorStyle('move');
-            this.isDragging = true;
+            this.leftButtonDown = true;
+            this.setLastClientPositionFromEvent(e);
         }
 
         /**
@@ -99,9 +100,15 @@ namespace SchemeDesigner {
          */
         protected onMouseUp(e: MouseEvent): void
         {
-            this.setLastClientPosition(e);
-            this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
-            this.isDragging = false;
+            this.leftButtonDown = false;
+            this.setLastClientPositionFromEvent(e);
+
+            if (this.isDragging) {
+                this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
+            }
+
+            // defer for prevent trigger click on mouseUp
+            setTimeout(() => {this.isDragging = false;}, 50);
         }
 
         /**
@@ -147,6 +154,18 @@ namespace SchemeDesigner {
          */
         protected onMouseMove(e: MouseEvent): void
         {
+            if (this.leftButtonDown) {
+                let newCoordinates = this.getCoordinatesFromEvent(e);
+                let deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
+                let deltaY = Math.abs(newCoordinates.y - this.getLastClientY());
+
+                // 1 - is click with offset - mis drag
+                if (deltaX > 1 || deltaY > 1) {
+                    this.isDragging = true;
+                    this.scheme.setCursorStyle('move');
+                }
+            }
+
             if (!this.isDragging) {
                 this.handleHover(e);
             } else {
@@ -160,7 +179,7 @@ namespace SchemeDesigner {
          */
         protected handleHover(e: MouseEvent): void
         {
-            this.setLastClientPosition(e);
+            this.setLastClientPositionFromEvent(e);
 
             let objects = this.findObjectsForEvent(e);
             let mustReRender = false;
@@ -214,7 +233,8 @@ namespace SchemeDesigner {
          */
         protected onMouseOut(e: MouseEvent): void
         {
-            this.setLastClientPosition(e);
+            this.setLastClientPositionFromEvent(e);
+            this.leftButtonDown = false;
             this.isDragging = false;
             this.scheme.requestRenderAll();
         }
@@ -237,16 +257,16 @@ namespace SchemeDesigner {
             let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
 
             if (delta) {
-                let zoomed = this.scheme.zoom(delta);
+                let zoomed = this.scheme.getZoomManager().zoom(delta);
 
-                this.setLastClientPosition(e);
+                this.setLastClientPositionFromEvent(e);
 
                 if (zoomed) {
                     // scroll to cursor, param for calc delta
-                    let k = 0.18 / this.scheme.getScale();
+                    let k = 0.18 / this.scheme.getZoomManager().getScale();
 
-                    let leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.lastClientX) * k;
-                    let topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.lastClientY) * k;
+                    let leftOffsetDelta = ((this.scheme.getCanvas().width / 2) - this.getLastClientX()) * k;
+                    let topOffsetDelta = ((this.scheme.getCanvas().height / 2) - this.getLastClientY()) * k;
 
                     this.scheme.getScrollManager().scroll(
                         this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta,
@@ -262,11 +282,10 @@ namespace SchemeDesigner {
          * Set last clent position
          * @param e
          */
-        public setLastClientPosition(e: MouseEvent): void
+        public setLastClientPositionFromEvent(e: MouseEvent): void
         {
             let coordinates = this.getCoordinatesFromEvent(e);
-            this.lastClientX = coordinates[0];
-            this.lastClientY = coordinates[1];
+            this.setLastClientPosition(coordinates);
         }
 
         /**
@@ -277,7 +296,7 @@ namespace SchemeDesigner {
         protected findObjectsForEvent(e: MouseEvent)
         {
             let coordinates = this.getCoordinatesFromEvent(e);
-            return this.scheme.findObjectsByCoordinates(coordinates[0], coordinates[1]);
+            return this.scheme.findObjectsByCoordinates(coordinates);
         }
 
         /**
@@ -285,13 +304,22 @@ namespace SchemeDesigner {
          * @param e
          * @returns {number[]}
          */
-        protected getCoordinatesFromEvent(e: MouseEvent): [number, number]
+        protected getCoordinatesFromEvent(e: MouseEvent): Coordinates
         {
             let clientRect = this.scheme.getCanvas().getBoundingClientRect();
             let x = e.clientX - clientRect.left;
             let y = e.clientY - clientRect.top;
 
-            return [x, y];
+            return {x, y};
+        }
+
+        /**
+         * Set last client position
+         * @param coordinates
+         */
+        public setLastClientPosition(coordinates: Coordinates): void
+        {
+            this.lastClientPosition = coordinates;
         }
 
         /**
@@ -300,7 +328,7 @@ namespace SchemeDesigner {
          */
         public getLastClientX(): number
         {
-            return this.lastClientX;
+            return this.lastClientPosition.x;
         }
 
         /**
@@ -309,7 +337,7 @@ namespace SchemeDesigner {
          */
         public getLastClientY(): number
         {
-            return this.lastClientY;
+            return this.lastClientPosition.y;
         }
 
         /**
@@ -319,7 +347,7 @@ namespace SchemeDesigner {
          */
         public sendEvent(eventName: string, data?: any): void
         {
-            let fullEventName = 'schemeDesigner.' + eventName;
+            let fullEventName = `schemeDesigner.${eventName}`;
 
             if (typeof CustomEvent === 'function') {
                 let event = new CustomEvent(fullEventName, {
