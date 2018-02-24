@@ -68,7 +68,7 @@ namespace SchemeDesigner {
          */
         public getScaleWithAllObjects(): number
         {
-            let boundingRect = this.scheme.getObjectsBoundingRect();
+            let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
 
             let maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getCanvas().width;
             let maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getCanvas().height;
@@ -83,7 +83,7 @@ namespace SchemeDesigner {
          */
         public zoomByFactor(factor: number): boolean
         {
-            let boundingRect = this.scheme.getObjectsBoundingRect();
+            let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
 
             let canScaleX = true;
             let canScaleY = true;

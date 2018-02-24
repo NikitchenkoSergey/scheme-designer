@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <title>Example</title>
     <script src="../dist/scheme-designer.js?1"></script>
-
-    <!-- data for scheme -->
-    <script src="./scheme-data.js"></script>
 </head>
 <body>
 <div style="margin: 20px auto; max-width: 1000px;">
     <h2>Hall scheme example</h2>
+
     <div>
-        <canvas id="canvas1" width="800" height="500" style="border: 1px solid #ccc;">
+        <canvas id="canvas1" width="1000" height="800" style="border: 1px solid #ccc;">
             Ваш браузер не поддерживает элемент canvas.
         </canvas>
     </div>
@@ -33,6 +31,13 @@
         }
     });
 
+    var placesCount = 20000;
+    var placesInRow = 100;
+    var placeMargin = 5;
+
+    var placeWidth = 13;
+    var placeHeight = 13;
+
     /**
      * Render place function
      * @param {SchemeObject} schemeObject
@@ -41,22 +46,17 @@
     var renderPlace = function (schemeObject, schemeDesigner) {
         var context = schemeDesigner.getCanvas2DContext();
 
-        var backgroundColor = '#' + schemeObject.params.backgroundColor;
-
         context.beginPath();
-        context.lineWidth = 4;
-        context.strokeStyle = 'white';
+        context.lineWidth = 1;
+        context.strokeStyle = '#B143B0';
 
-        context.fillStyle = backgroundColor;
+        context.fillStyle = '#B143B0';
         if (schemeObject.isSelected && schemeObject.isHovered) {
-            context.fillStyle = backgroundColor;
-            context.strokeStyle = backgroundColor;
+            context.fillStyle = '#B143B0';
         } else if (schemeObject.isHovered) {
             context.fillStyle = 'white';
-            context.strokeStyle = backgroundColor;
         } else if (schemeObject.isSelected) {
-            context.fillStyle = backgroundColor;
-            context.strokeStyle = backgroundColor;
+            context.fillStyle = '#B143B0';
         }
 
         var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
@@ -64,11 +64,10 @@
         var width = schemeObject.width;
         var height = schemeObject.height;
         if (!schemeObject.isHovered && !schemeObject.isSelected) {
-            var borderOffset = 4;
-            relativeX = relativeX + borderOffset;
-            relativeY = relativeY + borderOffset;
-            width = width - (borderOffset * 2);
-            height = height - (borderOffset * 2);
+            relativeX = relativeX + 2;
+            relativeY = relativeY + 2;
+            width = width - 4;
+            height = height - 4;
         }
 
         context.rect(relativeX, relativeY, width, height);
@@ -76,12 +75,12 @@
         context.fill();
         context.stroke();
 
-        context.font = (Math.floor((parseInt(schemeObject.width) + parseInt(schemeObject.height))/4)) + 'px Arial';
+        context.font = '6px Arial';
 
         if (schemeObject.isSelected && schemeObject.isHovered) {
             context.fillStyle = 'white';
         } else if (schemeObject.isHovered) {
-            context.fillStyle = backgroundColor;
+            context.fillStyle = '#B143B0';
         } else if (schemeObject.isSelected) {
             context.fillStyle = 'white';
         }
@@ -89,69 +88,39 @@
         if (schemeObject.isSelected || schemeObject.isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+            context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
         }
 
     };
 
     /**
-     * Render label function
-     * @param {SchemeObject} schemeObject
-     * @param {Scheme} schemeDesigner
-     */
-    var renderLabel = function(schemeObject, schemeDesigner) {
-        var fontSize = parseInt(schemeObject.params.fontSize) * (96 / 72) * 3;
-
-        var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
-        var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
-        var width = schemeObject.width;
-        var height = schemeObject.height;
-
-        var context = schemeDesigner.getCanvas2DContext();
-
-        context.fillStyle = '#' + this.params.fontColor;
-        context.font = fontSize + 'px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(schemeObject.params.sectorName, relativeX, relativeY);
-    };
-
-    /**
      * Creating places
      */
-    for (var i = 0; i < schemeData.length; i++)
+    for (var i = 0; i < placesCount; i++)
     {
-        var objectData = schemeData[i];
-        var leftOffset = parseInt(objectData.CX);
-        var topOffset = parseInt(objectData.CY);
-        var width = parseInt(objectData.Width);
-        var height = parseInt(objectData.Height);
+        var leftOffset = (i % placesInRow) * (placeMargin + placeWidth);
+        var topOffset = Math.floor(i / placesInRow) * (placeMargin + placeHeight);
 
-        var schemeObject = new SchemeDesigner.SchemeObject({
+        var place = new SchemeDesigner.SchemeObject({
             /**
              * Required params
              */
             x: 0.5 + leftOffset,
             y: 0.5 + topOffset,
-            width: width,
-            height: height,
-            renderFunction: objectData.ObjectType == 'Place' ? renderPlace : renderLabel,
-            cursorStyle: objectData.ObjectType == 'Place' ? 'pointer' : 'default',
+            width: placeWidth,
+            height: placeHeight,
+            renderFunction: renderPlace,
 
             /**
              * Custom params (any names and count)
              */
             id: 'place_' + i,
-            price: objectData.Price,
-            seat: objectData.Seat,
-            row: objectData.Row,
-            sectorName: objectData.Name_sec,
-            fontSize: objectData.FontSize,
-            backgroundColor: objectData.BackColor,
-            fontColor: objectData.FontColor
+            price: 100,
+            placeNumber: i % 100,
+            sectorName: 'Sector ' + (i % placesInRow)
         });
 
-        schemeDesigner.addObject(schemeObject);
+        schemeDesigner.addObject(place);
     }
 
 

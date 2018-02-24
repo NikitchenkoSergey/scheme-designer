@@ -15,16 +15,6 @@ namespace SchemeDesigner {
         protected canvas2DContext: CanvasRenderingContext2D;
 
         /**
-         * All objects
-         */
-        protected objects: SchemeObject[];
-
-        /**
-         * Objects bounding rect
-         */
-        protected objectsBoundingRect: BoundingRect;
-
-        /**
          * Frame animation
          */
         protected requestFrameAnimation: any;
@@ -61,6 +51,11 @@ namespace SchemeDesigner {
         protected zoomManager: ZoomManager;
 
         /**
+         * Storage manager
+         */
+        protected storageManager: StorageManager;
+
+        /**
          * Default cursor style
          */
         protected defaultCursorStyle: string = 'default';
@@ -72,8 +67,6 @@ namespace SchemeDesigner {
          */
         constructor(canvas: HTMLCanvasElement, params?: any)
         {
-            this.objects = [];
-
             this.canvas = canvas;
 
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
@@ -91,6 +84,8 @@ namespace SchemeDesigner {
 
             this.eventManager = new EventManager(this);
 
+            this.storageManager = new StorageManager(this);
+
 
             /**
              * Configure
@@ -98,6 +93,7 @@ namespace SchemeDesigner {
             if (params) {
                 Tools.configure(this.scrollManager, params.scroll);
                 Tools.configure(this.zoomManager, params.zoom);
+                Tools.configure(this.storageManager, params.storage);
             }
 
             /**
@@ -136,6 +132,15 @@ namespace SchemeDesigner {
         public getZoomManager(): ZoomManager
         {
             return this.zoomManager;
+        }
+
+        /**
+         * Get storage manager
+         * @returns {StorageManager}
+         */
+        public getStorageManager(): StorageManager
+        {
+            return this.storageManager;
         }
 
         /**
@@ -184,6 +189,25 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Render scheme
+         */
+        public render(): void
+        {
+            this.requestRenderAll();
+
+            /**
+             * Create tree index
+             */
+            this.storageManager.getTree();
+
+            /**
+             * Set scheme to center with scale for all oblects
+             */
+            this.getZoomManager().setScale(this.zoomManager.getScaleWithAllObjects());
+            this.getScrollManager().toCenter();
+        }
+
+        /**
          * todo render only visible objects
          * Render all objects
          */
@@ -198,7 +222,7 @@ namespace SchemeDesigner {
 
             this.clearContext();
 
-            for (let schemeObject of this.objects) {
+            for (let schemeObject of this.storageManager.getObjects()) {
                 schemeObject.render(this);
             }
 
@@ -211,8 +235,7 @@ namespace SchemeDesigner {
          */
         public addObject(object: SchemeObject): void
         {
-            this.objects.push(object);
-            this.reCalcObjectsBoundingRect();
+            this.storageManager.addObject(object);
         }
 
         /**
@@ -221,8 +244,7 @@ namespace SchemeDesigner {
          */
         public removeObject(object: SchemeObject): void
         {
-            this.objects.filter(existObject => existObject !== object);
-            this.reCalcObjectsBoundingRect();
+            this.storageManager.removeObject(object);
         }
 
         /**
@@ -230,7 +252,7 @@ namespace SchemeDesigner {
          */
         public removeObjects(): void
         {
-            this.objects = [];
+            this.storageManager.removeObjects();
         }
 
         /**
@@ -264,37 +286,7 @@ namespace SchemeDesigner {
 
 
 
-        /**
-         * find objects by coordinates
-         * @param coordinates Coordinates
-         * @returns {SchemeObject[]}
-         */
-        public findObjectsByCoordinates(coordinates: Coordinates): SchemeObject[]
-        {
-            let result: SchemeObject[] = [];
 
-            // scale
-            let x = coordinates.x;
-            let y = coordinates.y;
-
-            x = x / this.zoomManager.getScale();
-            y = y / this.zoomManager.getScale();
-
-            // scroll
-            x = x - this.scrollManager.getScrollLeft();
-            y = y - this.scrollManager.getScrollTop();
-
-
-            for (let schemeObject of this.objects) {
-                let boundingRect = schemeObject.getBoundingRect();
-                if (boundingRect.left <= x && boundingRect.right >= x
-                    && boundingRect.top <= y && boundingRect.bottom >= y) {
-                    result.push(schemeObject)
-                }
-            }
-
-            return result;
-        }
 
         /**
          * All objects
@@ -302,7 +294,7 @@ namespace SchemeDesigner {
          */
         public getObjects(): SchemeObject[]
         {
-            return this.objects;
+            return this.storageManager.getObjects();
         }
 
         /**
@@ -312,67 +304,6 @@ namespace SchemeDesigner {
         public getDefaultCursorStyle(): string
         {
             return this.defaultCursorStyle;
-        }
-
-
-        /**
-         * Get bounding rect of all objects
-         * @returns BoundingRect
-         */
-        public getObjectsBoundingRect(): BoundingRect
-        {
-            if (!this.objectsBoundingRect) {
-                this.objectsBoundingRect = this.calculateObjectsBoundingRect();
-            }
-            return this.objectsBoundingRect;
-        }
-
-        /**
-         * Recalculate bounding rect
-         */
-        public reCalcObjectsBoundingRect(): void
-        {
-            this.objectsBoundingRect = null;
-        }
-
-
-        /**
-         * Get bounding rect of all objects
-         * @returns {{left: number, top: number, right: number, bottom: number}}
-         */
-        public calculateObjectsBoundingRect(): BoundingRect
-        {
-            let top: number;
-            let left: number;
-            let right: number;
-            let bottom: number;
-
-            for (let schemeObject of this.objects) {
-                let schemeObjectBoundingRect = schemeObject.getBoundingRect();
-
-                if (top == undefined || schemeObjectBoundingRect.top < top) {
-                    top = schemeObjectBoundingRect.top;
-                }
-
-                if (left == undefined || schemeObjectBoundingRect.left < left) {
-                    left = schemeObjectBoundingRect.left;
-                }
-
-                if (right == undefined || schemeObjectBoundingRect.right > right) {
-                    right = schemeObjectBoundingRect.right;
-                }
-
-                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
-                    bottom = schemeObjectBoundingRect.bottom;
-                }
-            }
-
-            return {
-                left: left,
-                top: top,
-                right: right,
-                bottom: bottom
-            };
         }
 
         /**

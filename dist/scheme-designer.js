@@ -23,7 +23,6 @@ var SchemeDesigner;
              * Default cursor style
              */
             this.defaultCursorStyle = 'default';
-            this.objects = [];
             this.canvas = canvas;
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false });
             this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
@@ -35,12 +34,14 @@ var SchemeDesigner;
             this.scrollManager = new SchemeDesigner.ScrollManager(this);
             this.zoomManager = new SchemeDesigner.ZoomManager(this);
             this.eventManager = new SchemeDesigner.EventManager(this);
+            this.storageManager = new SchemeDesigner.StorageManager(this);
             /**
              * Configure
              */
             if (params) {
                 SchemeDesigner.Tools.configure(this.scrollManager, params.scroll);
                 SchemeDesigner.Tools.configure(this.zoomManager, params.zoom);
+                SchemeDesigner.Tools.configure(this.storageManager, params.storage);
             }
             /**
              * Disable selections on canvas
@@ -71,6 +72,13 @@ var SchemeDesigner;
          */
         Scheme.prototype.getZoomManager = function () {
             return this.zoomManager;
+        };
+        /**
+         * Get storage manager
+         * @returns {StorageManager}
+         */
+        Scheme.prototype.getStorageManager = function () {
+            return this.storageManager;
         };
         /**
          * Request animation
@@ -105,6 +113,21 @@ var SchemeDesigner;
             return this;
         };
         /**
+         * Render scheme
+         */
+        Scheme.prototype.render = function () {
+            this.requestRenderAll();
+            /**
+             * Create tree index
+             */
+            this.storageManager.getTree();
+            /**
+             * Set scheme to center with scale for all oblects
+             */
+            this.getZoomManager().setScale(this.zoomManager.getScaleWithAllObjects());
+            this.getScrollManager().toCenter();
+        };
+        /**
          * todo render only visible objects
          * Render all objects
          */
@@ -115,7 +138,7 @@ var SchemeDesigner;
             }
             this.eventManager.sendEvent('beforeRenderAll');
             this.clearContext();
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+            for (var _i = 0, _a = this.storageManager.getObjects(); _i < _a.length; _i++) {
                 var schemeObject = _a[_i];
                 schemeObject.render(this);
             }
@@ -126,22 +149,20 @@ var SchemeDesigner;
          * @param {SchemeObject} object
          */
         Scheme.prototype.addObject = function (object) {
-            this.objects.push(object);
-            this.reCalcObjectsBoundingRect();
+            this.storageManager.addObject(object);
         };
         /**
          * Remove object
          * @param {SchemeObject} object
          */
         Scheme.prototype.removeObject = function (object) {
-            this.objects.filter(function (existObject) { return existObject !== object; });
-            this.reCalcObjectsBoundingRect();
+            this.storageManager.removeObject(object);
         };
         /**
          * Remove all objects
          */
         Scheme.prototype.removeObjects = function () {
-            this.objects = [];
+            this.storageManager.removeObjects();
         };
         /**
          * Canvas getter
@@ -167,36 +188,11 @@ var SchemeDesigner;
             return this;
         };
         /**
-         * find objects by coordinates
-         * @param coordinates Coordinates
-         * @returns {SchemeObject[]}
-         */
-        Scheme.prototype.findObjectsByCoordinates = function (coordinates) {
-            var result = [];
-            // scale
-            var x = coordinates.x;
-            var y = coordinates.y;
-            x = x / this.zoomManager.getScale();
-            y = y / this.zoomManager.getScale();
-            // scroll
-            x = x - this.scrollManager.getScrollLeft();
-            y = y - this.scrollManager.getScrollTop();
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                var boundingRect = schemeObject.getBoundingRect();
-                if (boundingRect.left <= x && boundingRect.right >= x
-                    && boundingRect.top <= y && boundingRect.bottom >= y) {
-                    result.push(schemeObject);
-                }
-            }
-            return result;
-        };
-        /**
          * All objects
          * @returns {SchemeObject[]}
          */
         Scheme.prototype.getObjects = function () {
-            return this.objects;
+            return this.storageManager.getObjects();
         };
         /**
          * Get default cursor style
@@ -204,54 +200,6 @@ var SchemeDesigner;
          */
         Scheme.prototype.getDefaultCursorStyle = function () {
             return this.defaultCursorStyle;
-        };
-        /**
-         * Get bounding rect of all objects
-         * @returns BoundingRect
-         */
-        Scheme.prototype.getObjectsBoundingRect = function () {
-            if (!this.objectsBoundingRect) {
-                this.objectsBoundingRect = this.calculateObjectsBoundingRect();
-            }
-            return this.objectsBoundingRect;
-        };
-        /**
-         * Recalculate bounding rect
-         */
-        Scheme.prototype.reCalcObjectsBoundingRect = function () {
-            this.objectsBoundingRect = null;
-        };
-        /**
-         * Get bounding rect of all objects
-         * @returns {{left: number, top: number, right: number, bottom: number}}
-         */
-        Scheme.prototype.calculateObjectsBoundingRect = function () {
-            var top;
-            var left;
-            var right;
-            var bottom;
-            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                var schemeObjectBoundingRect = schemeObject.getBoundingRect();
-                if (top == undefined || schemeObjectBoundingRect.top < top) {
-                    top = schemeObjectBoundingRect.top;
-                }
-                if (left == undefined || schemeObjectBoundingRect.left < left) {
-                    left = schemeObjectBoundingRect.left;
-                }
-                if (right == undefined || schemeObjectBoundingRect.right > right) {
-                    right = schemeObjectBoundingRect.right;
-                }
-                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
-                    bottom = schemeObjectBoundingRect.bottom;
-                }
-            }
-            return {
-                left: left,
-                top: top,
-                right: right,
-                bottom: bottom
-            };
         };
         /**
          * Disable selection on canvas
@@ -445,6 +393,60 @@ var SchemeDesigner;
          */
         Tools.capitalizeFirstLetter = function (string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
+        };
+        /**
+         * Clone object
+         * @param obj
+         */
+        Tools.clone = function (obj) {
+            return JSON.parse(JSON.stringify(obj));
+        };
+        ;
+        /**
+         * Check than point in rect
+         * @param coordinates
+         * @param boundingRect
+         * @returns {boolean}
+         */
+        Tools.pointInRect = function (coordinates, boundingRect) {
+            var result = false;
+            if (boundingRect.left <= coordinates.x && boundingRect.right >= coordinates.x
+                && boundingRect.top <= coordinates.y && boundingRect.bottom >= coordinates.y) {
+                result = true;
+            }
+            return result;
+        };
+        /**
+         * Find objects by coordinates
+         * @param boundingRect
+         * @param objects
+         * @returns {SchemeObject[]}
+         */
+        Tools.filterObjectsByBoundingRect = function (boundingRect, objects) {
+            var result = [];
+            for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
+                var schemeObject = objects_1[_i];
+                var objectBoundingRect = schemeObject.getBoundingRect();
+                var isPart = false;
+                if (Tools.pointInRect({ x: objectBoundingRect.left, y: objectBoundingRect.top }, boundingRect)) {
+                    isPart = true;
+                }
+                else if (Tools.pointInRect({ x: objectBoundingRect.right, y: objectBoundingRect.top }, boundingRect)) {
+                    isPart = true;
+                }
+                else if (Tools.pointInRect({ x: objectBoundingRect.left, y: objectBoundingRect.bottom }, boundingRect)) {
+                    isPart = true;
+                }
+                else if (Tools.pointInRect({ x: objectBoundingRect.right, y: objectBoundingRect.bottom }, boundingRect)) {
+                    isPart = true;
+                }
+                if (isPart) {
+                    result.push(schemeObject);
+                }
+                else {
+                }
+            }
+            return result;
         };
         return Tools;
     }());
@@ -700,7 +702,7 @@ var SchemeDesigner;
          */
         EventManager.prototype.findObjectsForEvent = function (e) {
             var coordinates = this.getCoordinatesFromEvent(e);
-            return this.scheme.findObjectsByCoordinates(coordinates);
+            return this.scheme.getStorageManager().findObjectsByCoordinates(coordinates);
         };
         /**
          * Get coordinates from event
@@ -804,9 +806,10 @@ var SchemeDesigner;
          * @param {number} top
          */
         ScrollManager.prototype.scroll = function (left, top) {
-            var boundingRect = this.scheme.getObjectsBoundingRect();
-            var maxScrollLeft = this.scheme.getCanvas().width / this.scheme.getZoomManager().getScale() - boundingRect.left;
-            var maxScrollTop = this.scheme.getCanvas().height / this.scheme.getZoomManager().getScale() - boundingRect.top;
+            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
+            var scale = this.scheme.getZoomManager().getScale();
+            var maxScrollLeft = (this.scheme.getCanvas().width / scale) - boundingRect.left;
+            var maxScrollTop = (this.scheme.getCanvas().height / scale) - boundingRect.top;
             var minScrollLeft = -boundingRect.right;
             var minScrollTop = -boundingRect.bottom;
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
@@ -833,7 +836,7 @@ var SchemeDesigner;
          * Set scheme to center og objects
          */
         ScrollManager.prototype.toCenter = function () {
-            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
             var boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
             var widthDelta = this.scheme.getCanvas().width - boundingRectWidth;
@@ -872,6 +875,341 @@ var SchemeDesigner;
         return ScrollManager;
     }());
     SchemeDesigner.ScrollManager = ScrollManager;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * Storage manager
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
+     */
+    var StorageManager = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param {SchemeDesigner.Scheme} scheme
+         */
+        function StorageManager(scheme) {
+            /**
+             * Depth of tree
+             */
+            this.treeDepth = 6;
+            this.scheme = scheme;
+            this.objects = [];
+        }
+        /**
+         * Get objects
+         * @returns {SchemeObject[]}
+         */
+        StorageManager.prototype.getObjects = function () {
+            return this.objects;
+        };
+        /**
+         * Add object
+         * @param {SchemeObject} object
+         */
+        StorageManager.prototype.addObject = function (object) {
+            this.objects.push(object);
+            this.reCalcObjectsBoundingRect();
+            this.requestBuildTree();
+        };
+        /**
+         * Remove object
+         * @param {SchemeObject} object
+         */
+        StorageManager.prototype.removeObject = function (object) {
+            this.objects.filter(function (existObject) { return existObject !== object; });
+            this.reCalcObjectsBoundingRect();
+            this.requestBuildTree();
+        };
+        /**
+         * Remove all objects
+         */
+        StorageManager.prototype.removeObjects = function () {
+            this.objects = [];
+            this.requestBuildTree();
+        };
+        /**
+         * find objects by coordinates in tree
+         * @param coordinates Coordinates
+         * @returns {SchemeObject[]}
+         */
+        StorageManager.prototype.findObjectsByCoordinates = function (coordinates) {
+            var result = [];
+            // scale
+            var x = coordinates.x;
+            var y = coordinates.y;
+            x = x / this.scheme.getZoomManager().getScale();
+            y = y / this.scheme.getZoomManager().getScale();
+            // scroll
+            x = x - this.scheme.getScrollManager().getScrollLeft();
+            y = y - this.scheme.getScrollManager().getScrollTop();
+            // search node
+            var rootNode = this.getTree();
+            var lastTreeNodes = rootNode.getLastChildren();
+            var nodeObjects = [];
+            for (var _i = 0, lastTreeNodes_1 = lastTreeNodes; _i < lastTreeNodes_1.length; _i++) {
+                var lastTreeNode = lastTreeNodes_1[_i];
+                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, lastTreeNode.getBoundingRect())) {
+                    nodeObjects = lastTreeNode.getObjects();
+                    break;
+                }
+            }
+            // search object in node
+            for (var _a = 0, nodeObjects_1 = nodeObjects; _a < nodeObjects_1.length; _a++) {
+                var schemeObject = nodeObjects_1[_a];
+                var boundingRect = schemeObject.getBoundingRect();
+                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect)) {
+                    result.push(schemeObject);
+                }
+            }
+            return result;
+        };
+        /**
+         * Get bounding rect of all objects
+         * @returns BoundingRect
+         */
+        StorageManager.prototype.getObjectsBoundingRect = function () {
+            if (!this.objectsBoundingRect) {
+                this.objectsBoundingRect = this.calculateObjectsBoundingRect();
+            }
+            return this.objectsBoundingRect;
+        };
+        /**
+         * Recalculate bounding rect
+         */
+        StorageManager.prototype.reCalcObjectsBoundingRect = function () {
+            this.objectsBoundingRect = null;
+        };
+        /**
+         * Get bounding rect of all objects
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        StorageManager.prototype.calculateObjectsBoundingRect = function () {
+            var top;
+            var left;
+            var right;
+            var bottom;
+            for (var _i = 0, _a = this.objects; _i < _a.length; _i++) {
+                var schemeObject = _a[_i];
+                var schemeObjectBoundingRect = schemeObject.getBoundingRect();
+                if (top == undefined || schemeObjectBoundingRect.top < top) {
+                    top = schemeObjectBoundingRect.top;
+                }
+                if (left == undefined || schemeObjectBoundingRect.left < left) {
+                    left = schemeObjectBoundingRect.left;
+                }
+                if (right == undefined || schemeObjectBoundingRect.right > right) {
+                    right = schemeObjectBoundingRect.right;
+                }
+                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                    bottom = schemeObjectBoundingRect.bottom;
+                }
+            }
+            return {
+                left: left,
+                top: top,
+                right: right,
+                bottom: bottom
+            };
+        };
+        /**
+         * Set tree depth
+         * @param value
+         */
+        StorageManager.prototype.setTreeDepth = function (value) {
+            this.treeDepth = value;
+        };
+        /**
+         * Request build tree
+         */
+        StorageManager.prototype.requestBuildTree = function () {
+            this.rootTreeNode = null;
+        };
+        /**
+         * Get tree
+         * @returns {TreeNode}
+         */
+        StorageManager.prototype.getTree = function () {
+            if (!this.rootTreeNode) {
+                this.rootTreeNode = this.buildTree();
+            }
+            return this.rootTreeNode;
+        };
+        /**
+         * Build tree
+         * @returns {TreeNode}
+         */
+        StorageManager.prototype.buildTree = function () {
+            var boundingRect = this.getObjectsBoundingRect();
+            this.rootTreeNode = new TreeNode(null, boundingRect, this.objects, 0);
+            this.explodeTreeNodes(this.rootTreeNode, this.treeDepth);
+            return this.rootTreeNode;
+        };
+        /**
+         * Recursive explode node
+         * @param node
+         * @param depth
+         */
+        StorageManager.prototype.explodeTreeNodes = function (node, depth) {
+            this.explodeTreeNode(node);
+            depth--;
+            if (depth > 0) {
+                for (var _i = 0, _a = node.getChildren(); _i < _a.length; _i++) {
+                    var childNode = _a[_i];
+                    this.explodeTreeNodes(childNode, depth);
+                }
+            }
+        };
+        /**
+         * Explode node to children
+         * @param node
+         */
+        StorageManager.prototype.explodeTreeNode = function (node) {
+            var nodeBoundingRect = node.getBoundingRect();
+            var newDepth = node.getDepth() + 1;
+            var leftBoundingRect = SchemeDesigner.Tools.clone(nodeBoundingRect);
+            var rightBoundingRect = SchemeDesigner.Tools.clone(nodeBoundingRect);
+            /**
+             * Width or height explode
+             */
+            if (newDepth % 2 == 1) {
+                var width = nodeBoundingRect.right - nodeBoundingRect.left;
+                var delta = width / 2;
+                leftBoundingRect.right = leftBoundingRect.right - delta;
+                rightBoundingRect.left = rightBoundingRect.left + delta;
+            }
+            else {
+                var height = nodeBoundingRect.bottom - nodeBoundingRect.top;
+                var delta = height / 2;
+                leftBoundingRect.bottom = leftBoundingRect.bottom - delta;
+                rightBoundingRect.top = rightBoundingRect.top + delta;
+            }
+            var leftNodeObjects = SchemeDesigner.Tools.filterObjectsByBoundingRect(leftBoundingRect, node.getObjects());
+            var rightNodeObjects = SchemeDesigner.Tools.filterObjectsByBoundingRect(rightBoundingRect, node.getObjects());
+            var leftNode = new TreeNode(node, leftBoundingRect, leftNodeObjects, newDepth);
+            var rightNode = new TreeNode(node, rightBoundingRect, rightNodeObjects, newDepth);
+            node.addChild(leftNode);
+            node.addChild(rightNode);
+            node.removeObjects();
+        };
+        /**
+         * Draw bounds of nodes for testing
+         */
+        StorageManager.prototype.showNodesParts = function () {
+            var lastTreeNodes = this.getTree().getLastChildren();
+            var context = this.scheme.getCanvas2DContext();
+            for (var _i = 0, lastTreeNodes_2 = lastTreeNodes; _i < lastTreeNodes_2.length; _i++) {
+                var lastTreeNode = lastTreeNodes_2[_i];
+                var relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();
+                var relativeY = lastTreeNode.getBoundingRect().top + this.scheme.getScrollManager().getScrollTop();
+                var width = lastTreeNode.getBoundingRect().right - lastTreeNode.getBoundingRect().left;
+                var height = lastTreeNode.getBoundingRect().bottom - lastTreeNode.getBoundingRect().top;
+                context.lineWidth = 1;
+                context.strokeStyle = 'black';
+                context.rect(relativeX, relativeY, width, height);
+                context.stroke();
+            }
+        };
+        return StorageManager;
+    }());
+    SchemeDesigner.StorageManager = StorageManager;
+    /**
+     * Tree node
+     */
+    var TreeNode = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param parent
+         * @param boundingRect
+         * @param objects
+         * @param depth
+         */
+        function TreeNode(parent, boundingRect, objects, depth) {
+            /**
+             * Children nodes
+             */
+            this.children = [];
+            /**
+             * Objects in node
+             */
+            this.objects = [];
+            this.parent = parent;
+            this.boundingRect = boundingRect;
+            this.objects = objects;
+            this.depth = depth;
+        }
+        /**
+         * Add child
+         * @param child
+         */
+        TreeNode.prototype.addChild = function (child) {
+            this.children.push(child);
+        };
+        /**
+         * Get objects
+         * @returns {SchemeObject[]}
+         */
+        TreeNode.prototype.getObjects = function () {
+            return this.objects;
+        };
+        /**
+         * Get children
+         * @returns {TreeNode[]}
+         */
+        TreeNode.prototype.getChildren = function () {
+            return this.children;
+        };
+        /**
+         * Is last node
+         * @returns {boolean}
+         */
+        TreeNode.prototype.isLastNode = function () {
+            return this.objects.length > 0;
+        };
+        /**
+         * Get last children
+         * @returns {TreeNode[]}
+         */
+        TreeNode.prototype.getLastChildren = function () {
+            var result = [];
+            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+                var childNode = _a[_i];
+                if (childNode.isLastNode()) {
+                    result.push(childNode);
+                }
+                else {
+                    var lastChildNodeChildren = childNode.getLastChildren();
+                    for (var _b = 0, lastChildNodeChildren_1 = lastChildNodeChildren; _b < lastChildNodeChildren_1.length; _b++) {
+                        var lastChildNodeChild = lastChildNodeChildren_1[_b];
+                        result.push(lastChildNodeChild);
+                    }
+                }
+            }
+            return result;
+        };
+        /**
+         * Remove objects
+         */
+        TreeNode.prototype.removeObjects = function () {
+            this.objects = [];
+        };
+        /**
+         * Get bounding rect
+         * @returns {BoundingRect}
+         */
+        TreeNode.prototype.getBoundingRect = function () {
+            return this.boundingRect;
+        };
+        /**
+         * Get  depth
+         * @returns {number}
+         */
+        TreeNode.prototype.getDepth = function () {
+            return this.depth;
+        };
+        return TreeNode;
+    }());
+    SchemeDesigner.TreeNode = TreeNode;
 })(SchemeDesigner || (SchemeDesigner = {}));
 
 var SchemeDesigner;
@@ -927,7 +1265,7 @@ var SchemeDesigner;
          * @returns {number}
          */
         ZoomManager.prototype.getScaleWithAllObjects = function () {
-            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getCanvas().width;
             var maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getCanvas().height;
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
@@ -938,7 +1276,7 @@ var SchemeDesigner;
          * @returns {boolean}
          */
         ZoomManager.prototype.zoomByFactor = function (factor) {
-            var boundingRect = this.scheme.getObjectsBoundingRect();
+            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var canScaleX = true;
             var canScaleY = true;
             var newScale = this.scale * factor;

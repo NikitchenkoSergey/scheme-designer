@@ -302,7 +302,7 @@ namespace SchemeDesigner {
         protected findObjectsForEvent(e: MouseEvent | TouchEvent): SchemeObject[]
         {
             let coordinates = this.getCoordinatesFromEvent(e);
-            return this.scheme.findObjectsByCoordinates(coordinates);
+            return this.scheme.getStorageManager().findObjectsByCoordinates(coordinates);
         }
 
         /**
