@@ -62,8 +62,8 @@ namespace SchemeDesigner {
 
             let scale = this.scheme.getZoomManager().getScale();
 
-            let maxScrollLeft = (this.scheme.getCanvas().width / scale) - boundingRect.left;
-            let maxScrollTop = (this.scheme.getCanvas().height / scale) - boundingRect.top;
+            let maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
+            let maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
 
             let minScrollLeft = -boundingRect.right;
             let minScrollTop = -boundingRect.bottom;
@@ -93,6 +93,17 @@ namespace SchemeDesigner {
             this.scrollLeft = left;
             this.scrollTop = top;
             this.scheme.requestRenderAll();
+
+            this.scheme.getEventManager().sendEvent('scroll', {
+                left: left,
+                top: top,
+                maxScrollLeft: maxScrollLeft,
+                maxScrollTop: maxScrollTop,
+                minScrollLeft: minScrollLeft,
+                minScrollTop: minScrollTop,
+                boundingRect: boundingRect,
+                scale: scale
+            });
         }
 
         /**
@@ -105,8 +116,8 @@ namespace SchemeDesigner {
             let boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
             let boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
 
-            let widthDelta =  this.scheme.getCanvas().width - boundingRectWidth;
-            let heightDelta = this.scheme.getCanvas().height - boundingRectHeight;
+            let widthDelta =  this.scheme.getWidth() - boundingRectWidth;
+            let heightDelta = this.scheme.getHeight() - boundingRectHeight;
 
             let scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
             let scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();

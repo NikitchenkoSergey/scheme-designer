@@ -30,6 +30,11 @@ namespace SchemeDesigner {
         protected lastClientPosition: Coordinates;
 
         /**
+         * distance for touch zoom
+         */
+        protected touchDistance: number;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -38,8 +43,8 @@ namespace SchemeDesigner {
             this.scheme = scheme;
 
             this.setLastClientPosition({
-                x: this.scheme.getCanvas().width / 2,
-                y: this.scheme.getCanvas().height / 2
+                x: this.scheme.getWidth() / 2,
+                y: this.scheme.getHeight() / 2
             });
         }
 
@@ -81,13 +86,36 @@ namespace SchemeDesigner {
 
             // touch events
             this.scheme.getCanvas().addEventListener('touchstart', (e: TouchEvent) => {
-                this.onMouseDown(e)
+                this.touchDistance = 0;
+                this.onMouseDown(e);
             });
             this.scheme.getCanvas().addEventListener('touchmove', (e: TouchEvent) => {
-                this.onMouseMove(e)
+                if (e.targetTouches.length == 1) {
+                    // one finger - dragging
+                    this.onMouseMove(e);
+                } else if (e.targetTouches.length == 2) {
+                    // two finger - zoom
+                    var p1 = e.targetTouches[0];
+                    var p2 = e.targetTouches[1];
+
+                    // euclidean distance
+                    var distance = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2));
+
+                    let delta = 0;
+                    if(this.touchDistance) {
+                        delta = distance - this.touchDistance;
+                    }
+
+                    this.touchDistance = distance;
+
+                    if (delta) {
+                        this.scheme.getZoomManager().zoomToPointer(e, delta / 5);
+                    }
+                }
+                e.preventDefault();
             });
             this.scheme.getCanvas().addEventListener('touchend', (e: TouchEvent) => {
-                this.onMouseUp(e)
+                this.onMouseUp(e);
             });
             this.scheme.getCanvas().addEventListener('touchcancel', (e: TouchEvent) => {
                 this.onMouseUp(e)
@@ -130,8 +158,7 @@ namespace SchemeDesigner {
             if (!this.isDragging) {
                 let objects = this.findObjectsForEvent(e);
                 for (let schemeObject of objects) {
-                    schemeObject.isSelected = !schemeObject.isSelected;
-
+                    schemeObject.click(e, this.scheme);
                     this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
@@ -191,13 +218,20 @@ namespace SchemeDesigner {
          */
         protected getPointer(e: MouseEvent | TouchEvent, clientProp: string): number
         {
-        let touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
+            let touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
 
-        let event = (e as any);
+            let event = (e as any);
 
-        return (event[touchProp] && event[touchProp][0]
-            ? event[touchProp][0][clientProp]
-            : event[clientProp]);
+            // touch event
+            if (event[touchProp] && event[touchProp][0]) {
+                if (event[touchProp].length == 2) {
+                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
+                }
+
+                return event[touchProp][0][clientProp];
+            }
+
+            return event[clientProp];
         }
 
         /**

@@ -70,8 +70,8 @@ namespace SchemeDesigner {
         {
             let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
 
-            let maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getCanvas().width;
-            let maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getCanvas().height;
+            let maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getWidth();
+            let maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getHeight();
 
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         }
@@ -94,14 +94,14 @@ namespace SchemeDesigner {
                 /**
                  * Cant zoom less that 100% + padding
                  */
-                canScaleX = this.scheme.getCanvas().width * (1 - this.padding) < boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * (1 - this.padding) < boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * (1 - this.padding) < boundingRect.right * newScale;
+                canScaleY = this.scheme.getHeight() * (1 - this.padding) < boundingRect.bottom * newScale;
             } else {
                 /**
                  * Cant zoom more that maxScale
                  */
-                canScaleX = this.scheme.getCanvas().width * this.maxScale > boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * this.maxScale > boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * this.maxScale > boundingRect.right * newScale;
+                canScaleY = this.scheme.getHeight() * this.maxScale > boundingRect.bottom * newScale;
             }
 
             if (canScaleX || canScaleY) {
@@ -145,7 +145,7 @@ namespace SchemeDesigner {
          * @param e
          * @param delta
          */
-        public zoomToPointer(e: MouseWheelEvent | MouseEvent, delta: number): void
+        public zoomToPointer(e: MouseWheelEvent | MouseEvent | TouchEvent, delta: number): void
         {
             let prevScale = this.scheme.getZoomManager().getScale();
             let zoomed = this.scheme.getZoomManager().zoom(delta);

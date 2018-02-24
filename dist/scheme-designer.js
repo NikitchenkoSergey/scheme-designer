@@ -24,6 +24,8 @@ var SchemeDesigner;
              */
             this.defaultCursorStyle = 'default';
             this.canvas = canvas;
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false });
             this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
@@ -81,6 +83,20 @@ var SchemeDesigner;
             return this.storageManager;
         };
         /**
+         * Get width
+         * @returns {number}
+         */
+        Scheme.prototype.getWidth = function () {
+            return this.width;
+        };
+        /**
+         * Get height
+         * @returns {number}
+         */
+        Scheme.prototype.getHeight = function () {
+            return this.height;
+        };
+        /**
          * Request animation
          * @param animation
          * @returns {number}
@@ -99,7 +115,7 @@ var SchemeDesigner;
          * Clear canvas context
          */
         Scheme.prototype.clearContext = function () {
-            this.canvas2DContext.clearRect(0, 0, this.canvas.width / this.zoomManager.getScale(), this.canvas.height / this.zoomManager.getScale());
+            this.canvas2DContext.clearRect(0, 0, this.getWidth() / this.zoomManager.getScale(), this.getHeight() / this.zoomManager.getScale());
             return this;
         };
         /**
@@ -241,10 +257,6 @@ var SchemeDesigner;
              */
             this.isHovered = false;
             /**
-             * Is selected
-             */
-            this.isSelected = false;
-            /**
              * Cursor style
              */
             this.cursorStyle = 'pointer';
@@ -256,13 +268,18 @@ var SchemeDesigner;
             if (params.cursorStyle) {
                 this.cursorStyle = params.cursorStyle;
             }
+            if (params.clickFunction) {
+                this.clickFunction = params.clickFunction;
+            }
             this.params = params;
         }
         /**
          * Rendering object
          */
         SchemeObject.prototype.render = function (Scheme) {
-            this.renderFunction(this, Scheme);
+            if (typeof this.renderFunction === 'function') {
+                this.renderFunction(this, Scheme);
+            }
         };
         /**
          * Click on object
@@ -270,6 +287,9 @@ var SchemeDesigner;
          * @param {Scheme} schemeDesigner
          */
         SchemeObject.prototype.click = function (e, schemeDesigner) {
+            if (typeof this.clickFunction === 'function') {
+                this.clickFunction(this, SchemeDesigner.Scheme, e);
+            }
         };
         /**
          * Mouse over
@@ -480,8 +500,8 @@ var SchemeDesigner;
             this.hoveredObjects = [];
             this.scheme = scheme;
             this.setLastClientPosition({
-                x: this.scheme.getCanvas().width / 2,
-                y: this.scheme.getCanvas().height / 2
+                x: this.scheme.getWidth() / 2,
+                y: this.scheme.getHeight() / 2
             });
         }
         /**
@@ -520,10 +540,30 @@ var SchemeDesigner;
             });
             // touch events
             this.scheme.getCanvas().addEventListener('touchstart', function (e) {
+                _this.touchDistance = 0;
                 _this.onMouseDown(e);
             });
             this.scheme.getCanvas().addEventListener('touchmove', function (e) {
-                _this.onMouseMove(e);
+                if (e.targetTouches.length == 1) {
+                    // one finger - dragging
+                    _this.onMouseMove(e);
+                }
+                else if (e.targetTouches.length == 2) {
+                    // two finger - zoom
+                    var p1 = e.targetTouches[0];
+                    var p2 = e.targetTouches[1];
+                    // euclidean distance
+                    var distance = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2));
+                    var delta = 0;
+                    if (_this.touchDistance) {
+                        delta = distance - _this.touchDistance;
+                    }
+                    _this.touchDistance = distance;
+                    if (delta) {
+                        _this.scheme.getZoomManager().zoomToPointer(e, delta / 5);
+                    }
+                }
+                e.preventDefault();
             });
             this.scheme.getCanvas().addEventListener('touchend', function (e) {
                 _this.onMouseUp(e);
@@ -563,7 +603,7 @@ var SchemeDesigner;
                 var objects = this.findObjectsForEvent(e);
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                     var schemeObject = objects_1[_i];
-                    schemeObject.isSelected = !schemeObject.isSelected;
+                    schemeObject.click(e, this.scheme);
                     this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
@@ -615,9 +655,14 @@ var SchemeDesigner;
         EventManager.prototype.getPointer = function (e, clientProp) {
             var touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
             var event = e;
-            return (event[touchProp] && event[touchProp][0]
-                ? event[touchProp][0][clientProp]
-                : event[clientProp]);
+            // touch event
+            if (event[touchProp] && event[touchProp][0]) {
+                if (event[touchProp].length == 2) {
+                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
+                }
+                return event[touchProp][0][clientProp];
+            }
+            return event[clientProp];
         };
         /**
          * Handling hover
@@ -808,8 +853,8 @@ var SchemeDesigner;
         ScrollManager.prototype.scroll = function (left, top) {
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var scale = this.scheme.getZoomManager().getScale();
-            var maxScrollLeft = (this.scheme.getCanvas().width / scale) - boundingRect.left;
-            var maxScrollTop = (this.scheme.getCanvas().height / scale) - boundingRect.top;
+            var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
+            var maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
             var minScrollLeft = -boundingRect.right;
             var minScrollTop = -boundingRect.bottom;
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
@@ -831,6 +876,16 @@ var SchemeDesigner;
             this.scrollLeft = left;
             this.scrollTop = top;
             this.scheme.requestRenderAll();
+            this.scheme.getEventManager().sendEvent('scroll', {
+                left: left,
+                top: top,
+                maxScrollLeft: maxScrollLeft,
+                maxScrollTop: maxScrollTop,
+                minScrollLeft: minScrollLeft,
+                minScrollTop: minScrollTop,
+                boundingRect: boundingRect,
+                scale: scale
+            });
         };
         /**
          * Set scheme to center og objects
@@ -839,8 +894,8 @@ var SchemeDesigner;
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
             var boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
-            var widthDelta = this.scheme.getCanvas().width - boundingRectWidth;
-            var heightDelta = this.scheme.getCanvas().height - boundingRectHeight;
+            var widthDelta = this.scheme.getWidth() - boundingRectWidth;
+            var heightDelta = this.scheme.getHeight() - boundingRectHeight;
             var scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
             var scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();
             // left and top empty space
@@ -945,18 +1000,14 @@ var SchemeDesigner;
             y = y - this.scheme.getScrollManager().getScrollTop();
             // search node
             var rootNode = this.getTree();
-            var lastTreeNodes = rootNode.getLastChildren();
+            var node = this.findNodeByCoordinates(rootNode, { x: x, y: y });
             var nodeObjects = [];
-            for (var _i = 0, lastTreeNodes_1 = lastTreeNodes; _i < lastTreeNodes_1.length; _i++) {
-                var lastTreeNode = lastTreeNodes_1[_i];
-                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, lastTreeNode.getBoundingRect())) {
-                    nodeObjects = lastTreeNode.getObjects();
-                    break;
-                }
+            if (node) {
+                nodeObjects = node.getObjects();
             }
             // search object in node
-            for (var _a = 0, nodeObjects_1 = nodeObjects; _a < nodeObjects_1.length; _a++) {
-                var schemeObject = nodeObjects_1[_a];
+            for (var _i = 0, nodeObjects_1 = nodeObjects; _i < nodeObjects_1.length; _i++) {
+                var schemeObject = nodeObjects_1[_i];
                 var boundingRect = schemeObject.getBoundingRect();
                 if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect)) {
                     result.push(schemeObject);
@@ -1093,13 +1144,31 @@ var SchemeDesigner;
             node.removeObjects();
         };
         /**
+         * Find node by coordinates
+         * @param node
+         * @param coordinates
+         * @returns {TreeNode|null}
+         */
+        StorageManager.prototype.findNodeByCoordinates = function (node, coordinates) {
+            var childNode = node.getChildByCoordinates(coordinates);
+            if (!childNode) {
+                return null;
+            }
+            if (childNode.isLastNode()) {
+                return childNode;
+            }
+            else {
+                return this.findNodeByCoordinates(childNode, coordinates);
+            }
+        };
+        /**
          * Draw bounds of nodes for testing
          */
         StorageManager.prototype.showNodesParts = function () {
             var lastTreeNodes = this.getTree().getLastChildren();
             var context = this.scheme.getCanvas2DContext();
-            for (var _i = 0, lastTreeNodes_2 = lastTreeNodes; _i < lastTreeNodes_2.length; _i++) {
-                var lastTreeNode = lastTreeNodes_2[_i];
+            for (var _i = 0, lastTreeNodes_1 = lastTreeNodes; _i < lastTreeNodes_1.length; _i++) {
+                var lastTreeNode = lastTreeNodes_1[_i];
                 var relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();
                 var relativeY = lastTreeNode.getBoundingRect().top + this.scheme.getScrollManager().getScrollTop();
                 var width = lastTreeNode.getBoundingRect().right - lastTreeNode.getBoundingRect().left;
@@ -1188,6 +1257,20 @@ var SchemeDesigner;
             return result;
         };
         /**
+         * Get child by coordinates
+         * @param coordinates
+         * @returns {TreeNode|null}
+         */
+        TreeNode.prototype.getChildByCoordinates = function (coordinates) {
+            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+                var childNode = _a[_i];
+                if (SchemeDesigner.Tools.pointInRect(coordinates, childNode.getBoundingRect())) {
+                    return childNode;
+                }
+            }
+            return null;
+        };
+        /**
          * Remove objects
          */
         TreeNode.prototype.removeObjects = function () {
@@ -1266,8 +1349,8 @@ var SchemeDesigner;
          */
         ZoomManager.prototype.getScaleWithAllObjects = function () {
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
-            var maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getCanvas().width;
-            var maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getCanvas().height;
+            var maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getWidth();
+            var maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getHeight();
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         };
         /**
@@ -1284,15 +1367,15 @@ var SchemeDesigner;
                 /**
                  * Cant zoom less that 100% + padding
                  */
-                canScaleX = this.scheme.getCanvas().width * (1 - this.padding) < boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * (1 - this.padding) < boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * (1 - this.padding) < boundingRect.right * newScale;
+                canScaleY = this.scheme.getHeight() * (1 - this.padding) < boundingRect.bottom * newScale;
             }
             else {
                 /**
                  * Cant zoom more that maxScale
                  */
-                canScaleX = this.scheme.getCanvas().width * this.maxScale > boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * this.maxScale > boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * this.maxScale > boundingRect.right * newScale;
+                canScaleY = this.scheme.getHeight() * this.maxScale > boundingRect.bottom * newScale;
             }
             if (canScaleX || canScaleY) {
                 this.scheme.getCanvas2DContext().scale(factor, factor);

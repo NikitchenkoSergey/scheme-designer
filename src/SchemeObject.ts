@@ -31,11 +31,6 @@ namespace SchemeDesigner {
         public isHovered: boolean = false;
 
         /**
-         * Is selected
-         */
-        public isSelected: boolean = false;
-
-        /**
          * Cursor style
          */
         public cursorStyle: string = 'pointer';
@@ -43,7 +38,12 @@ namespace SchemeDesigner {
         /**
          * Render function
          */
-        protected renderFunction: any;
+        protected renderFunction: Function;
+
+        /**
+         * Click function
+         */
+        protected clickFunction: Function;
 
         /**
          * All params of object
@@ -66,6 +66,10 @@ namespace SchemeDesigner {
                 this.cursorStyle = params.cursorStyle;
             }
 
+            if (params.clickFunction) {
+                this.clickFunction = params.clickFunction;
+            }
+
             this.params = params;
         }
 
@@ -74,7 +78,9 @@ namespace SchemeDesigner {
          */
         public render(Scheme: Scheme): void
         {
-            this.renderFunction(this, Scheme);
+            if (typeof this.renderFunction === 'function') {
+                this.renderFunction(this, Scheme);
+            }
         }
 
         /**
@@ -84,7 +90,9 @@ namespace SchemeDesigner {
          */
         public click(e: MouseEvent, schemeDesigner: Scheme): void
         {
-
+            if (typeof this.clickFunction === 'function') {
+                this.clickFunction(this, Scheme, e);
+            }
         }
 
         /**

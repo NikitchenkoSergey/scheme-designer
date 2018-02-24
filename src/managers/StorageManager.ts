@@ -103,14 +103,12 @@ namespace SchemeDesigner {
 
             // search node
             let rootNode = this.getTree();
-            let lastTreeNodes = rootNode.getLastChildren();
+            let node = this.findNodeByCoordinates(rootNode, {x: x, y: y});
 
             let nodeObjects: SchemeObject[] = [];
-            for (let lastTreeNode of lastTreeNodes) {
-                if (Tools.pointInRect({x: x, y: y}, lastTreeNode.getBoundingRect())) {
-                    nodeObjects = lastTreeNode.getObjects();
-                    break;
-                }
+
+            if (node) {
+                nodeObjects = node.getObjects();
             }
 
             // search object in node
@@ -287,6 +285,27 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Find node by coordinates
+         * @param node
+         * @param coordinates
+         * @returns {TreeNode|null}
+         */
+        public findNodeByCoordinates(node: TreeNode, coordinates: Coordinates): TreeNode | null
+        {
+            let childNode = node.getChildByCoordinates(coordinates);
+
+            if (!childNode) {
+                return null;
+            }
+
+            if (childNode.isLastNode()) {
+                return childNode;
+            } else {
+                return this.findNodeByCoordinates(childNode, coordinates);
+            }
+        }
+
+        /**
          * Draw bounds of nodes for testing
          */
         public showNodesParts()
@@ -408,6 +427,22 @@ namespace SchemeDesigner {
             }
 
             return result;
+        }
+
+        /**
+         * Get child by coordinates
+         * @param coordinates
+         * @returns {TreeNode|null}
+         */
+        public getChildByCoordinates(coordinates: Coordinates): TreeNode | null
+        {
+            for (let childNode of this.children) {
+                if (Tools.pointInRect(coordinates, childNode.getBoundingRect())) {
+                    return childNode;
+                }
+            }
+
+            return null;
         }
 
         /**

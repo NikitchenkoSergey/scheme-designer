@@ -15,6 +15,16 @@ namespace SchemeDesigner {
         protected canvas2DContext: CanvasRenderingContext2D;
 
         /**
+         * Width
+         */
+        protected width: number;
+
+        /**
+         * Height
+         */
+        protected height: number;
+
+        /**
          * Frame animation
          */
         protected requestFrameAnimation: any;
@@ -69,6 +79,9 @@ namespace SchemeDesigner {
         {
             this.canvas = canvas;
 
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
+
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
 
             this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
@@ -85,7 +98,6 @@ namespace SchemeDesigner {
             this.eventManager = new EventManager(this);
 
             this.storageManager = new StorageManager(this);
-
 
             /**
              * Configure
@@ -144,6 +156,24 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Get width
+         * @returns {number}
+         */
+        public getWidth(): number
+        {
+            return this.width;
+        }
+
+        /**
+         * Get height
+         * @returns {number}
+         */
+        public getHeight(): number
+        {
+            return this.height;
+        }
+
+        /**
          * Request animation
          * @param animation
          * @returns {number}
@@ -170,8 +200,8 @@ namespace SchemeDesigner {
             this.canvas2DContext.clearRect(
                 0,
                 0,
-                this.canvas.width / this.zoomManager.getScale(),
-                this.canvas.height / this.zoomManager.getScale()
+                this.getWidth() / this.zoomManager.getScale(),
+                this.getHeight() / this.zoomManager.getScale()
             );
             return this;
         }

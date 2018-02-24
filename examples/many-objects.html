@@ -51,11 +51,11 @@
         context.strokeStyle = '#B143B0';
 
         context.fillStyle = '#B143B0';
-        if (schemeObject.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && schemeObject.isHovered) {
             context.fillStyle = '#B143B0';
         } else if (schemeObject.isHovered) {
             context.fillStyle = 'white';
-        } else if (schemeObject.isSelected) {
+        } else if (schemeObject.params.isSelected) {
             context.fillStyle = '#B143B0';
         }
 
@@ -63,7 +63,7 @@
         var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
         var width = schemeObject.width;
         var height = schemeObject.height;
-        if (!schemeObject.isHovered && !schemeObject.isSelected) {
+        if (!schemeObject.isHovered && !schemeObject.params.isSelected) {
             relativeX = relativeX + 2;
             relativeY = relativeY + 2;
             width = width - 4;
@@ -77,20 +77,25 @@
 
         context.font = '6px Arial';
 
-        if (schemeObject.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && schemeObject.isHovered) {
             context.fillStyle = 'white';
         } else if (schemeObject.isHovered) {
             context.fillStyle = '#B143B0';
-        } else if (schemeObject.isSelected) {
+        } else if (schemeObject.params.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (schemeObject.isSelected || schemeObject.isHovered) {
+        if (schemeObject.params.isSelected || schemeObject.isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
         }
 
+    };
+
+    var clickOnPlace = function (schemeObject, schemeDesigner, e)
+    {
+        schemeObject.params.isSelected = !schemeObject.params.isSelected;
     };
 
     /**
@@ -117,7 +122,10 @@
             id: 'place_' + i,
             price: 100,
             placeNumber: i % 100,
-            sectorName: 'Sector ' + (i % placesInRow)
+            sectorName: 'Sector ' + (i % placesInRow),
+
+            isSelected: false,
+            clickFunction: clickOnPlace
         });
 
         schemeDesigner.addObject(place);

@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Example</title>
-    <script src="../dist/scheme-designer.min.js?1"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="../dist/scheme-designer.min.js?2"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
 </head>
 <body>
-<div style="margin: 20px auto; max-width: 1000px;">
-    <h2>Hall scheme example</h2>
-    <div>
+<div class="container" style="min-width: 800px;">
+    <div style="text-align: center;">
+        <h2>Hall scheme example</h2>
+
         <canvas id="canvas1" width="800" height="500" style="border: 1px solid #ccc;">
             Ваш браузер не поддерживает элемент canvas.
         </canvas>
@@ -48,13 +54,13 @@
         context.strokeStyle = 'white';
 
         context.fillStyle = backgroundColor;
-        if (schemeObject.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && schemeObject.isHovered) {
             context.fillStyle = backgroundColor;
             context.strokeStyle = backgroundColor;
         } else if (schemeObject.isHovered) {
             context.fillStyle = 'white';
             context.strokeStyle = backgroundColor;
-        } else if (schemeObject.isSelected) {
+        } else if (schemeObject.params.isSelected) {
             context.fillStyle = backgroundColor;
             context.strokeStyle = backgroundColor;
         }
@@ -63,7 +69,7 @@
         var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
         var width = schemeObject.width;
         var height = schemeObject.height;
-        if (!schemeObject.isHovered && !schemeObject.isSelected) {
+        if (!schemeObject.isHovered && !schemeObject.params.isSelected) {
             var borderOffset = 4;
             relativeX = relativeX + borderOffset;
             relativeY = relativeY + borderOffset;
@@ -78,15 +84,15 @@
 
         context.font = (Math.floor((parseInt(schemeObject.width) + parseInt(schemeObject.height))/4)) + 'px Arial';
 
-        if (schemeObject.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && schemeObject.isHovered) {
             context.fillStyle = 'white';
         } else if (schemeObject.isHovered) {
             context.fillStyle = backgroundColor;
-        } else if (schemeObject.isSelected) {
+        } else if (schemeObject.params.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (schemeObject.isSelected || schemeObject.isHovered) {
+        if (schemeObject.params.isSelected || schemeObject.isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
@@ -114,6 +120,12 @@
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(schemeObject.params.sectorName, relativeX, relativeY);
+    };
+
+
+    var clickOnPlace = function (schemeObject, schemeDesigner, e)
+    {
+        schemeObject.params.isSelected = !schemeObject.params.isSelected;
     };
 
     /**
@@ -148,7 +160,10 @@
             sectorName: objectData.Name_sec,
             fontSize: objectData.FontSize,
             backgroundColor: objectData.BackColor,
-            fontColor: objectData.FontColor
+            fontColor: objectData.FontColor,
+
+            isSelected: false,
+            clickFunction: clickOnPlace
         });
 
         schemeDesigner.addObject(schemeObject);
@@ -180,6 +195,10 @@
 
     canvas.addEventListener('schemeDesigner.mouseLeaveObject', function (e) {
         console.log('mouseLeaveObject', e.detail);
+    }, false);
+
+    canvas.addEventListener('schemeDesigner.scroll', function (e) {
+        console.log('scroll', e.detail);
     }, false);
 </script>
 </body>
