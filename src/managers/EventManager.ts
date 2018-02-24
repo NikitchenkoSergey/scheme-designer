@@ -146,7 +146,7 @@ namespace SchemeDesigner {
          */
         protected onDoubleClick(e: MouseEvent): void
         {
-
+            this.scheme.getZoomManager().zoomToPointer(e, 14);
         }
 
         /**

@@ -78,9 +78,9 @@ namespace SchemeDesigner {
 
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
 
-            this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = this.getCancelAnimationFunction();
-            this.devicePixelRatio = this.getDevicePixelRatio();
+            this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = Polyfill.getDevicePixelRatio();
 
             /**
              * Managers
@@ -97,6 +97,7 @@ namespace SchemeDesigner {
              */
             if (params) {
                 Tools.configure(this.scrollManager, params.scroll);
+                Tools.configure(this.zoomManager, params.zoom);
             }
 
             /**
@@ -135,61 +136,6 @@ namespace SchemeDesigner {
         public getZoomManager(): ZoomManager
         {
             return this.zoomManager;
-        }
-
-        /**
-         * Get request animation frame function, polyfill
-         * @returns {Function}
-         */
-        protected getRequestAnimationFrameFunction(): Function
-        {
-            let variables: string[] = [
-                'requestAnimationFrame',
-                'webkitRequestAnimationFrame',
-                'mozRequestAnimationFrame',
-                'oRequestAnimationFrame',
-                'msRequestAnimationFrame'
-            ];
-
-            for (let variableName of variables) {
-                if (window.hasOwnProperty(variableName)) {
-                    return (window as any)[variableName];
-                }
-            }
-
-            return function (callback: any) {
-                return window.setTimeout(callback, 1000 / 60);
-            };
-        }
-
-        /**
-         * Get cancel animation function, polyfill
-         * @returns {Function}
-         */
-        protected getCancelAnimationFunction(): Function
-        {
-            return window.cancelAnimationFrame || window.clearTimeout;
-        }
-
-        /**
-         * Get device pixel radio, polyfill
-         * @returns {number}
-         */
-        protected getDevicePixelRatio(): number
-        {
-            let variables: string[] = [
-                'devicePixelRatio',
-                'webkitDevicePixelRatio',
-                'mozDevicePixelRatio'
-            ];
-
-            for (let variableName of variables) {
-                if (window.hasOwnProperty(variableName)) {
-                    return (window as any)[variableName];
-                }
-            }
-
-            return 1;
         }
 
         /**

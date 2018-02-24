@@ -21,7 +21,7 @@ gulp.task('watch', function () {
 
 gulp.task('compress', function(cb) {
     pump([
-            gulp.src('dist/*.js'),
+            gulp.src('dist/scheme-designer.js'),
             rename({suffix: '.min'}),
             uglify(),
             gulp.dest('dist')

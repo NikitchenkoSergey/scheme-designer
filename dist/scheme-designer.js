@@ -26,9 +26,9 @@ var SchemeDesigner;
             this.objects = [];
             this.canvas = canvas;
             this.canvas2DContext = this.canvas.getContext('2d', { alpha: false });
-            this.requestFrameAnimation = this.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = this.getCancelAnimationFunction();
-            this.devicePixelRatio = this.getDevicePixelRatio();
+            this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
             /**
              * Managers
              */
@@ -40,6 +40,7 @@ var SchemeDesigner;
              */
             if (params) {
                 SchemeDesigner.Tools.configure(this.scrollManager, params.scroll);
+                SchemeDesigner.Tools.configure(this.zoomManager, params.zoom);
             }
             /**
              * Disable selections on canvas
@@ -70,53 +71,6 @@ var SchemeDesigner;
          */
         Scheme.prototype.getZoomManager = function () {
             return this.zoomManager;
-        };
-        /**
-         * Get request animation frame function, polyfill
-         * @returns {Function}
-         */
-        Scheme.prototype.getRequestAnimationFrameFunction = function () {
-            var variables = [
-                'requestAnimationFrame',
-                'webkitRequestAnimationFrame',
-                'mozRequestAnimationFrame',
-                'oRequestAnimationFrame',
-                'msRequestAnimationFrame'
-            ];
-            for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
-                var variableName = variables_1[_i];
-                if (window.hasOwnProperty(variableName)) {
-                    return window[variableName];
-                }
-            }
-            return function (callback) {
-                return window.setTimeout(callback, 1000 / 60);
-            };
-        };
-        /**
-         * Get cancel animation function, polyfill
-         * @returns {Function}
-         */
-        Scheme.prototype.getCancelAnimationFunction = function () {
-            return window.cancelAnimationFrame || window.clearTimeout;
-        };
-        /**
-         * Get device pixel radio, polyfill
-         * @returns {number}
-         */
-        Scheme.prototype.getDevicePixelRatio = function () {
-            var variables = [
-                'devicePixelRatio',
-                'webkitDevicePixelRatio',
-                'mozDevicePixelRatio'
-            ];
-            for (var _i = 0, variables_2 = variables; _i < variables_2.length; _i++) {
-                var variableName = variables_2[_i];
-                if (window.hasOwnProperty(variableName)) {
-                    return window[variableName];
-                }
-            }
-            return 1;
         };
         /**
          * Request animation
@@ -403,6 +357,66 @@ var SchemeDesigner;
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
+     * Polyfill
+     */
+    var Polyfill = /** @class */ (function () {
+        function Polyfill() {
+        }
+        /**
+         * Get request animation frame function
+         * @returns {Function}
+         */
+        Polyfill.getRequestAnimationFrameFunction = function () {
+            var variables = [
+                'requestAnimationFrame',
+                'webkitRequestAnimationFrame',
+                'mozRequestAnimationFrame',
+                'oRequestAnimationFrame',
+                'msRequestAnimationFrame'
+            ];
+            for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+                var variableName = variables_1[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return function (callback) {
+                return window.setTimeout(callback, 1000 / 60);
+            };
+        };
+        /**
+         * Get cancel animation function
+         * @returns {Function}
+         */
+        Polyfill.getCancelAnimationFunction = function () {
+            return window.cancelAnimationFrame || window.clearTimeout;
+        };
+        /**
+         * Get device pixel radio
+         * @returns {number}
+         */
+        Polyfill.getDevicePixelRatio = function () {
+            var variables = [
+                'devicePixelRatio',
+                'webkitDevicePixelRatio',
+                'mozDevicePixelRatio'
+            ];
+            for (var _i = 0, variables_2 = variables; _i < variables_2.length; _i++) {
+                var variableName = variables_2[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return 1;
+        };
+        return Polyfill;
+    }());
+    SchemeDesigner.Polyfill = Polyfill;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
      * Tools
      */
     var Tools = /** @class */ (function () {
@@ -560,6 +574,7 @@ var SchemeDesigner;
          * @param e
          */
         EventManager.prototype.onDoubleClick = function (e) {
+            this.scheme.getZoomManager().zoomToPointer(e, 14);
         };
         /**
          * Right click
@@ -875,6 +890,18 @@ var SchemeDesigner;
              * Current scale
              */
             this.scale = 1;
+            /**
+             * Zoom coefficient
+             */
+            this.zoomCoefficient = 1.04;
+            /**
+             * Padding for max zoom
+             */
+            this.padding = 0.1;
+            /**
+             * Max scale
+             */
+            this.maxScale = 5;
             this.scheme = scheme;
         }
         /**
@@ -883,7 +910,7 @@ var SchemeDesigner;
          * @returns {boolean}
          */
         ZoomManager.prototype.zoom = function (delta) {
-            var factor = Math.pow(1.03, delta);
+            var factor = Math.pow(this.zoomCoefficient, delta);
             return this.zoomByFactor(factor);
         };
         /**
@@ -901,10 +928,8 @@ var SchemeDesigner;
          */
         ZoomManager.prototype.getScaleWithAllObjects = function () {
             var boundingRect = this.scheme.getObjectsBoundingRect();
-            // 10%
-            var padding = 0.1;
-            var maxScaleX = ((boundingRect.right - boundingRect.left) * (padding + 1)) / this.scheme.getCanvas().width;
-            var maxScaleY = ((boundingRect.bottom - boundingRect.top) * (padding + 1)) / this.scheme.getCanvas().height;
+            var maxScaleX = ((boundingRect.right - boundingRect.left) * (this.padding + 1)) / this.scheme.getCanvas().width;
+            var maxScaleY = ((boundingRect.bottom - boundingRect.top) * (this.padding + 1)) / this.scheme.getCanvas().height;
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         };
         /**
@@ -919,17 +944,17 @@ var SchemeDesigner;
             var newScale = this.scale * factor;
             if (factor < 1) {
                 /**
-                 * Cant zoom less that 70%
+                 * Cant zoom less that 100% + padding
                  */
-                canScaleX = this.scheme.getCanvas().width * 0.7 < boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * 0.7 < boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getCanvas().width * (1 - this.padding) < boundingRect.right * newScale;
+                canScaleY = this.scheme.getCanvas().height * (1 - this.padding) < boundingRect.bottom * newScale;
             }
             else {
                 /**
-                 * Cant zoom more that 500%
+                 * Cant zoom more that maxScale
                  */
-                canScaleX = this.scheme.getCanvas().width * 5 > boundingRect.right * newScale;
-                canScaleY = this.scheme.getCanvas().height * 5 > boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getCanvas().width * this.maxScale > boundingRect.right * newScale;
+                canScaleY = this.scheme.getCanvas().height * this.maxScale > boundingRect.bottom * newScale;
             }
             if (canScaleX || canScaleY) {
                 this.scheme.getCanvas2DContext().scale(factor, factor);
@@ -947,33 +972,62 @@ var SchemeDesigner;
             return this.scale;
         };
         /**
-         * Handle mouse weel
+         * Handle mouse wheel
          * @param e
          * @returns {void|boolean}
          */
         ZoomManager.prototype.handleMouseWheel = function (e) {
             var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
             if (delta) {
-                var prevScale = this.scheme.getZoomManager().getScale();
-                var zoomed = this.scheme.getZoomManager().zoom(delta);
-                this.scheme.getEventManager().setLastClientPositionFromEvent(e);
-                if (zoomed) {
-                    // scroll to cursor
-                    var newScale = this.scheme.getZoomManager().getScale();
-                    var prevCenter = {
-                        x: this.scheme.getEventManager().getLastClientX() / prevScale,
-                        y: this.scheme.getEventManager().getLastClientY() / prevScale,
-                    };
-                    var newCenter = {
-                        x: this.scheme.getEventManager().getLastClientX() / newScale,
-                        y: this.scheme.getEventManager().getLastClientY() / newScale,
-                    };
-                    var leftOffsetDelta = newCenter.x - prevCenter.x;
-                    var topOffsetDelta = newCenter.y - prevCenter.y;
-                    this.scheme.getScrollManager().scroll(this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta, this.scheme.getScrollManager().getScrollTop() + topOffsetDelta);
-                }
+                this.zoomToPointer(e, delta);
             }
             return e.preventDefault() && false;
+        };
+        /**
+         * Zoom to pointer
+         * @param e
+         * @param delta
+         */
+        ZoomManager.prototype.zoomToPointer = function (e, delta) {
+            var prevScale = this.scheme.getZoomManager().getScale();
+            var zoomed = this.scheme.getZoomManager().zoom(delta);
+            this.scheme.getEventManager().setLastClientPositionFromEvent(e);
+            if (zoomed) {
+                // scroll to cursor
+                var newScale = this.scheme.getZoomManager().getScale();
+                var prevCenter = {
+                    x: this.scheme.getEventManager().getLastClientX() / prevScale,
+                    y: this.scheme.getEventManager().getLastClientY() / prevScale,
+                };
+                var newCenter = {
+                    x: this.scheme.getEventManager().getLastClientX() / newScale,
+                    y: this.scheme.getEventManager().getLastClientY() / newScale,
+                };
+                var leftOffsetDelta = newCenter.x - prevCenter.x;
+                var topOffsetDelta = newCenter.y - prevCenter.y;
+                this.scheme.getScrollManager().scroll(this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta, this.scheme.getScrollManager().getScrollTop() + topOffsetDelta);
+            }
+        };
+        /**
+         * Set padding
+         * @param value
+         */
+        ZoomManager.prototype.setPadding = function (value) {
+            this.padding = value;
+        };
+        /**
+         * Set max scale
+         * @param value
+         */
+        ZoomManager.prototype.setMaxScale = function (value) {
+            this.maxScale = value;
+        };
+        /**
+         * Set zoomCoefficient
+         * @param value
+         */
+        ZoomManager.prototype.setZoomCoefficient = function (value) {
+            this.zoomCoefficient = value;
         };
         return ZoomManager;
     }());
