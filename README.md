@@ -17,6 +17,7 @@ Demo: <a href="http://nikitchenko.ru/scheme-designer/examples/">http://nikitchen
 
 <h2>Usage Instructions</h2>
 1. Link file:
+
 ```
 <script src="dist/scheme-designer.min.js"></script>
 ```
@@ -63,6 +64,7 @@ schemeDesigner.render();
 ```
 
 <h2>Options</h2>
+<h3>Scheme</h3>
 <table>
     <tr>
         <th>Option</th>
@@ -103,6 +105,45 @@ schemeDesigner.render();
         <td>0.6</td>
         <td>Depth of search tree</td>
     </tr>
+</table>
+<h3>SchemeObject</h3>
+<table>
+    <tr>
+        <th>Option</th>
+        <th>Default</th>
+        <th>Description</th>
+    </tr>
+     <tr>
+        <td>x: number</td>
+        <td></td>
+        <td>X position</td>
+    </tr>
+    <tr>
+        <td>width: number</td>
+        <td></td>
+        <td>Width</td>
+    </tr>
+    <tr>
+        <td>height: number</td>
+        <td></td>
+        <td>Height</td>
+    </tr>
+     <tr>
+        <td>cursorStyle: string</td>
+        <td>pointer</td>
+        <td>Cursor style on object</td>
+    </tr>
+    <tr>
+        <td>renderFunction: Function(schemeObject: SchemeObject, scheme: Scheme)</td>
+        <td></td>
+        <td>Function for rendering object, see examples</td>
+    </tr>
+    <tr>
+        <td>clickFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+        <td></td>
+        <td>Function for handle click on object</td>
+    </tr>
+   
 </table>
 
 <h2>Api</h2>
@@ -343,5 +384,43 @@ schemeDesigner.getStorageManager().showNodesParts();
         <td>showNodesParts()</td>
         <td></td>
         <td>Draw rect of nodes for testing</td>
+    </tr>
+</table>
+
+
+<h2>Events</h2>
+
+<table>
+    <tr>
+        <th>Event</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td>schemeDesigner.beforeRenderAll</td>
+        <td>Before render all</td>
+    </tr>
+        <tr>
+        <td>schemeDesigner.afterRenderAll</td>
+        <td>After render all</td>
+    </tr>
+        <tr>
+        <td>schemeDesigner.clickOnObject</td>
+        <td>Click on object</td>
+    </tr>
+        <tr>
+        <td>schemeDesigner.mouseOverObject</td>
+        <td>Mouse over on object</td>
+    </tr>
+        <tr>
+        <td>schemeDesigner.mouseLeaveObject</td>
+        <td>Mouse leave from object</td>
+    </tr>
+        <tr>
+        <td>schemeDesigner.scroll</td>
+        <td>On scroll</td>
+    </tr>
+    <tr>
+        <td>schemeDesigner.zoom</td>
+        <td>On zoom</td>
     </tr>
 </table>
