@@ -61,6 +61,22 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Rect intersect rect
+         * @param boundingRect1
+         * @param boundingRect2
+         * @returns {boolean}
+         */
+        public static rectIntersectRect(boundingRect1: BoundingRect, boundingRect2: BoundingRect): boolean
+        {
+            return !(
+            boundingRect1.top > boundingRect2.bottom
+            || boundingRect1.bottom < boundingRect2.top
+            || boundingRect1.right < boundingRect2.left
+            || boundingRect1.left > boundingRect2.right
+            );
+        }
+
+        /**
          * Find objects by coordinates
          * @param boundingRect
          * @param objects
@@ -74,22 +90,10 @@ namespace SchemeDesigner {
             for (let schemeObject of objects) {
                 let objectBoundingRect = schemeObject.getBoundingRect();
 
-                let isPart = false;
-
-                if (Tools.pointInRect({x: objectBoundingRect.left, y: objectBoundingRect.top}, boundingRect)) {
-                    isPart = true;
-                } else if (Tools.pointInRect({x: objectBoundingRect.right, y: objectBoundingRect.top}, boundingRect)) {
-                    isPart = true;
-                } else if (Tools.pointInRect({x: objectBoundingRect.left, y: objectBoundingRect.bottom}, boundingRect)) {
-                    isPart = true;
-                } else if (Tools.pointInRect({x: objectBoundingRect.right, y: objectBoundingRect.bottom}, boundingRect)) {
-                    isPart = true;
-                }
+                let isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
 
                 if (isPart) {
                     result.push(schemeObject);
-                } else {
-
                 }
             }
 

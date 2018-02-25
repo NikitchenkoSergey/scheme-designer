@@ -306,6 +306,37 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Find nodes by rect
+         * @param node
+         * @param boundingRect
+         * @returns {TreeNode[]}
+         */
+        public findNodesByBoundingRect(node: TreeNode | null, boundingRect: BoundingRect): TreeNode[]
+        {
+            if (!node) {
+                node = this.getTree();
+            }
+
+            let result: TreeNode[] = [];
+
+            let childNodes = node.getChildrenByBoundingRect(boundingRect);
+
+            for (let childNode of childNodes) {
+                if (childNode.isLastNode()) {
+                    result.push(childNode);
+                } else {
+                    let subChildNodes = this.findNodesByBoundingRect(childNode, boundingRect);
+                    for (let subChildNode of subChildNodes) {
+                        result.push(subChildNode);
+                    }
+                }
+            }
+
+
+            return result;
+        }
+
+        /**
          * Draw bounds of nodes for testing
          */
         public showNodesParts()
@@ -443,6 +474,24 @@ namespace SchemeDesigner {
             }
 
             return null;
+        }
+
+        /**
+         * Get child by bounding rect
+         * @param boundingRect
+         * @returns {TreeNode[]}
+         */
+        public getChildrenByBoundingRect(boundingRect: BoundingRect): TreeNode[]
+        {
+            let result: TreeNode[] = [];
+
+            for (let childNode of this.children) {
+                if (Tools.rectIntersectRect(childNode.getBoundingRect(), boundingRect)) {
+                    result.push(childNode);
+                }
+            }
+
+            return result;
         }
 
         /**

@@ -144,8 +144,7 @@ var SchemeDesigner;
             this.getScrollManager().toCenter();
         };
         /**
-         * todo render only visible objects
-         * Render all objects
+         * Render visible objects
          */
         Scheme.prototype.renderAll = function () {
             if (this.renderingRequestId) {
@@ -154,9 +153,24 @@ var SchemeDesigner;
             }
             this.eventManager.sendEvent('beforeRenderAll');
             this.clearContext();
-            for (var _i = 0, _a = this.storageManager.getObjects(); _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                schemeObject.render(this);
+            var scrollLeft = this.scrollManager.getScrollLeft();
+            var scrollTop = this.scrollManager.getScrollTop();
+            var width = this.getWidth() / this.zoomManager.getScale();
+            var height = this.getHeight() / this.zoomManager.getScale();
+            var leftOffset = -scrollLeft;
+            var topOffset = -scrollTop;
+            var nodes = this.storageManager.findNodesByBoundingRect(null, {
+                left: leftOffset,
+                top: topOffset,
+                right: leftOffset + width,
+                bottom: topOffset + height
+            });
+            for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
+                var node = nodes_1[_i];
+                for (var _a = 0, _b = node.getObjects(); _a < _b.length; _a++) {
+                    var schemeObject = _b[_a];
+                    schemeObject.render(this);
+                }
             }
             this.eventManager.sendEvent('afterRenderAll');
         };
@@ -437,6 +451,18 @@ var SchemeDesigner;
             return result;
         };
         /**
+         * Rect intersect rect
+         * @param boundingRect1
+         * @param boundingRect2
+         * @returns {boolean}
+         */
+        Tools.rectIntersectRect = function (boundingRect1, boundingRect2) {
+            return !(boundingRect1.top > boundingRect2.bottom
+                || boundingRect1.bottom < boundingRect2.top
+                || boundingRect1.right < boundingRect2.left
+                || boundingRect1.left > boundingRect2.right);
+        };
+        /**
          * Find objects by coordinates
          * @param boundingRect
          * @param objects
@@ -447,23 +473,9 @@ var SchemeDesigner;
             for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                 var schemeObject = objects_1[_i];
                 var objectBoundingRect = schemeObject.getBoundingRect();
-                var isPart = false;
-                if (Tools.pointInRect({ x: objectBoundingRect.left, y: objectBoundingRect.top }, boundingRect)) {
-                    isPart = true;
-                }
-                else if (Tools.pointInRect({ x: objectBoundingRect.right, y: objectBoundingRect.top }, boundingRect)) {
-                    isPart = true;
-                }
-                else if (Tools.pointInRect({ x: objectBoundingRect.left, y: objectBoundingRect.bottom }, boundingRect)) {
-                    isPart = true;
-                }
-                else if (Tools.pointInRect({ x: objectBoundingRect.right, y: objectBoundingRect.bottom }, boundingRect)) {
-                    isPart = true;
-                }
+                var isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
                 if (isPart) {
                     result.push(schemeObject);
-                }
-                else {
                 }
             }
             return result;
@@ -1162,6 +1174,33 @@ var SchemeDesigner;
             }
         };
         /**
+         * Find nodes by rect
+         * @param node
+         * @param boundingRect
+         * @returns {TreeNode[]}
+         */
+        StorageManager.prototype.findNodesByBoundingRect = function (node, boundingRect) {
+            if (!node) {
+                node = this.getTree();
+            }
+            var result = [];
+            var childNodes = node.getChildrenByBoundingRect(boundingRect);
+            for (var _i = 0, childNodes_1 = childNodes; _i < childNodes_1.length; _i++) {
+                var childNode = childNodes_1[_i];
+                if (childNode.isLastNode()) {
+                    result.push(childNode);
+                }
+                else {
+                    var subChildNodes = this.findNodesByBoundingRect(childNode, boundingRect);
+                    for (var _a = 0, subChildNodes_1 = subChildNodes; _a < subChildNodes_1.length; _a++) {
+                        var subChildNode = subChildNodes_1[_a];
+                        result.push(subChildNode);
+                    }
+                }
+            }
+            return result;
+        };
+        /**
          * Draw bounds of nodes for testing
          */
         StorageManager.prototype.showNodesParts = function () {
@@ -1269,6 +1308,21 @@ var SchemeDesigner;
                 }
             }
             return null;
+        };
+        /**
+         * Get child by bounding rect
+         * @param boundingRect
+         * @returns {TreeNode[]}
+         */
+        TreeNode.prototype.getChildrenByBoundingRect = function (boundingRect) {
+            var result = [];
+            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+                var childNode = _a[_i];
+                if (SchemeDesigner.Tools.rectIntersectRect(childNode.getBoundingRect(), boundingRect)) {
+                    result.push(childNode);
+                }
+            }
+            return result;
         };
         /**
          * Remove objects

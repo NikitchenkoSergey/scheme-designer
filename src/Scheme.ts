@@ -238,8 +238,7 @@ namespace SchemeDesigner {
         }
 
         /**
-         * todo render only visible objects
-         * Render all objects
+         * Render visible objects
          */
         protected renderAll(): void
         {
@@ -252,8 +251,25 @@ namespace SchemeDesigner {
 
             this.clearContext();
 
-            for (let schemeObject of this.storageManager.getObjects()) {
-                schemeObject.render(this);
+            let scrollLeft = this.scrollManager.getScrollLeft();
+            let scrollTop = this.scrollManager.getScrollTop();
+
+            let width = this.getWidth() / this.zoomManager.getScale();
+            let height = this.getHeight() / this.zoomManager.getScale();
+            let leftOffset = -scrollLeft;
+            let topOffset = -scrollTop;
+
+            let nodes = this.storageManager.findNodesByBoundingRect(null, {
+                left: leftOffset,
+                top: topOffset,
+                right: leftOffset + width,
+                bottom: topOffset + height
+            });
+
+            for (let node of nodes) {
+                for (let schemeObject of node.getObjects()) {
+                    schemeObject.render(this);
+                }
             }
 
             this.eventManager.sendEvent('afterRenderAll');
