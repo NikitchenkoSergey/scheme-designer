@@ -1592,19 +1592,40 @@ var SchemeDesigner;
          * @param delta
          */
         ZoomManager.prototype.zoomToPointer = function (e, delta) {
+            this.scheme.getEventManager().setLastClientPositionFromEvent(e);
+            this.zoomToPoint({
+                x: this.scheme.getEventManager().getLastClientX(),
+                y: this.scheme.getEventManager().getLastClientY()
+            }, delta);
+        };
+        /**
+         * Zoom to center
+         * @param delta
+         */
+        ZoomManager.prototype.zoomToCenter = function (delta) {
+            this.zoomToPoint({
+                x: this.scheme.getWidth() / 2,
+                y: this.scheme.getHeight() / 2
+            }, delta);
+        };
+        /**
+         * Zoom to point
+         * @param point
+         * @param delta
+         */
+        ZoomManager.prototype.zoomToPoint = function (point, delta) {
             var prevScale = this.scheme.getZoomManager().getScale();
             var zoomed = this.scheme.getZoomManager().zoom(delta);
-            this.scheme.getEventManager().setLastClientPositionFromEvent(e);
             if (zoomed) {
                 // scroll to cursor
                 var newScale = this.scheme.getZoomManager().getScale();
                 var prevCenter = {
-                    x: this.scheme.getEventManager().getLastClientX() / prevScale,
-                    y: this.scheme.getEventManager().getLastClientY() / prevScale,
+                    x: point.x / prevScale,
+                    y: point.y / prevScale,
                 };
                 var newCenter = {
-                    x: this.scheme.getEventManager().getLastClientX() / newScale,
-                    y: this.scheme.getEventManager().getLastClientY() / newScale,
+                    x: point.x / newScale,
+                    y: point.y / newScale,
                 };
                 var leftOffsetDelta = newCenter.x - prevCenter.x;
                 var topOffsetDelta = newCenter.y - prevCenter.y;

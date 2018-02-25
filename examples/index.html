@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <script src="../dist/scheme-designer.js?3"></script>
+    <script src="../dist/scheme-designer.min.js?4"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
@@ -23,8 +23,26 @@
                 Ваш браузер не поддерживает элемент canvas.
             </canvas>
         </div>
-        
-        
+
+        <div class="well">
+            <div class="row" >
+                <div class="col-sm-2" style="margin-bottom: 5px;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(10)">+</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="schemeDesigner.getZoomManager().zoomToCenter(-10)">-</button>
+                </div>
+                <div class="col-sm-2" style="margin-bottom: 5px;">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
+                        Show tree nodes
+                    </button>
+                </div>
+
+                <div class="col-sm-2">
+                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter()">
+                        Scroll to center
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <script>

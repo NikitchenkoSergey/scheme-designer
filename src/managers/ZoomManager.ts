@@ -155,23 +155,49 @@ namespace SchemeDesigner {
          */
         public zoomToPointer(e: MouseWheelEvent | MouseEvent | TouchEvent, delta: number): void
         {
-            let prevScale = this.scheme.getZoomManager().getScale();
-            let zoomed = this.scheme.getZoomManager().zoom(delta);
 
             this.scheme.getEventManager().setLastClientPositionFromEvent(e);
+
+            this.zoomToPoint({
+                x: this.scheme.getEventManager().getLastClientX(),
+                y: this.scheme.getEventManager().getLastClientY()
+            }, delta);
+        }
+
+        /**
+         * Zoom to center
+         * @param delta
+         */
+        public zoomToCenter(delta: number)
+        {
+            this.zoomToPoint({
+                x: this.scheme.getWidth() / 2,
+                y: this.scheme.getHeight() / 2
+            }, delta);
+        }
+
+        /**
+         * Zoom to point
+         * @param point
+         * @param delta
+         */
+        public zoomToPoint(point: Coordinates, delta: number): void
+        {
+            let prevScale = this.scheme.getZoomManager().getScale();
+            let zoomed = this.scheme.getZoomManager().zoom(delta);
 
             if (zoomed) {
                 // scroll to cursor
                 let newScale = this.scheme.getZoomManager().getScale();
 
                 let prevCenter: Coordinates = {
-                    x: this.scheme.getEventManager().getLastClientX() / prevScale,
-                    y: this.scheme.getEventManager().getLastClientY() / prevScale,
+                    x: point.x / prevScale,
+                    y: point.y / prevScale,
                 };
 
                 let newCenter: Coordinates = {
-                    x: this.scheme.getEventManager().getLastClientX() / newScale,
-                    y: this.scheme.getEventManager().getLastClientY() / newScale,
+                    x: point.x / newScale,
+                    y: point.y / newScale,
                 };
 
                 let leftOffsetDelta = newCenter.x - prevCenter.x;
