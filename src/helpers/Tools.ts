@@ -99,5 +99,124 @@ namespace SchemeDesigner {
 
             return result;
         }
+
+
+        /**
+         * convert max-width/max-height values that may be percentages into a number
+         * @param styleValue
+         * @param node
+         * @param parentProperty
+         * @returns {number}
+         */
+        public static parseMaxStyle(styleValue: number | string, node: HTMLElement, parentProperty: string): number {
+        var valueInPixels;
+        if (typeof styleValue === 'string') {
+            valueInPixels = parseInt(styleValue, 10);
+
+            if (styleValue.indexOf('%') !== -1) {
+                // percentage * size in dimension
+                valueInPixels = valueInPixels / 100 * (node.parentNode as any)[parentProperty];
+            }
+        } else {
+            valueInPixels = styleValue;
+        }
+
+        return valueInPixels;
+    }
+
+        /**
+         * Returns if the given value contains an effective constraint.
+         * @param value
+         * @returns {boolean}
+         */
+        public static isConstrainedValue(value: any): boolean {
+            return value !== undefined && value !== null && value !== 'none';
+        }
+
+        /**
+         * Get constraint dimention
+         * @see http://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
+         * @param domNode
+         * @param maxStyle
+         * @param percentageProperty
+         * @returns {null|number}
+         */
+        public static getConstraintDimension(domNode: HTMLElement, maxStyle: string, percentageProperty: string): null|number {
+        var view = document.defaultView;
+        var parentNode = domNode.parentNode as HTMLElement;
+        var constrainedNode = (view.getComputedStyle(domNode) as any)[maxStyle];
+        var constrainedContainer = (view.getComputedStyle(parentNode) as any)[maxStyle];
+        var hasCNode = this.isConstrainedValue(constrainedNode);
+        var hasCContainer = this.isConstrainedValue(constrainedContainer);
+        var infinity = Number.POSITIVE_INFINITY;
+
+        if (hasCNode || hasCContainer) {
+            return Math.min(
+                hasCNode ? this.parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity,
+                hasCContainer ? this.parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
+        }
+
+        return null;
+    }
+
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        public static getConstraintWidth(domNode: HTMLElement) {
+            return this.getConstraintDimension(domNode, 'max-width', 'clientWidth');
+        }
+
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        public static getConstraintHeight(domNode: HTMLElement) {
+            return this.getConstraintDimension(domNode, 'max-height', 'clientHeight');
+        }
+
+        /**
+         * Get max width
+         * @param domNode
+         * @returns {number}
+         */
+        public static getMaximumWidth(domNode: HTMLElement): number {
+            var container = domNode.parentNode as HTMLElement;
+            if (!container) {
+                return domNode.clientWidth;
+            }
+
+            var paddingLeft = parseInt(this.getStyle(container, 'padding-left'), 10);
+            var paddingRight = parseInt(this.getStyle(container, 'padding-right'), 10);
+            var w = container.clientWidth - paddingLeft - paddingRight;
+            var cw = this.getConstraintWidth(domNode);
+            return !cw ? w : Math.min(w, cw);
+        }
+
+        /**
+         * Get max height
+         * @param domNode
+         * @returns {number}
+         */
+        public static getMaximumHeight(domNode: HTMLElement): number {
+            var container = domNode.parentNode as HTMLElement;
+            if (!container) {
+                return domNode.clientHeight;
+            }
+
+            var paddingTop = parseInt(this.getStyle(container, 'padding-top'), 10);
+            var paddingBottom = parseInt(this.getStyle(container, 'padding-bottom'), 10);
+            var h = container.clientHeight - paddingTop - paddingBottom;
+            var ch = this.getConstraintHeight(domNode);
+            return !ch ? h : Math.min(h, ch);
+        }
+
+        public static getStyle(element: any, property: string) {
+        return element.currentStyle ?
+            element.currentStyle[property] :
+            document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
+    };
     }
 }

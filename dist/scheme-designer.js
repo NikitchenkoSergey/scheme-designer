@@ -24,12 +24,6 @@ var SchemeDesigner;
              */
             this.defaultCursorStyle = 'default';
             this.canvas = canvas;
-            this.width = this.canvas.width;
-            this.height = this.canvas.height;
-            this.canvas2DContext = this.canvas.getContext('2d', { alpha: false });
-            this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
-            this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
             /**
              * Managers
              */
@@ -37,6 +31,11 @@ var SchemeDesigner;
             this.zoomManager = new SchemeDesigner.ZoomManager(this);
             this.eventManager = new SchemeDesigner.EventManager(this);
             this.storageManager = new SchemeDesigner.StorageManager(this);
+            this.resize();
+            this.canvas2DContext = this.canvas.getContext('2d');
+            this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
             /**
              * Configure
              */
@@ -54,6 +53,16 @@ var SchemeDesigner;
              */
             this.eventManager.bindEvents();
         }
+        /**
+         * Resize canvas
+         */
+        Scheme.prototype.resize = function () {
+            var newWidth = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumWidth(this.canvas)));
+            var newHeight = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumHeight(this.canvas)));
+            this.width = this.canvas.width = newWidth;
+            this.height = this.canvas.height = newHeight;
+            this.zoomManager.resetScale();
+        };
         /**
          * Get event manager
          * @returns {EventManager}
@@ -480,6 +489,110 @@ var SchemeDesigner;
             }
             return result;
         };
+        /**
+         * convert max-width/max-height values that may be percentages into a number
+         * @param styleValue
+         * @param node
+         * @param parentProperty
+         * @returns {number}
+         */
+        Tools.parseMaxStyle = function (styleValue, node, parentProperty) {
+            var valueInPixels;
+            if (typeof styleValue === 'string') {
+                valueInPixels = parseInt(styleValue, 10);
+                if (styleValue.indexOf('%') !== -1) {
+                    // percentage * size in dimension
+                    valueInPixels = valueInPixels / 100 * node.parentNode[parentProperty];
+                }
+            }
+            else {
+                valueInPixels = styleValue;
+            }
+            return valueInPixels;
+        };
+        /**
+         * Returns if the given value contains an effective constraint.
+         * @param value
+         * @returns {boolean}
+         */
+        Tools.isConstrainedValue = function (value) {
+            return value !== undefined && value !== null && value !== 'none';
+        };
+        /**
+         * Get constraint dimention
+         * @see http://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
+         * @param domNode
+         * @param maxStyle
+         * @param percentageProperty
+         * @returns {null|number}
+         */
+        Tools.getConstraintDimension = function (domNode, maxStyle, percentageProperty) {
+            var view = document.defaultView;
+            var parentNode = domNode.parentNode;
+            var constrainedNode = view.getComputedStyle(domNode)[maxStyle];
+            var constrainedContainer = view.getComputedStyle(parentNode)[maxStyle];
+            var hasCNode = this.isConstrainedValue(constrainedNode);
+            var hasCContainer = this.isConstrainedValue(constrainedContainer);
+            var infinity = Number.POSITIVE_INFINITY;
+            if (hasCNode || hasCContainer) {
+                return Math.min(hasCNode ? this.parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity, hasCContainer ? this.parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
+            }
+            return null;
+        };
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        Tools.getConstraintWidth = function (domNode) {
+            return this.getConstraintDimension(domNode, 'max-width', 'clientWidth');
+        };
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        Tools.getConstraintHeight = function (domNode) {
+            return this.getConstraintDimension(domNode, 'max-height', 'clientHeight');
+        };
+        /**
+         * Get max width
+         * @param domNode
+         * @returns {number}
+         */
+        Tools.getMaximumWidth = function (domNode) {
+            var container = domNode.parentNode;
+            if (!container) {
+                return domNode.clientWidth;
+            }
+            var paddingLeft = parseInt(this.getStyle(container, 'padding-left'), 10);
+            var paddingRight = parseInt(this.getStyle(container, 'padding-right'), 10);
+            var w = container.clientWidth - paddingLeft - paddingRight;
+            var cw = this.getConstraintWidth(domNode);
+            return !cw ? w : Math.min(w, cw);
+        };
+        /**
+         * Get max height
+         * @param domNode
+         * @returns {number}
+         */
+        Tools.getMaximumHeight = function (domNode) {
+            var container = domNode.parentNode;
+            if (!container) {
+                return domNode.clientHeight;
+            }
+            var paddingTop = parseInt(this.getStyle(container, 'padding-top'), 10);
+            var paddingBottom = parseInt(this.getStyle(container, 'padding-bottom'), 10);
+            var h = container.clientHeight - paddingTop - paddingBottom;
+            var ch = this.getConstraintHeight(domNode);
+            return !ch ? h : Math.min(h, ch);
+        };
+        Tools.getStyle = function (element, property) {
+            return element.currentStyle ?
+                element.currentStyle[property] :
+                document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
+        };
+        ;
         return Tools;
     }());
     SchemeDesigner.Tools = Tools;
@@ -550,6 +663,10 @@ var SchemeDesigner;
             this.scheme.getCanvas().addEventListener('mousewheel', function (e) {
                 _this.onMouseWheel(e);
             });
+            // for FF
+            this.scheme.getCanvas().addEventListener('DOMMouseScroll', function (e) {
+                _this.onMouseWheel(e);
+            });
             // touch events
             this.scheme.getCanvas().addEventListener('touchstart', function (e) {
                 _this.touchDistance = 0;
@@ -583,6 +700,11 @@ var SchemeDesigner;
             this.scheme.getCanvas().addEventListener('touchcancel', function (e) {
                 _this.onMouseUp(e);
             });
+            // resize
+            window.addEventListener('resize', function (e) {
+                _this.scheme.resize();
+                _this.scheme.requestRenderAll();
+            });
         };
         /**
          * Mouse down
@@ -604,7 +726,7 @@ var SchemeDesigner;
                 this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
             }
             // defer for prevent trigger click on mouseUp
-            setTimeout(function () { _this.isDragging = false; }, 50);
+            setTimeout(function () { _this.isDragging = false; }, 10);
         };
         /**
          * On click
@@ -1445,6 +1567,12 @@ var SchemeDesigner;
          */
         ZoomManager.prototype.getScale = function () {
             return this.scale;
+        };
+        /**
+         * Reset scale
+         */
+        ZoomManager.prototype.resetScale = function () {
+            this.scale = 1;
         };
         /**
          * Handle mouse wheel

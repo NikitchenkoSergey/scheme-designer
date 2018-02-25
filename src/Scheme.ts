@@ -79,15 +79,6 @@ namespace SchemeDesigner {
         {
             this.canvas = canvas;
 
-            this.width = this.canvas.width;
-            this.height = this.canvas.height;
-
-            this.canvas2DContext = this.canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
-
-            this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
-            this.devicePixelRatio = Polyfill.getDevicePixelRatio();
-
             /**
              * Managers
              */
@@ -98,6 +89,14 @@ namespace SchemeDesigner {
             this.eventManager = new EventManager(this);
 
             this.storageManager = new StorageManager(this);
+
+            this.resize();
+
+            this.canvas2DContext = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+
+            this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = Polyfill.getDevicePixelRatio();
 
             /**
              * Configure
@@ -117,6 +116,20 @@ namespace SchemeDesigner {
              * Bind events
              */
             this.eventManager.bindEvents();
+        }
+
+        /**
+         * Resize canvas
+         */
+        public resize(): void
+        {
+            var newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.canvas)));
+            var newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.canvas)));
+
+            this.width = this.canvas.width = newWidth;
+            this.height = this.canvas.height = newHeight;
+
+            this.zoomManager.resetScale();
         }
 
         /**
@@ -329,9 +342,6 @@ namespace SchemeDesigner {
             this.canvas.style.cursor = cursor;
             return this;
         }
-
-
-
 
 
         /**

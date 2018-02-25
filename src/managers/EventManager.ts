@@ -83,6 +83,10 @@ namespace SchemeDesigner {
             this.scheme.getCanvas().addEventListener('mousewheel', (e: MouseWheelEvent) => {
                 this.onMouseWheel(e)
             });
+            // for FF
+            this.scheme.getCanvas().addEventListener('DOMMouseScroll', (e: MouseWheelEvent) => {
+                this.onMouseWheel(e)
+            });
 
             // touch events
             this.scheme.getCanvas().addEventListener('touchstart', (e: TouchEvent) => {
@@ -120,6 +124,12 @@ namespace SchemeDesigner {
             this.scheme.getCanvas().addEventListener('touchcancel', (e: TouchEvent) => {
                 this.onMouseUp(e)
             });
+
+            // resize
+            window.addEventListener('resize', (e: Event) => {
+                this.scheme.resize();
+                this.scheme.requestRenderAll();
+            });
         }
 
         /**
@@ -146,7 +156,7 @@ namespace SchemeDesigner {
             }
 
             // defer for prevent trigger click on mouseUp
-            setTimeout(() => {this.isDragging = false;}, 50);
+            setTimeout(() => {this.isDragging = false;}, 10);
         }
 
         /**

@@ -123,6 +123,14 @@ namespace SchemeDesigner {
             return this.scale;
         }
 
+        /**
+         * Reset scale
+         */
+        public resetScale(): void
+        {
+            this.scale = 1;
+        }
+
 
         /**
          * Handle mouse wheel

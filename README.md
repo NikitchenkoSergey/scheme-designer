@@ -6,5 +6,8 @@ Demo: <a href="http://nikitchenko.ru/scheme-designer/examples/">http://nikitchen
 <h2>Features</h2>
 <ul>
     <li>No dependencies, vanile JS</li>
-    <li>Objects stored in the tree, it improves performance</li>
+    <li>Render only visible objects</li>
+    <li>Responsible</li>
+    <li>Objects stored in search tree</li>
+    <li>Touch support</li>
 </ul>
