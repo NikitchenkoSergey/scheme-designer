@@ -149,8 +149,8 @@ var SchemeDesigner;
             /**
              * Set scheme to center with scale for all oblects
              */
-            this.getZoomManager().setScale(this.zoomManager.getScaleWithAllObjects());
-            this.getScrollManager().toCenter();
+            this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
+            this.scrollManager.toCenter();
         };
         /**
          * Render visible objects
@@ -702,8 +702,12 @@ var SchemeDesigner;
             });
             // resize
             window.addEventListener('resize', function (e) {
+                var prevScale = _this.scheme.getZoomManager().getScale();
                 _this.scheme.resize();
                 _this.scheme.requestRenderAll();
+                if (!_this.scheme.getZoomManager().zoomByFactor(prevScale)) {
+                    _this.scheme.getZoomManager().setScale(_this.scheme.getZoomManager().getScaleWithAllObjects());
+                }
             });
         };
         /**
@@ -1538,7 +1542,8 @@ var SchemeDesigner;
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var canScaleX = true;
             var canScaleY = true;
-            var newScale = this.scale * factor;
+            var oldScale = this.scale;
+            var newScale = oldScale * factor;
             if (factor < 1) {
                 /**
                  * Cant zoom less that 100% + padding
@@ -1557,6 +1562,10 @@ var SchemeDesigner;
                 this.scheme.getCanvas2DContext().scale(factor, factor);
                 this.scale = newScale;
                 this.scheme.requestRenderAll();
+                this.scheme.getEventManager().sendEvent('zoom', {
+                    oldScale: oldScale,
+                    newScale: newScale
+                });
                 return true;
             }
             return false;

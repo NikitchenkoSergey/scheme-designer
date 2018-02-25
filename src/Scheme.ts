@@ -246,8 +246,8 @@ namespace SchemeDesigner {
             /**
              * Set scheme to center with scale for all oblects
              */
-            this.getZoomManager().setScale(this.zoomManager.getScaleWithAllObjects());
-            this.getScrollManager().toCenter();
+            this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
+            this.scrollManager.toCenter();
         }
 
         /**

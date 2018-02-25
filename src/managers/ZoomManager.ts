@@ -88,7 +88,8 @@ namespace SchemeDesigner {
             let canScaleX = true;
             let canScaleY = true;
 
-            let newScale = this.scale * factor;
+            let oldScale = this.scale;
+            let newScale = oldScale * factor;
 
             if (factor < 1) {
                 /**
@@ -108,6 +109,12 @@ namespace SchemeDesigner {
                 this.scheme.getCanvas2DContext().scale(factor, factor);
                 this.scale = newScale;
                 this.scheme.requestRenderAll();
+
+                this.scheme.getEventManager().sendEvent('zoom', {
+                    oldScale: oldScale,
+                    newScale: newScale
+                });
+
                 return true;
             }
 

@@ -127,8 +127,15 @@ namespace SchemeDesigner {
 
             // resize
             window.addEventListener('resize', (e: Event) => {
+
+                let prevScale = this.scheme.getZoomManager().getScale();
+
                 this.scheme.resize();
                 this.scheme.requestRenderAll();
+
+                if (!this.scheme.getZoomManager().zoomByFactor(prevScale)) {
+                    this.scheme.getZoomManager().setScale(this.scheme.getZoomManager().getScaleWithAllObjects());
+                }
             });
         }
 
