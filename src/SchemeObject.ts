@@ -199,6 +199,26 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Relative x
+         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @returns {number}
+         */
+        public getRelativeX(schemeDesigner: Scheme): number
+        {
+            return this.x + schemeDesigner.getScrollManager().getScrollLeft();
+        }
+
+        /**
+         * Relative y
+         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @returns {number}
+         */
+        public getRelativeY(schemeDesigner: Scheme): number
+        {
+            return this.y + schemeDesigner.getScrollManager().getScrollTop();
+        }
+
+        /**
          * Bounding rect
          * @returns BoundingRect
          */

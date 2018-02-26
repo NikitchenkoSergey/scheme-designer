@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Example</title>
-    <script src="../dist/scheme-designer.js?5"></script>
+    <script src="../dist/scheme-designer.min.js?5"></script>
 </head>
 <body>
 <div style="margin: 20px auto; max-width: 1000px;">
@@ -59,8 +59,9 @@
             context.fillStyle = '#B143B0';
         }
 
-        var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
-        var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
+        var relativeX = schemeObject.getRelativeX(schemeDesigner);
+        var relativeY = schemeObject.getRelativeY(schemeDesigner);
+
         var width = schemeObject.width;
         var height = schemeObject.height;
         if (!schemeObject.isHovered && !schemeObject.params.isSelected) {

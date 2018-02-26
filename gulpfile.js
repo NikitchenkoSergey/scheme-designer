@@ -6,6 +6,7 @@ var concat = require('gulp-concat');
 var pump = require('pump');
 var watch = require('gulp-watch');
 var rename = require('gulp-rename');
+var gulpSequence = require('gulp-sequence');
 
 gulp.task('ts', function () {
     gulp.src('src/**/*.ts')
@@ -14,9 +15,8 @@ gulp.task('ts', function () {
         .pipe(gulp.dest('./dist/'));
 });
 
-
-gulp.task('watch', function () {
-    gulp.watch('src/**/*.ts', ['ts']);
+gulp.task('all', function (cb) {
+    gulpSequence('ts', 'compress', cb)
 });
 
 gulp.task('compress', function(cb) {
@@ -29,5 +29,10 @@ gulp.task('compress', function(cb) {
         cb
     );
 });
+
+gulp.task('watch', function () {
+    gulp.watch('src/**/*.ts', ['all']);
+});
+
 
 gulp.task('default', ['watch']);

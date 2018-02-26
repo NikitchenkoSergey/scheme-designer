@@ -143,13 +143,24 @@ schemeDesigner.render();
         <td></td>
         <td>Function for handle click on object</td>
     </tr>
-   
+    <tr>
+        <td>mouseOverFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+        <td></td>
+        <td>Function for handle mouseover on object</td>
+    </tr>
+   <tr>
+       <td>mouseLeaveFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+       <td></td>
+       <td>Function for handle mouseleave on object</td>
+   </tr>
 </table>
 
 <h2>Api</h2>
 
 Examples:
 ```
+var schemeDesigner = new SchemeDesigner.Scheme(canvas);
+
 SchemeDesigner.setCursorStyle('move');
 schemeDesigner.getZoomManager().zoomToCenter(10);
 schemeDesigner.getScrollManager().scroll(100, 200);

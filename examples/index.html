@@ -14,7 +14,7 @@
     <script src="./scheme-data.js"></script>
 </head>
 <body>
-<div class="container">
+<div class="container" style="max-width: 800px;">
     <div style="text-align: center;">
         <h2>Hall scheme example</h2>
 
@@ -75,11 +75,13 @@
         context.lineWidth = 4;
         context.strokeStyle = 'white';
 
+        var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
+
         context.fillStyle = backgroundColor;
-        if (schemeObject.params.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && isHovered) {
             context.fillStyle = backgroundColor;
             context.strokeStyle = backgroundColor;
-        } else if (schemeObject.isHovered) {
+        } else if (isHovered) {
             context.fillStyle = 'white';
             context.strokeStyle = backgroundColor;
         } else if (schemeObject.params.isSelected) {
@@ -87,11 +89,12 @@
             context.strokeStyle = backgroundColor;
         }
 
-        var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
-        var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
+        var relativeX = schemeObject.getRelativeX(schemeDesigner);
+        var relativeY = schemeObject.getRelativeY(schemeDesigner);
+
         var width = schemeObject.width;
         var height = schemeObject.height;
-        if (!schemeObject.isHovered && !schemeObject.params.isSelected) {
+        if (!isHovered && !schemeObject.params.isSelected) {
             var borderOffset = 4;
             relativeX = relativeX + borderOffset;
             relativeY = relativeY + borderOffset;
@@ -106,15 +109,15 @@
 
         context.font = (Math.floor((parseInt(schemeObject.width) + parseInt(schemeObject.height))/4)) + 'px Arial';
 
-        if (schemeObject.params.isSelected && schemeObject.isHovered) {
+        if (schemeObject.params.isSelected && isHovered) {
             context.fillStyle = 'white';
-        } else if (schemeObject.isHovered) {
+        } else if (isHovered) {
             context.fillStyle = backgroundColor;
         } else if (schemeObject.params.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (schemeObject.params.isSelected || schemeObject.isHovered) {
+        if (schemeObject.params.isSelected || isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
@@ -132,8 +135,6 @@
 
         var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
         var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
-        var width = schemeObject.width;
-        var height = schemeObject.height;
 
         var context = schemeDesigner.getCanvas2DContext();
 

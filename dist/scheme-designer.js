@@ -388,6 +388,22 @@ var SchemeDesigner;
             this.mouseLeaveFunction = value;
         };
         /**
+         * Relative x
+         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @returns {number}
+         */
+        SchemeObject.prototype.getRelativeX = function (schemeDesigner) {
+            return this.x + schemeDesigner.getScrollManager().getScrollLeft();
+        };
+        /**
+         * Relative y
+         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @returns {number}
+         */
+        SchemeObject.prototype.getRelativeY = function (schemeDesigner) {
+            return this.y + schemeDesigner.getScrollManager().getScrollTop();
+        };
+        /**
          * Bounding rect
          * @returns BoundingRect
          */
@@ -646,12 +662,25 @@ var SchemeDesigner;
             var ch = this.getConstraintHeight(domNode);
             return !ch ? h : Math.min(h, ch);
         };
+        /**
+         * Get style
+         * @param element
+         * @param {string} property
+         * @returns {string}
+         */
         Tools.getStyle = function (element, property) {
             return element.currentStyle ?
                 element.currentStyle[property] :
                 document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
         };
         ;
+        /**
+         * Touch supported
+         * @returns {boolean}
+         */
+        Tools.touchSupported = function () {
+            return 'ontouchstart' in window;
+        };
         return Tools;
     }());
     SchemeDesigner.Tools = Tools;
