@@ -234,5 +234,28 @@ namespace SchemeDesigner {
         {
             return 'ontouchstart' in window;
         }
+
+
+        /**
+         * Sorting object
+         * @param obj
+         * @returns {{}}
+         */
+        public static sortObject(obj: Object): Object
+        {
+            let keys = Object.keys(obj),
+                len = keys.length;
+
+            keys.sort();
+
+            let result = {};
+
+            for (let i = 0; i < len; i++) {
+                let k = keys[i];
+                (result as any)[k] = (obj as any)[k];
+            }
+
+            return result;
+        }
     }
 }

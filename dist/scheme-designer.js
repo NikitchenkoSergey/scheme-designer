@@ -681,6 +681,21 @@ var SchemeDesigner;
         Tools.touchSupported = function () {
             return 'ontouchstart' in window;
         };
+        /**
+         * Sorting object
+         * @param obj
+         * @returns {{}}
+         */
+        Tools.sortObject = function (obj) {
+            var keys = Object.keys(obj), len = keys.length;
+            keys.sort();
+            var result = {};
+            for (var i = 0; i < len; i++) {
+                var k = keys[i];
+                result[k] = obj[k];
+            }
+            return result;
+        };
         return Tools;
     }());
     SchemeDesigner.Tools = Tools;
