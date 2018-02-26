@@ -265,7 +265,6 @@ namespace SchemeDesigner {
 
             if (this.hoveredObjects.length) {
                 for (let schemeHoveredObject of this.hoveredObjects) {
-                    // already hovered
                     let alreadyHovered = false;
 
                     for (let schemeObject of objects) {
@@ -276,6 +275,9 @@ namespace SchemeDesigner {
 
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
+
+                        schemeHoveredObject.mouseLeave(e, this.scheme);
+
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
 
                         mustReRender = true;
@@ -289,6 +291,8 @@ namespace SchemeDesigner {
                     schemeObject.isHovered = true;
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
+
+                    schemeObject.mouseOver(e, this.scheme);
 
                     this.sendEvent('mouseOverObject', schemeObject);
                 }

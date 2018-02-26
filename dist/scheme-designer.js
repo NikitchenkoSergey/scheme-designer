@@ -283,17 +283,7 @@ var SchemeDesigner;
              * Cursor style
              */
             this.cursorStyle = 'pointer';
-            this.x = params.x;
-            this.y = params.y;
-            this.width = params.width;
-            this.height = params.height;
-            this.renderFunction = params.renderFunction;
-            if (params.cursorStyle) {
-                this.cursorStyle = params.cursorStyle;
-            }
-            if (params.clickFunction) {
-                this.clickFunction = params.clickFunction;
-            }
+            SchemeDesigner.Tools.configure(this, params);
             this.params = params;
         }
         /**
@@ -320,6 +310,9 @@ var SchemeDesigner;
          * @param {Scheme} schemeDesigner
          */
         SchemeObject.prototype.mouseOver = function (e, schemeDesigner) {
+            if (typeof this.mouseOverFunction === 'function') {
+                this.mouseOverFunction(this, SchemeDesigner.Scheme, e);
+            }
         };
         /**
          * Mouse leave
@@ -327,6 +320,72 @@ var SchemeDesigner;
          * @param {Scheme} schemeDesigner
          */
         SchemeObject.prototype.mouseLeave = function (e, schemeDesigner) {
+            if (typeof this.mouseLeaveFunction === 'function') {
+                this.mouseLeaveFunction(this, SchemeDesigner.Scheme, e);
+            }
+        };
+        /**
+         * Set x
+         * @param {number} value
+         */
+        SchemeObject.prototype.setX = function (value) {
+            this.x = value;
+        };
+        /**
+         * Set y
+         * @param {number} value
+         */
+        SchemeObject.prototype.setY = function (value) {
+            this.y = value;
+        };
+        /**
+         * Set width
+         * @param {number} value
+         */
+        SchemeObject.prototype.setWidth = function (value) {
+            this.width = value;
+        };
+        /**
+         * Set height
+         * @param {number} value
+         */
+        SchemeObject.prototype.setHeight = function (value) {
+            this.height = value;
+        };
+        /**
+         * Set cursorStyle
+         * @param {number} value
+         */
+        SchemeObject.prototype.setCursorStyle = function (value) {
+            this.cursorStyle = value;
+        };
+        /**
+         * Set renderFunction
+         * @param {Function} value
+         */
+        SchemeObject.prototype.setRenderFunction = function (value) {
+            this.renderFunction = value;
+        };
+        /**
+         * Set clickFunction
+         * @param {Function} value
+         */
+        SchemeObject.prototype.setClickFunction = function (value) {
+            this.clickFunction = value;
+        };
+        /**
+         * Set mouseOverFunction
+         * @param {Function} value
+         */
+        SchemeObject.prototype.setMouseOverFunction = function (value) {
+            this.mouseOverFunction = value;
+        };
+        /**
+         * Set mouseLeaveFunction
+         * @param {Function} value
+         */
+        SchemeObject.prototype.setMouseLeaveFunction = function (value) {
+            this.mouseLeaveFunction = value;
         };
         /**
          * Bounding rect
@@ -814,7 +873,6 @@ var SchemeDesigner;
             if (this.hoveredObjects.length) {
                 for (var _i = 0, _a = this.hoveredObjects; _i < _a.length; _i++) {
                     var schemeHoveredObject = _a[_i];
-                    // already hovered
                     var alreadyHovered = false;
                     for (var _b = 0, objects_2 = objects; _b < objects_2.length; _b++) {
                         var schemeObject = objects_2[_b];
@@ -824,6 +882,7 @@ var SchemeDesigner;
                     }
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
+                        schemeHoveredObject.mouseLeave(e, this.scheme);
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
                         mustReRender = true;
                         hasNewHovers = true;
@@ -836,6 +895,7 @@ var SchemeDesigner;
                     schemeObject.isHovered = true;
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
+                    schemeObject.mouseOver(e, this.scheme);
                     this.sendEvent('mouseOverObject', schemeObject);
                 }
             }

@@ -123,8 +123,8 @@ namespace SchemeDesigner {
          */
         public resize(): void
         {
-            var newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.canvas)));
-            var newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.canvas)));
+            let newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.canvas)));
+            let newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.canvas)));
 
             this.width = this.canvas.width = newWidth;
             this.height = this.canvas.height = newHeight;

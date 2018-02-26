@@ -339,7 +339,7 @@ namespace SchemeDesigner {
         /**
          * Draw bounds of nodes for testing
          */
-        public showNodesParts()
+        public showNodesParts(): void
         {
             let lastTreeNodes = this.getTree().getLastChildren();
 

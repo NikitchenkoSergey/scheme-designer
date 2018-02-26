@@ -46,6 +46,16 @@ namespace SchemeDesigner {
         protected clickFunction: Function;
 
         /**
+         * Mouse over function
+         */
+        protected mouseOverFunction: Function;
+
+        /**
+         * Mouse leave function
+         */
+        protected mouseLeaveFunction: Function;
+
+        /**
          * All params of object
          */
         protected params: any;
@@ -56,19 +66,7 @@ namespace SchemeDesigner {
          */
         constructor(params: any)
         {
-            this.x = params.x;
-            this.y = params.y;
-            this.width = params.width;
-            this.height = params.height;
-            this.renderFunction = params.renderFunction;
-
-            if (params.cursorStyle) {
-                this.cursorStyle = params.cursorStyle;
-            }
-
-            if (params.clickFunction) {
-                this.clickFunction = params.clickFunction;
-            }
+            Tools.configure(this, params);
 
             this.params = params;
         }
@@ -100,9 +98,11 @@ namespace SchemeDesigner {
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          */
-        public mouseOver(e: MouseEvent, schemeDesigner: Scheme): void
+        public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme): void
         {
-
+            if (typeof this.mouseOverFunction === 'function') {
+                this.mouseOverFunction(this, Scheme, e);
+            }
         }
 
         /**
@@ -110,9 +110,92 @@ namespace SchemeDesigner {
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          */
-        public mouseLeave(e: MouseEvent, schemeDesigner: Scheme): void
+        public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme): void
         {
+            if (typeof this.mouseLeaveFunction === 'function') {
+                this.mouseLeaveFunction(this, Scheme, e);
+            }
+        }
 
+        /**
+         * Set x
+         * @param {number} value
+         */
+        public setX(value: number): void
+        {
+            this.x = value;
+        }
+
+        /**
+         * Set y
+         * @param {number} value
+         */
+        public setY(value: number): void
+        {
+            this.y = value;
+        }
+
+        /**
+         * Set width
+         * @param {number} value
+         */
+        public setWidth(value: number): void
+        {
+            this.width = value;
+        }
+
+        /**
+         * Set height
+         * @param {number} value
+         */
+        public setHeight(value: number): void
+        {
+            this.height = value;
+        }
+
+        /**
+         * Set cursorStyle
+         * @param {number} value
+         */
+        public setCursorStyle(value: string): void
+        {
+            this.cursorStyle = value;
+        }
+
+        /**
+         * Set renderFunction
+         * @param {Function} value
+         */
+        public setRenderFunction(value: Function): void
+        {
+            this.renderFunction = value;
+        }
+
+        /**
+         * Set clickFunction
+         * @param {Function} value
+         */
+        public setClickFunction(value: Function): void
+        {
+            this.clickFunction = value;
+        }
+
+        /**
+         * Set mouseOverFunction
+         * @param {Function} value
+         */
+        public setMouseOverFunction(value: Function): void
+        {
+            this.mouseOverFunction = value;
+        }
+
+        /**
+         * Set mouseLeaveFunction
+         * @param {Function} value
+         */
+        public setMouseLeaveFunction(value: Function): void
+        {
+            this.mouseLeaveFunction = value;
         }
 
         /**
