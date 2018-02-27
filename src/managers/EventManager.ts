@@ -160,10 +160,12 @@ namespace SchemeDesigner {
 
             if (this.isDragging) {
                 this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
+
+                this.scheme.requestRenderAll();
             }
 
             // defer for prevent trigger click on mouseUp
-            setTimeout(() => {this.isDragging = false;}, 10);
+            setTimeout(() => {this.isDragging = false; }, 10);
         }
 
         /**

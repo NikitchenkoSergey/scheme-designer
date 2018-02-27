@@ -136,6 +136,20 @@ namespace SchemeDesigner {
         }
 
         /**
+         * All objects dimensions
+         * @returns {Dimensions}
+         */
+        public getObjectsDimensions(): Dimensions
+        {
+            let boundingRect = this.getObjectsBoundingRect();
+
+            return {
+                width: boundingRect.right - boundingRect.left,
+                height: boundingRect.bottom - boundingRect.top
+            };
+        }
+
+        /**
          * Recalculate bounding rect
          */
         public reCalcObjectsBoundingRect(): void
@@ -355,6 +369,16 @@ namespace SchemeDesigner {
                 context.rect(relativeX, relativeY, width, height);
                 context.stroke();
             }
+        }
+
+        /**
+         * Return image storage
+         * @param id
+         * @returns {ImageStorage}
+         */
+        public getImageStorage(id: string): ImageStorage
+        {
+            return new ImageStorage(id);
         }
     }
 

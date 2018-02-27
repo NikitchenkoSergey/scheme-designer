@@ -71,6 +71,16 @@ namespace SchemeDesigner {
         protected defaultCursorStyle: string = 'default';
 
         /**
+         * Storage with screen shot
+         */
+        protected screenShotStorage: ImageStorage;
+
+        /**
+         * Render all callback
+         */
+        protected renderAllCallback: Function;
+
+        /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
          * @param {Object} params
@@ -221,8 +231,9 @@ namespace SchemeDesigner {
 
         /**
          * Request render all
+         * @param callback
          */
-        public requestRenderAll(): this
+        public requestRenderAll(callback?: Function): this
         {
             if (!this.renderingRequestId) {
                 this.renderingRequestId = this.requestFrameAnimationApply(() => {this.renderAll()});
@@ -236,18 +247,19 @@ namespace SchemeDesigner {
          */
         public render(): void
         {
-            this.requestRenderAll();
-
             /**
              * Create tree index
              */
             this.storageManager.getTree();
 
             /**
-             * Set scheme to center with scale for all oblects
+             * Set scheme to center with scale for all objects
              */
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
+
+            this.renderAllCallback = () => {this.createScreenShot()};
+            this.requestRenderAll();
         }
 
         /**
@@ -283,6 +295,11 @@ namespace SchemeDesigner {
                 for (let schemeObject of node.getObjects()) {
                     schemeObject.render(this);
                 }
+            }
+
+            if (typeof this.renderAllCallback === 'function') {
+                this.renderAllCallback.apply(window, []);
+                this.renderAllCallback = null;
             }
 
             this.eventManager.sendEvent('afterRenderAll');
@@ -379,6 +396,58 @@ namespace SchemeDesigner {
             for (let styleName of styles) {
                 (this.canvas.style as any)[styleName] = 'none';
             }
+        }
+
+
+        /**
+         *
+         * @param left
+         * @param top
+         */
+        public drawScreenShot(left: number, top: number)
+        {
+            if (!this.screenShotStorage) {
+                return false;
+            }
+
+            let storage = this.screenShotStorage;
+
+            this.clearContext();
+
+            let scale = this.zoomManager.getScale();
+
+            let boundingRect = this.storageManager.getObjectsBoundingRect();
+            let rectWidth = boundingRect.right * scale;
+            let rectHeight = boundingRect.bottom * scale;
+
+            this.canvas2DContext.save();
+            this.canvas2DContext.scale(1 / scale, 1 / scale);
+            this.canvas2DContext.drawImage(storage.getCanvas(), left, top, rectWidth, rectHeight);
+            this.canvas2DContext.restore();
+        }
+
+        /**
+         * Creating screen shot
+         */
+        public createScreenShot()
+        {
+            let storage = this.storageManager.getImageStorage('screenShot');
+            let boundingRect = this.storageManager.getObjectsBoundingRect();
+
+            let scale = this.zoomManager.getScale();
+            let rectWidth = boundingRect.right * scale;
+            let rectHeight = boundingRect.bottom * scale;
+
+            let imageData = this.canvas2DContext.getImageData(
+                this.scrollManager.getScrollLeft() * scale,
+                this.scrollManager.getScrollTop() * scale,
+                rectWidth,
+                rectHeight
+            );
+
+            storage.setImageData(imageData, rectWidth, rectHeight);
+
+            this.screenShotStorage = storage;
         }
     }
 }

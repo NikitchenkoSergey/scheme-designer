@@ -129,8 +129,9 @@ var SchemeDesigner;
         };
         /**
          * Request render all
+         * @param callback
          */
-        Scheme.prototype.requestRenderAll = function () {
+        Scheme.prototype.requestRenderAll = function (callback) {
             var _this = this;
             if (!this.renderingRequestId) {
                 this.renderingRequestId = this.requestFrameAnimationApply(function () { _this.renderAll(); });
@@ -141,16 +142,18 @@ var SchemeDesigner;
          * Render scheme
          */
         Scheme.prototype.render = function () {
-            this.requestRenderAll();
+            var _this = this;
             /**
              * Create tree index
              */
             this.storageManager.getTree();
             /**
-             * Set scheme to center with scale for all oblects
+             * Set scheme to center with scale for all objects
              */
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
+            this.renderAllCallback = function () { _this.createScreenShot(); };
+            this.requestRenderAll();
         };
         /**
          * Render visible objects
@@ -180,6 +183,10 @@ var SchemeDesigner;
                     var schemeObject = _b[_a];
                     schemeObject.render(this);
                 }
+            }
+            if (typeof this.renderAllCallback === 'function') {
+                this.renderAllCallback.apply(window, []);
+                this.renderAllCallback = null;
             }
             this.eventManager.sendEvent('afterRenderAll');
         };
@@ -257,6 +264,39 @@ var SchemeDesigner;
                 var styleName = styles_1[_i];
                 this.canvas.style[styleName] = 'none';
             }
+        };
+        /**
+         *
+         * @param left
+         * @param top
+         */
+        Scheme.prototype.drawScreenShot = function (left, top) {
+            if (!this.screenShotStorage) {
+                return false;
+            }
+            var storage = this.screenShotStorage;
+            this.clearContext();
+            var scale = this.zoomManager.getScale();
+            var boundingRect = this.storageManager.getObjectsBoundingRect();
+            var rectWidth = boundingRect.right * scale;
+            var rectHeight = boundingRect.bottom * scale;
+            this.canvas2DContext.save();
+            this.canvas2DContext.scale(1 / scale, 1 / scale);
+            this.canvas2DContext.drawImage(storage.getCanvas(), left, top, rectWidth, rectHeight);
+            this.canvas2DContext.restore();
+        };
+        /**
+         * Creating screen shot
+         */
+        Scheme.prototype.createScreenShot = function () {
+            var storage = this.storageManager.getImageStorage('screenShot');
+            var boundingRect = this.storageManager.getObjectsBoundingRect();
+            var scale = this.zoomManager.getScale();
+            var rectWidth = boundingRect.right * scale;
+            var rectHeight = boundingRect.bottom * scale;
+            var imageData = this.canvas2DContext.getImageData(this.scrollManager.getScrollLeft() * scale, this.scrollManager.getScrollTop() * scale, rectWidth, rectHeight);
+            storage.setImageData(imageData, rectWidth, rectHeight);
+            this.screenShotStorage = storage;
         };
         return Scheme;
     }());
@@ -418,6 +458,57 @@ var SchemeDesigner;
         return SchemeObject;
     }());
     SchemeDesigner.SchemeObject = SchemeObject;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * ImageStorage
+     */
+    var ImageStorage = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param id
+         */
+        function ImageStorage(id) {
+            var canvas = document.getElementById(id);
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = id;
+                canvas.style.display = 'none';
+                document.body.appendChild(canvas);
+            }
+            this.canvas = canvas;
+            this.context = this.canvas.getContext("2d");
+        }
+        /**
+         * Set image data
+         * @param imageData
+         * @param width
+         * @param height
+         */
+        ImageStorage.prototype.setImageData = function (imageData, width, height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+            this.context.putImageData(imageData, 0, 0);
+        };
+        /**
+         * Get canvas
+         * @returns {HTMLCanvasElement}
+         */
+        ImageStorage.prototype.getCanvas = function () {
+            return this.canvas;
+        };
+        /**
+         * Get context
+         * @returns {CanvasRenderingContext2D}
+         */
+        ImageStorage.prototype.getContext = function () {
+            return this.context;
+        };
+        return ImageStorage;
+    }());
+    SchemeDesigner.ImageStorage = ImageStorage;
 })(SchemeDesigner || (SchemeDesigner = {}));
 
 var SchemeDesigner;
@@ -831,6 +922,7 @@ var SchemeDesigner;
             this.setLastClientPositionFromEvent(e);
             if (this.isDragging) {
                 this.scheme.setCursorStyle(this.scheme.getDefaultCursorStyle());
+                this.scheme.requestRenderAll();
             }
             // defer for prevent trigger click on mouseUp
             setTimeout(function () { _this.isDragging = false; }, 10);
@@ -1071,6 +1163,10 @@ var SchemeDesigner;
              * Max hidden part on scroll
              */
             this.maxHiddenPart = 0.85;
+            /**
+             * Ratio, when scroll fake scheme
+             */
+            this.fakeSchemeRatio = 1.8;
             this.scheme = scheme;
         }
         /**
@@ -1117,7 +1213,16 @@ var SchemeDesigner;
             }
             this.scrollLeft = left;
             this.scrollTop = top;
-            this.scheme.requestRenderAll();
+            // scroll screen shot
+            var objectsDimensions = this.scheme.getStorageManager().getObjectsDimensions();
+            var ratio = (objectsDimensions.width * scale) / this.scheme.getWidth();
+            // scroll fake scheme
+            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
+                this.scheme.drawScreenShot(left * scale, top * scale);
+            }
+            else {
+                this.scheme.requestRenderAll();
+            }
             this.scheme.getEventManager().sendEvent('scroll', {
                 left: left,
                 top: top,
@@ -1168,6 +1273,13 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.setMaxHiddenPart = function (value) {
             this.maxHiddenPart = value;
+        };
+        /**
+         * Set fakeSchemeRatio
+         * @param value
+         */
+        ScrollManager.prototype.setFakeSchemeRatio = function (value) {
+            this.fakeSchemeRatio = value;
         };
         return ScrollManager;
     }());
@@ -1266,6 +1378,17 @@ var SchemeDesigner;
                 this.objectsBoundingRect = this.calculateObjectsBoundingRect();
             }
             return this.objectsBoundingRect;
+        };
+        /**
+         * All objects dimensions
+         * @returns {Dimensions}
+         */
+        StorageManager.prototype.getObjectsDimensions = function () {
+            var boundingRect = this.getObjectsBoundingRect();
+            return {
+                width: boundingRect.right - boundingRect.left,
+                height: boundingRect.bottom - boundingRect.top
+            };
         };
         /**
          * Recalculate bounding rect
@@ -1447,6 +1570,14 @@ var SchemeDesigner;
                 context.rect(relativeX, relativeY, width, height);
                 context.stroke();
             }
+        };
+        /**
+         * Return image storage
+         * @param id
+         * @returns {ImageStorage}
+         */
+        StorageManager.prototype.getImageStorage = function (id) {
+            return new SchemeDesigner.ImageStorage(id);
         };
         return StorageManager;
     }());
