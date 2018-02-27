@@ -99,11 +99,11 @@ namespace SchemeDesigner {
                     this.onMouseMove(e);
                 } else if (e.targetTouches.length == 2) {
                     // two finger - zoom
-                    var p1 = e.targetTouches[0];
-                    var p2 = e.targetTouches[1];
+                    const p1 = e.targetTouches[0];
+                    const p2 = e.targetTouches[1];
 
                     // euclidean distance
-                    var distance = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2));
+                    let distance = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2));
 
                     let delta = 0;
                     if(this.touchDistance) {
