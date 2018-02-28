@@ -357,7 +357,7 @@ namespace SchemeDesigner {
         {
             let lastTreeNodes = this.getTree().getLastChildren();
 
-            let context = this.scheme.getCanvas2DContext();
+            let context = this.scheme.getView().getContext();
 
             for (let lastTreeNode of lastTreeNodes) {
                 let relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();

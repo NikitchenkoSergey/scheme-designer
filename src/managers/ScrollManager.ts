@@ -95,9 +95,9 @@ namespace SchemeDesigner {
 
 
             // scroll fake scheme
-            if (this.scheme.useFakeScheme()) {
+            if (this.scheme.useSchemeCache()) {
                 this.scheme.requestFrameAnimationApply(() => {
-                    this.scheme.drawScreenShot(left * scale, top * scale)
+                    this.scheme.drawFromCache(left * scale, top * scale)
                 });
             } else {
                 this.scheme.requestRenderAll();

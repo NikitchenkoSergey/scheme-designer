@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?8"></script>
+    <script src="../dist/scheme-designer.min.js?9"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
@@ -57,7 +57,7 @@
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
         options: {
-            fakeSchemeRatio: 2
+            cacheSchemeRatio: 2
         },
         scroll: {
             maxHiddenPart: 0.85
@@ -76,9 +76,10 @@
      * Render place function
      * @param {SchemeObject} schemeObject
      * @param {Scheme} schemeDesigner
+     * @param {View} view
      */
-    var renderPlace = function (schemeObject, schemeDesigner) {
-        var context = schemeDesigner.getCanvas2DContext();
+    var renderPlace = function (schemeObject, schemeDesigner, view) {
+        var context = view.getContext();
 
         var backgroundColor = '#' + schemeObject.params.backgroundColor;
 
@@ -100,8 +101,8 @@
             context.strokeStyle = backgroundColor;
         }
 
-        var relativeX = schemeObject.getRelativeX(schemeDesigner);
-        var relativeY = schemeObject.getRelativeY(schemeDesigner);
+        var relativeX = schemeObject.getRelativeX(view);
+        var relativeY = schemeObject.getRelativeY(view);
 
         var width = schemeObject.width;
         var height = schemeObject.height;
@@ -140,14 +141,15 @@
      * Render label function
      * @param {SchemeObject} schemeObject
      * @param {Scheme} schemeDesigner
+     * @param {View} view
      */
-    var renderLabel = function(schemeObject, schemeDesigner) {
+    var renderLabel = function(schemeObject, schemeDesigner, view) {
         var fontSize = parseInt(schemeObject.params.fontSize) * (96 / 72) * 3;
 
-        var relativeX = schemeObject.x + schemeDesigner.getScrollManager().getScrollLeft();
-        var relativeY = schemeObject.y + schemeDesigner.getScrollManager().getScrollTop();
+        var relativeX = schemeObject.getRelativeX(view);
+        var relativeY = schemeObject.getRelativeY(view);
 
-        var context = schemeDesigner.getCanvas2DContext();
+        var context = view.getContext();
 
         context.fillStyle = '#' + this.params.fontColor;
         context.font = fontSize + 'px Arial';
@@ -157,7 +159,7 @@
     };
 
 
-    var clickOnPlace = function (schemeObject, schemeDesigner, e)
+    var clickOnPlace = function (schemeObject, schemeDesigner, view, e)
     {
         schemeObject.params.isSelected = !schemeObject.params.isSelected;
     };

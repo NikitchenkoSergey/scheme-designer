@@ -24,10 +24,10 @@ var SchemeDesigner;
              */
             this.defaultCursorStyle = 'default';
             /**
-             * Ratio, when scroll fake scheme
+             * Ratio for cache scheme
              */
-            this.fakeSchemeRatio = 1.8;
-            this.canvas = canvas;
+            this.cacheSchemeRatio = 2;
+            this.view = new SchemeDesigner.View(canvas);
             /**
              * Managers
              */
@@ -36,7 +36,6 @@ var SchemeDesigner;
             this.eventManager = new SchemeDesigner.EventManager(this);
             this.storageManager = new SchemeDesigner.StorageManager(this);
             this.resize();
-            this.canvas2DContext = this.canvas.getContext('2d');
             this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
             this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
@@ -62,10 +61,12 @@ var SchemeDesigner;
          * Resize canvas
          */
         Scheme.prototype.resize = function () {
-            var newWidth = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumWidth(this.canvas)));
-            var newHeight = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumHeight(this.canvas)));
-            this.width = this.canvas.width = newWidth;
-            this.height = this.canvas.height = newHeight;
+            var newWidth = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumWidth(this.view.getCanvas())));
+            var newHeight = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumHeight(this.view.getCanvas())));
+            this.view.setDimensions({
+                width: newWidth,
+                height: newHeight
+            });
             this.zoomManager.resetScale();
         };
         /**
@@ -101,14 +102,14 @@ var SchemeDesigner;
          * @returns {number}
          */
         Scheme.prototype.getWidth = function () {
-            return this.width;
+            return this.view.getWidth();
         };
         /**
          * Get height
          * @returns {number}
          */
         Scheme.prototype.getHeight = function () {
-            return this.height;
+            return this.view.getHeight();
         };
         /**
          * Request animation
@@ -129,7 +130,7 @@ var SchemeDesigner;
          * Clear canvas context
          */
         Scheme.prototype.clearContext = function () {
-            this.canvas2DContext.clearRect(0, 0, this.getWidth() / this.zoomManager.getScale(), this.getHeight() / this.zoomManager.getScale());
+            this.view.getContext().clearRect(0, 0, this.getWidth() / this.zoomManager.getScale(), this.getHeight() / this.zoomManager.getScale());
             return this;
         };
         /**
@@ -147,7 +148,6 @@ var SchemeDesigner;
          * Render scheme
          */
         Scheme.prototype.render = function () {
-            var _this = this;
             /**
              * Create tree index
              */
@@ -157,8 +157,8 @@ var SchemeDesigner;
              */
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
-            this.renderAllCallback = function () { _this.createScreenShot(); };
-            this.requestRenderAll();
+            this.updateCache();
+            this.drawFromCache(this.scrollManager.getScrollLeft(), this.scrollManager.getScrollTop());
         };
         /**
          * Render visible objects
@@ -172,6 +172,8 @@ var SchemeDesigner;
             this.clearContext();
             var scrollLeft = this.scrollManager.getScrollLeft();
             var scrollTop = this.scrollManager.getScrollTop();
+            this.view.setScrollLeft(scrollLeft);
+            this.view.setScrollTop(scrollTop);
             var width = this.getWidth() / this.zoomManager.getScale();
             var height = this.getHeight() / this.zoomManager.getScale();
             var leftOffset = -scrollLeft;
@@ -186,12 +188,8 @@ var SchemeDesigner;
                 var node = nodes_1[_i];
                 for (var _a = 0, _b = node.getObjects(); _a < _b.length; _a++) {
                     var schemeObject = _b[_a];
-                    schemeObject.render(this);
+                    schemeObject.render(this, this.view);
                 }
-            }
-            if (typeof this.renderAllCallback === 'function') {
-                this.renderAllCallback.apply(window, []);
-                this.renderAllCallback = null;
             }
             this.eventManager.sendEvent('afterRenderAll');
         };
@@ -220,14 +218,7 @@ var SchemeDesigner;
          * @returns {HTMLCanvasElement}
          */
         Scheme.prototype.getCanvas = function () {
-            return this.canvas;
-        };
-        /**
-         * Canvas context getter
-         * @returns {CanvasRenderingContext2D}
-         */
-        Scheme.prototype.getCanvas2DContext = function () {
-            return this.canvas2DContext;
+            return this.view.getCanvas();
         };
         /**
          * Set cursor style
@@ -235,7 +226,7 @@ var SchemeDesigner;
          * @returns {SchemeDesigner}
          */
         Scheme.prototype.setCursorStyle = function (cursor) {
-            this.canvas.style.cursor = cursor;
+            this.view.getCanvas().style.cursor = cursor;
             return this;
         };
         /**
@@ -267,67 +258,82 @@ var SchemeDesigner;
             ];
             for (var _i = 0, styles_1 = styles; _i < styles_1.length; _i++) {
                 var styleName = styles_1[_i];
-                this.canvas.style[styleName] = 'none';
+                this.view.getCanvas().style[styleName] = 'none';
             }
         };
         /**
-         *
+         * Draw from cache
          * @param left
          * @param top
          */
-        Scheme.prototype.drawScreenShot = function (left, top) {
-            if (!this.screenShotStorage) {
+        Scheme.prototype.drawFromCache = function (left, top) {
+            if (!this.cacheView) {
                 return false;
             }
-            var storage = this.screenShotStorage;
             this.clearContext();
             var scale = this.zoomManager.getScale();
             var boundingRect = this.storageManager.getObjectsBoundingRect();
             var rectWidth = boundingRect.right * scale;
             var rectHeight = boundingRect.bottom * scale;
-            this.canvas2DContext.save();
-            this.canvas2DContext.scale(1 / scale, 1 / scale);
-            this.canvas2DContext.drawImage(storage.getCanvas(), left, top, rectWidth, rectHeight);
-            this.canvas2DContext.restore();
+            this.view.getContext().save();
+            this.view.getContext().scale(1 / scale, 1 / scale);
+            this.view.getContext().drawImage(this.cacheView.getCanvas(), left, top, rectWidth, rectHeight);
+            this.view.getContext().restore();
         };
         /**
-         * Creating screen shot
+         * Update scheme cache
          */
-        Scheme.prototype.createScreenShot = function () {
-            var storage = this.storageManager.getImageStorage('screen-shot');
+        Scheme.prototype.updateCache = function () {
+            if (!this.cacheView) {
+                var storage = this.storageManager.getImageStorage('scheme-cache');
+                this.cacheView = new SchemeDesigner.View(storage.getCanvas());
+            }
             var boundingRect = this.storageManager.getObjectsBoundingRect();
-            var scale = this.zoomManager.getScale();
+            var scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
             var rectWidth = boundingRect.right * scale;
             var rectHeight = boundingRect.bottom * scale;
-            var imageData = this.canvas2DContext.getImageData(this.scrollManager.getScrollLeft() * scale, this.scrollManager.getScrollTop() * scale, rectWidth, rectHeight);
-            storage.setImageData(imageData, rectWidth, rectHeight);
-            this.screenShotStorage = storage;
+            this.cacheView.setDimensions({
+                width: rectWidth,
+                height: rectHeight
+            });
+            this.cacheView.getContext().scale(scale, scale);
+            for (var _i = 0, _a = this.getObjects(); _i < _a.length; _i++) {
+                var schemeObject = _a[_i];
+                schemeObject.render(this, this.cacheView);
+            }
         };
         /**
-         * Set fakeSchemeRatio
+         * Set cacheSchemeRatio
          * @param value
          */
-        Scheme.prototype.setFakeSchemeRatio = function (value) {
-            this.fakeSchemeRatio = value;
+        Scheme.prototype.setCacheSchemeRatio = function (value) {
+            this.cacheSchemeRatio = value;
         };
         /**
-         * get fakeSchemeRatio
+         * get cacheSchemeRatio
          * @returns {number}
          */
-        Scheme.prototype.getFakeSchemeRatio = function () {
-            return this.fakeSchemeRatio;
+        Scheme.prototype.getCAcheSchemeRatio = function () {
+            return this.cacheSchemeRatio;
         };
         /**
-         * Use fake scheme
+         * Use scheme from cache
          * @returns {boolean}
          */
-        Scheme.prototype.useFakeScheme = function () {
+        Scheme.prototype.useSchemeCache = function () {
             var objectsDimensions = this.storageManager.getObjectsDimensions();
-            var ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.width;
-            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
+            var ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.getWidth();
+            if (this.cacheSchemeRatio && ratio <= this.cacheSchemeRatio) {
                 return true;
             }
             return false;
+        };
+        /**
+         * Get view
+         * @returns {View}
+         */
+        Scheme.prototype.getView = function () {
+            return this.view;
         };
         return Scheme;
     }());
@@ -359,40 +365,45 @@ var SchemeDesigner;
         }
         /**
          * Rendering object
+         * @param scheme
+         * @param view
          */
-        SchemeObject.prototype.render = function (Scheme) {
+        SchemeObject.prototype.render = function (scheme, view) {
             if (typeof this.renderFunction === 'function') {
-                this.renderFunction(this, Scheme);
+                this.renderFunction(this, scheme, view);
             }
         };
         /**
          * Click on object
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        SchemeObject.prototype.click = function (e, schemeDesigner) {
+        SchemeObject.prototype.click = function (e, schemeDesigner, view) {
             if (typeof this.clickFunction === 'function') {
-                this.clickFunction(this, SchemeDesigner.Scheme, e);
+                this.clickFunction(this, SchemeDesigner.Scheme, view, e);
             }
         };
         /**
          * Mouse over
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        SchemeObject.prototype.mouseOver = function (e, schemeDesigner) {
+        SchemeObject.prototype.mouseOver = function (e, schemeDesigner, view) {
             if (typeof this.mouseOverFunction === 'function') {
-                this.mouseOverFunction(this, SchemeDesigner.Scheme, e);
+                this.mouseOverFunction(this, SchemeDesigner.Scheme, view, e);
             }
         };
         /**
          * Mouse leave
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        SchemeObject.prototype.mouseLeave = function (e, schemeDesigner) {
+        SchemeObject.prototype.mouseLeave = function (e, schemeDesigner, view) {
             if (typeof this.mouseLeaveFunction === 'function') {
-                this.mouseLeaveFunction(this, SchemeDesigner.Scheme, e);
+                this.mouseLeaveFunction(this, SchemeDesigner.Scheme, view, e);
             }
         };
         /**
@@ -460,19 +471,19 @@ var SchemeDesigner;
         };
         /**
          * Relative x
-         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @param {SchemeDesigner.View} view
          * @returns {number}
          */
-        SchemeObject.prototype.getRelativeX = function (schemeDesigner) {
-            return this.x + schemeDesigner.getScrollManager().getScrollLeft();
+        SchemeObject.prototype.getRelativeX = function (view) {
+            return this.x + view.getScrollLeft();
         };
         /**
          * Relative y
-         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @param {SchemeDesigner.View} view
          * @returns {number}
          */
-        SchemeObject.prototype.getRelativeY = function (schemeDesigner) {
-            return this.y + schemeDesigner.getScrollManager().getScrollTop();
+        SchemeObject.prototype.getRelativeY = function (view) {
+            return this.y + view.getScrollTop();
         };
         /**
          * Bounding rect
@@ -513,7 +524,7 @@ var SchemeDesigner;
                 this.scheme.getCanvas().parentNode.appendChild(canvas);
             }
             this.canvas = canvas;
-            this.context = this.canvas.getContext("2d");
+            this.context = this.canvas.getContext('2d');
         }
         /**
          * Set image data
@@ -522,9 +533,16 @@ var SchemeDesigner;
          * @param height
          */
         ImageStorage.prototype.setImageData = function (imageData, width, height) {
-            this.canvas.width = width;
-            this.canvas.height = height;
+            this.setDimensions({ width: width, height: height });
             this.context.putImageData(imageData, 0, 0);
+        };
+        /**
+         * Set dimensions
+         * @param dimensions
+         */
+        ImageStorage.prototype.setDimensions = function (dimensions) {
+            this.canvas.width = dimensions.width;
+            this.canvas.height = dimensions.height;
         };
         /**
          * Get canvas
@@ -837,6 +855,118 @@ var SchemeDesigner;
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
+     * View
+     */
+    var View = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param canvas
+         */
+        function View(canvas) {
+            /**
+             * scroll left
+             */
+            this.scrollLeft = 0;
+            /**
+             * Scroll top
+             */
+            this.scrollTop = 0;
+            /**
+             * Scale
+             */
+            this.scale = 0;
+            /**
+             * Width
+             */
+            this.width = 0;
+            /**
+             * Height
+             */
+            this.height = 0;
+            this.canvas = canvas;
+            this.context = this.canvas.getContext('2d');
+        }
+        /**
+         * Get canvas
+         * @returns {HTMLCanvasElement}
+         */
+        View.prototype.getCanvas = function () {
+            return this.canvas;
+        };
+        /**
+         * Canvas context getter
+         * @returns {CanvasRenderingContext2D}
+         */
+        View.prototype.getContext = function () {
+            return this.context;
+        };
+        /**
+         * Set scroll left
+         * @param value
+         */
+        View.prototype.setScrollLeft = function (value) {
+            this.scrollLeft = value;
+        };
+        /**
+         * Set scroll top
+         * @param value
+         */
+        View.prototype.setScrollTop = function (value) {
+            this.scrollTop = value;
+        };
+        /**
+         * Set scale
+         * @param value
+         */
+        View.prototype.setScale = function (value) {
+            this.scale = value;
+        };
+        /**
+         * Get scroll left
+         * @returns {number}
+         */
+        View.prototype.getScrollLeft = function () {
+            return this.scrollLeft;
+        };
+        /**
+         * Get scroll top
+         * @returns {number}
+         */
+        View.prototype.getScrollTop = function () {
+            return this.scrollTop;
+        };
+        /**
+         * Set dimensions
+         * @param dimensions
+         */
+        View.prototype.setDimensions = function (dimensions) {
+            this.canvas.width = dimensions.width;
+            this.canvas.height = dimensions.height;
+            this.width = dimensions.width;
+            this.height = dimensions.height;
+        };
+        /**
+         * Get width
+         * @returns {number}
+         */
+        View.prototype.getWidth = function () {
+            return this.width;
+        };
+        /**
+         * Get height
+         * @returns {number}
+         */
+        View.prototype.getHeight = function () {
+            return this.height;
+        };
+        return View;
+    }());
+    SchemeDesigner.View = View;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
      * Event manager
      * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
      */
@@ -977,7 +1107,7 @@ var SchemeDesigner;
                 var objects = this.findObjectsForEvent(e);
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                     var schemeObject = objects_1[_i];
-                    schemeObject.click(e, this.scheme);
+                    schemeObject.click(e, this.scheme, this.scheme.getView());
                     this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
@@ -1059,7 +1189,7 @@ var SchemeDesigner;
                     }
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
-                        schemeHoveredObject.mouseLeave(e, this.scheme);
+                        schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
                         mustReRender = true;
                         hasNewHovers = true;
@@ -1072,7 +1202,7 @@ var SchemeDesigner;
                     schemeObject.isHovered = true;
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
-                    schemeObject.mouseOver(e, this.scheme);
+                    schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
                     this.sendEvent('mouseOverObject', schemeObject);
                 }
             }
@@ -1252,9 +1382,9 @@ var SchemeDesigner;
             this.scrollLeft = left;
             this.scrollTop = top;
             // scroll fake scheme
-            if (this.scheme.useFakeScheme()) {
+            if (this.scheme.useSchemeCache()) {
                 this.scheme.requestFrameAnimationApply(function () {
-                    _this.scheme.drawScreenShot(left * scale, top * scale);
+                    _this.scheme.drawFromCache(left * scale, top * scale);
                 });
             }
             else {
@@ -1588,7 +1718,7 @@ var SchemeDesigner;
          */
         StorageManager.prototype.showNodesParts = function () {
             var lastTreeNodes = this.getTree().getLastChildren();
-            var context = this.scheme.getCanvas2DContext();
+            var context = this.scheme.getView().getContext();
             for (var _i = 0, lastTreeNodes_1 = lastTreeNodes; _i < lastTreeNodes_1.length; _i++) {
                 var lastTreeNode = lastTreeNodes_1[_i];
                 var relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();
@@ -1828,11 +1958,11 @@ var SchemeDesigner;
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRect.bottom * newScale;
             }
             if (canScaleX || canScaleY) {
-                this.scheme.getCanvas2DContext().scale(factor, factor);
+                this.scheme.getView().getContext().scale(factor, factor);
                 this.scale = newScale;
-                if (this.scheme.useFakeScheme()) {
-                    this.scheme.drawScreenShot(this.scheme.getScrollManager().getScrollLeft(), this.scheme.getScrollManager().getScrollTop());
-                    setTimeout(function () { _this.scheme.requestRenderAll(); }, 50);
+                if (this.scheme.useSchemeCache()) {
+                    this.scheme.drawFromCache(this.scheme.getScrollManager().getScrollLeft(), this.scheme.getScrollManager().getScrollTop());
+                    this.renderAllTimer = setTimeout(function () { _this.scheme.requestRenderAll(); }, 300);
                 }
                 else {
                     this.scheme.requestRenderAll();

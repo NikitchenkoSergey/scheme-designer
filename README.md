@@ -134,22 +134,22 @@ schemeDesigner.render();
         <td>Cursor style on object</td>
     </tr>
     <tr>
-        <td>renderFunction: Function(schemeObject: SchemeObject, scheme: Scheme)</td>
+        <td>renderFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View)</td>
         <td></td>
         <td>Function for rendering object, see examples</td>
     </tr>
     <tr>
-        <td>clickFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+        <td>clickFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View, e: Event)</td>
         <td></td>
         <td>Function for handle click on object</td>
     </tr>
     <tr>
-        <td>mouseOverFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+        <td>mouseOverFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View, e: Event)</td>
         <td></td>
         <td>Function for handle mouseover on object</td>
     </tr>
    <tr>
-       <td>mouseLeaveFunction: Function(schemeObject: SchemeObject, scheme: Scheme, e: Event)</td>
+       <td>mouseLeaveFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View, e: Event)</td>
        <td></td>
        <td>Function for handle mouseleave on object</td>
    </tr>

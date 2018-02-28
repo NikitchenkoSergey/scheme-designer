@@ -42,9 +42,10 @@
      * Render place function
      * @param {SchemeObject} schemeObject
      * @param {Scheme} schemeDesigner
+     * @param {View} view
      */
-    var renderPlace = function (schemeObject, schemeDesigner) {
-        var context = schemeDesigner.getCanvas2DContext();
+    var renderPlace = function (schemeObject, schemeDesigner, view) {
+        var context = view.getContext();
 
         context.beginPath();
         context.lineWidth = 1;
@@ -59,8 +60,8 @@
             context.fillStyle = '#B143B0';
         }
 
-        var relativeX = schemeObject.getRelativeX(schemeDesigner);
-        var relativeY = schemeObject.getRelativeY(schemeDesigner);
+        var relativeX = schemeObject.getRelativeX(view);
+        var relativeY = schemeObject.getRelativeY(view);
 
         var width = schemeObject.width;
         var height = schemeObject.height;

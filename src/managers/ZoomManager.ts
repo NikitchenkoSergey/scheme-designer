@@ -115,16 +115,16 @@ namespace SchemeDesigner {
             }
 
             if (canScaleX || canScaleY) {
-                this.scheme.getCanvas2DContext().scale(factor, factor);
+                this.scheme.getView().getContext().scale(factor, factor);
                 this.scale = newScale;
 
-                if (this.scheme.useFakeScheme()) {
-                    this.scheme.drawScreenShot(
+                if (this.scheme.useSchemeCache()) {
+                    this.scheme.drawFromCache(
                         this.scheme.getScrollManager().getScrollLeft(),
                         this.scheme.getScrollManager().getScrollTop(),
                     );
 
-                    setTimeout(() => {this.scheme.requestRenderAll();}, 50);
+                    this.renderAllTimer = setTimeout(() => {this.scheme.requestRenderAll();}, 300);
                 } else {
                     this.scheme.requestRenderAll();
                 }

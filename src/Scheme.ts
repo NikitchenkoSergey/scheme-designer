@@ -5,26 +5,6 @@ namespace SchemeDesigner {
      */
     export class Scheme {
         /**
-         * Canvas element
-         */
-        protected canvas: HTMLCanvasElement;
-
-        /**
-         * Canvas context
-         */
-        protected canvas2DContext: CanvasRenderingContext2D;
-
-        /**
-         * Width
-         */
-        protected width: number;
-
-        /**
-         * Height
-         */
-        protected height: number;
-
-        /**
          * Frame animation
          */
         protected requestFrameAnimation: any;
@@ -71,19 +51,20 @@ namespace SchemeDesigner {
         protected defaultCursorStyle: string = 'default';
 
         /**
-         * Storage with screen shot
+         * Ratio for cache scheme
          */
-        protected screenShotStorage: ImageStorage;
+        protected cacheSchemeRatio: number = 2;
 
         /**
-         * Render all callback
+         * View
          */
-        protected renderAllCallback: Function;
+        protected view: View;
+
 
         /**
-         * Ratio, when scroll fake scheme
+         * Cache view
          */
-        protected fakeSchemeRatio: number = 1.8;
+        protected cacheView: View;
 
         /**
          * Constructor
@@ -92,7 +73,7 @@ namespace SchemeDesigner {
          */
         constructor(canvas: HTMLCanvasElement, params?: any)
         {
-            this.canvas = canvas;
+            this.view = new View(canvas);
 
             /**
              * Managers
@@ -106,8 +87,6 @@ namespace SchemeDesigner {
             this.storageManager = new StorageManager(this);
 
             this.resize();
-
-            this.canvas2DContext = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
             this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
@@ -139,11 +118,13 @@ namespace SchemeDesigner {
          */
         public resize(): void
         {
-            let newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.canvas)));
-            let newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.canvas)));
+            let newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.view.getCanvas())));
+            let newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.view.getCanvas())));
 
-            this.width = this.canvas.width = newWidth;
-            this.height = this.canvas.height = newHeight;
+            this.view.setDimensions({
+                width: newWidth,
+                height: newHeight
+            });
 
             this.zoomManager.resetScale();
         }
@@ -190,7 +171,7 @@ namespace SchemeDesigner {
          */
         public getWidth(): number
         {
-            return this.width;
+            return this.view.getWidth();
         }
 
         /**
@@ -199,7 +180,7 @@ namespace SchemeDesigner {
          */
         public getHeight(): number
         {
-            return this.height;
+            return this.view.getHeight();
         }
 
         /**
@@ -226,7 +207,7 @@ namespace SchemeDesigner {
          */
         public clearContext(): this
         {
-            this.canvas2DContext.clearRect(
+            this.view.getContext().clearRect(
                 0,
                 0,
                 this.getWidth() / this.zoomManager.getScale(),
@@ -264,8 +245,9 @@ namespace SchemeDesigner {
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
 
-            this.renderAllCallback = () => {this.createScreenShot()};
-            this.requestRenderAll();
+            this.updateCache();
+
+            this.drawFromCache(this.scrollManager.getScrollLeft(), this.scrollManager.getScrollTop());
         }
 
         /**
@@ -285,6 +267,9 @@ namespace SchemeDesigner {
             let scrollLeft = this.scrollManager.getScrollLeft();
             let scrollTop = this.scrollManager.getScrollTop();
 
+            this.view.setScrollLeft(scrollLeft);
+            this.view.setScrollTop(scrollTop);
+
             let width = this.getWidth() / this.zoomManager.getScale();
             let height = this.getHeight() / this.zoomManager.getScale();
             let leftOffset = -scrollLeft;
@@ -299,13 +284,8 @@ namespace SchemeDesigner {
 
             for (let node of nodes) {
                 for (let schemeObject of node.getObjects()) {
-                    schemeObject.render(this);
+                    schemeObject.render(this, this.view);
                 }
-            }
-
-            if (typeof this.renderAllCallback === 'function') {
-                this.renderAllCallback.apply(window, []);
-                this.renderAllCallback = null;
             }
 
             this.eventManager.sendEvent('afterRenderAll');
@@ -343,16 +323,7 @@ namespace SchemeDesigner {
          */
         public getCanvas(): HTMLCanvasElement
         {
-            return this.canvas;
-        }
-
-        /**
-         * Canvas context getter
-         * @returns {CanvasRenderingContext2D}
-         */
-        public getCanvas2DContext(): CanvasRenderingContext2D
-        {
-            return this.canvas2DContext;
+            return this.view.getCanvas();
         }
 
         /**
@@ -362,7 +333,7 @@ namespace SchemeDesigner {
          */
         public setCursorStyle(cursor: string): this
         {
-            this.canvas.style.cursor = cursor;
+            this.view.getCanvas().style.cursor = cursor;
             return this;
         }
 
@@ -400,23 +371,21 @@ namespace SchemeDesigner {
                 'outline'
             ];
             for (let styleName of styles) {
-                (this.canvas.style as any)[styleName] = 'none';
+                (this.view.getCanvas().style as any)[styleName] = 'none';
             }
         }
 
 
         /**
-         *
+         * Draw from cache
          * @param left
          * @param top
          */
-        public drawScreenShot(left: number, top: number)
+        public drawFromCache(left: number, top: number)
         {
-            if (!this.screenShotStorage) {
+            if (!this.cacheView) {
                 return false;
             }
-
-            let storage = this.screenShotStorage;
 
             this.clearContext();
 
@@ -426,69 +395,84 @@ namespace SchemeDesigner {
             let rectWidth = boundingRect.right * scale;
             let rectHeight = boundingRect.bottom * scale;
 
-            this.canvas2DContext.save();
-            this.canvas2DContext.scale(1 / scale, 1 / scale);
-            this.canvas2DContext.drawImage(storage.getCanvas(), left, top, rectWidth, rectHeight);
-            this.canvas2DContext.restore();
+            this.view.getContext().save();
+            this.view.getContext().scale(1 / scale, 1 / scale);
+            this.view.getContext().drawImage(this.cacheView.getCanvas(), left, top, rectWidth, rectHeight);
+            this.view.getContext().restore();
         }
 
         /**
-         * Creating screen shot
+         * Update scheme cache
          */
-        public createScreenShot()
+        public updateCache(): void
         {
-            let storage = this.storageManager.getImageStorage('screen-shot');
+            if (!this.cacheView) {
+                let storage = this.storageManager.getImageStorage('scheme-cache');
+                this.cacheView = new View(storage.getCanvas());
+            }
+
             let boundingRect = this.storageManager.getObjectsBoundingRect();
 
-            let scale = this.zoomManager.getScale();
+
+            let scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
             let rectWidth = boundingRect.right * scale;
             let rectHeight = boundingRect.bottom * scale;
 
-            let imageData = this.canvas2DContext.getImageData(
-                this.scrollManager.getScrollLeft() * scale,
-                this.scrollManager.getScrollTop() * scale,
-                rectWidth,
-                rectHeight
-            );
+            this.cacheView.setDimensions({
+                width: rectWidth,
+                height: rectHeight
+            });
 
-            storage.setImageData(imageData, rectWidth, rectHeight);
+            this.cacheView.getContext().scale(scale, scale);
 
-            this.screenShotStorage = storage;
+            for (let schemeObject of this.getObjects()) {
+                schemeObject.render(this, this.cacheView);
+            }
+
         }
 
         /**
-         * Set fakeSchemeRatio
+         * Set cacheSchemeRatio
          * @param value
          */
-        public setFakeSchemeRatio(value: number): void
+        public setCacheSchemeRatio(value: number): void
         {
-            this.fakeSchemeRatio = value;
+            this.cacheSchemeRatio = value;
         }
 
         /**
-         * get fakeSchemeRatio
+         * get cacheSchemeRatio
          * @returns {number}
          */
-        public getFakeSchemeRatio(): number
+        public getCAcheSchemeRatio(): number
         {
-            return this.fakeSchemeRatio;
+            return this.cacheSchemeRatio;
         }
 
         /**
-         * Use fake scheme
+         * Use scheme from cache
          * @returns {boolean}
          */
-        public useFakeScheme(): boolean
+        public useSchemeCache(): boolean
         {
             let objectsDimensions = this.storageManager.getObjectsDimensions();
 
-            let ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.width;
+            let ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.getWidth();
 
-            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
+            if (this.cacheSchemeRatio && ratio <= this.cacheSchemeRatio) {
                 return true;
             }
 
             return false;
+        }
+
+        /**
+         * Get view
+         * @returns {View}
+         */
+        public getView(): View
+        {
+            return this.view;
         }
     }
 }

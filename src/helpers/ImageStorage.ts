@@ -29,8 +29,8 @@ namespace SchemeDesigner {
          * @param id
          * @param scheme
          */
-        constructor(id: string, scheme: Scheme) {
-
+        constructor(id: string, scheme: Scheme)
+        {
             this.id = 'scheme-designer-image-storage-' + Tools.getRandomString() + '-' + id;
 
             this.scheme = scheme;
@@ -44,7 +44,7 @@ namespace SchemeDesigner {
             }
 
             this.canvas = canvas;
-            this.context = this.canvas.getContext("2d");
+            this.context = this.canvas.getContext('2d');
         }
 
         /**
@@ -55,9 +55,18 @@ namespace SchemeDesigner {
          */
         public setImageData(imageData: ImageData, width: number, height: number): void
         {
-            this.canvas.width = width;
-            this.canvas.height = height;
+            this.setDimensions({width: width, height: height});
             this.context.putImageData(imageData, 0, 0);
+        }
+
+        /**
+         * Set dimensions
+         * @param dimensions
+         */
+        public setDimensions(dimensions: Dimensions): void
+        {
+            this.canvas.width = dimensions.width;
+            this.canvas.height = dimensions.height;
         }
 
         /**

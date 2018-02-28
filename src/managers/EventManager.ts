@@ -177,9 +177,10 @@ namespace SchemeDesigner {
             if (!this.isDragging) {
                 let objects = this.findObjectsForEvent(e);
                 for (let schemeObject of objects) {
-                    schemeObject.click(e, this.scheme);
+                    schemeObject.click(e, this.scheme, this.scheme.getView());
                     this.sendEvent('clickOnObject', schemeObject);
                 }
+
                 if (objects.length) {
                     this.scheme.requestRenderAll();
                 }
@@ -278,7 +279,7 @@ namespace SchemeDesigner {
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
 
-                        schemeHoveredObject.mouseLeave(e, this.scheme);
+                        schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
 
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
 
@@ -294,7 +295,7 @@ namespace SchemeDesigner {
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
 
-                    schemeObject.mouseOver(e, this.scheme);
+                    schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
 
                     this.sendEvent('mouseOverObject', schemeObject);
                 }

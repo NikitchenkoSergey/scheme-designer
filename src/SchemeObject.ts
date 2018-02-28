@@ -73,11 +73,13 @@ namespace SchemeDesigner {
 
         /**
          * Rendering object
+         * @param scheme
+         * @param view
          */
-        public render(Scheme: Scheme): void
+        public render(scheme: Scheme, view: View): void
         {
             if (typeof this.renderFunction === 'function') {
-                this.renderFunction(this, Scheme);
+                this.renderFunction(this, scheme, view);
             }
         }
 
@@ -85,11 +87,12 @@ namespace SchemeDesigner {
          * Click on object
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        public click(e: MouseEvent, schemeDesigner: Scheme): void
+        public click(e: MouseEvent, schemeDesigner: Scheme, view: View): void
         {
             if (typeof this.clickFunction === 'function') {
-                this.clickFunction(this, Scheme, e);
+                this.clickFunction(this, Scheme, view, e);
             }
         }
 
@@ -97,11 +100,12 @@ namespace SchemeDesigner {
          * Mouse over
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme): void
+        public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): void
         {
             if (typeof this.mouseOverFunction === 'function') {
-                this.mouseOverFunction(this, Scheme, e);
+                this.mouseOverFunction(this, Scheme, view, e);
             }
         }
 
@@ -109,11 +113,12 @@ namespace SchemeDesigner {
          * Mouse leave
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
+         * @param view
          */
-        public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme): void
+        public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): void
         {
             if (typeof this.mouseLeaveFunction === 'function') {
-                this.mouseLeaveFunction(this, Scheme, e);
+                this.mouseLeaveFunction(this, Scheme, view, e);
             }
         }
 
@@ -200,22 +205,22 @@ namespace SchemeDesigner {
 
         /**
          * Relative x
-         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @param {SchemeDesigner.View} view
          * @returns {number}
          */
-        public getRelativeX(schemeDesigner: Scheme): number
+        public getRelativeX(view: View): number
         {
-            return this.x + schemeDesigner.getScrollManager().getScrollLeft();
+            return this.x + view.getScrollLeft();
         }
 
         /**
          * Relative y
-         * @param {SchemeDesigner.Scheme} schemeDesigner
+         * @param {SchemeDesigner.View} view
          * @returns {number}
          */
-        public getRelativeY(schemeDesigner: Scheme): number
+        public getRelativeY(view: View): number
         {
-            return this.y + schemeDesigner.getScrollManager().getScrollTop();
+            return this.y + view.getScrollTop();
         }
 
         /**
