@@ -30,6 +30,11 @@ namespace SchemeDesigner {
         protected maxScale = 5;
 
         /**
+         * Timer for render all
+         */
+        protected renderAllTimer: number;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -83,6 +88,10 @@ namespace SchemeDesigner {
          */
         public zoomByFactor(factor: number): boolean
         {
+            if (this.renderAllTimer) {
+                clearTimeout(this.renderAllTimer);
+            }
+
             let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
 
             let canScaleX = true;
@@ -108,7 +117,17 @@ namespace SchemeDesigner {
             if (canScaleX || canScaleY) {
                 this.scheme.getCanvas2DContext().scale(factor, factor);
                 this.scale = newScale;
-                this.scheme.requestRenderAll();
+
+                if (this.scheme.useFakeScheme()) {
+                    this.scheme.drawScreenShot(
+                        this.scheme.getScrollManager().getScrollLeft(),
+                        this.scheme.getScrollManager().getScrollTop(),
+                    );
+
+                    setTimeout(() => {this.scheme.requestRenderAll();}, 50);
+                } else {
+                    this.scheme.requestRenderAll();
+                }
 
                 this.scheme.getEventManager().sendEvent('zoom', {
                     oldScale: oldScale,

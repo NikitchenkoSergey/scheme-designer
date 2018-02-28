@@ -15,16 +15,32 @@ namespace SchemeDesigner {
         protected context: CanvasRenderingContext2D;
 
         /**
+         * Id
+         */
+        protected id: string;
+
+        /**
+         * Scheme object
+         */
+        protected scheme: Scheme;
+
+        /**
          * Constructor
          * @param id
+         * @param scheme
          */
-        constructor(id: string) {
+        constructor(id: string, scheme: Scheme) {
+
+            this.id = 'scheme-designer-image-storage-' + Tools.getRandomString() + '-' + id;
+
+            this.scheme = scheme;
+
             let canvas = document.getElementById(id) as HTMLCanvasElement;
             if (!canvas) {
                 canvas = document.createElement('canvas');
-                canvas.id = id;
+                canvas.id = this.id;
                 canvas.style.display = 'none';
-                document.body.appendChild(canvas);
+                this.scheme.getCanvas().parentNode.appendChild(canvas);
             }
 
             this.canvas = canvas;
@@ -37,7 +53,7 @@ namespace SchemeDesigner {
          * @param width
          * @param height
          */
-        public setImageData(imageData: ImageData, width: number, height: number)
+        public setImageData(imageData: ImageData, width: number, height: number): void
         {
             this.canvas.width = width;
             this.canvas.height = height;
@@ -48,7 +64,7 @@ namespace SchemeDesigner {
          * Get canvas
          * @returns {HTMLCanvasElement}
          */
-        public getCanvas()
+        public getCanvas(): HTMLCanvasElement
         {
             return this.canvas;
         }
@@ -57,7 +73,7 @@ namespace SchemeDesigner {
          * Get context
          * @returns {CanvasRenderingContext2D}
          */
-        public getContext()
+        public getContext(): CanvasRenderingContext2D
         {
             return this.context;
         }

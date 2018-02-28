@@ -23,6 +23,10 @@ var SchemeDesigner;
              * Default cursor style
              */
             this.defaultCursorStyle = 'default';
+            /**
+             * Ratio, when scroll fake scheme
+             */
+            this.fakeSchemeRatio = 1.8;
             this.canvas = canvas;
             /**
              * Managers
@@ -40,6 +44,7 @@ var SchemeDesigner;
              * Configure
              */
             if (params) {
+                SchemeDesigner.Tools.configure(this, params.options);
                 SchemeDesigner.Tools.configure(this.scrollManager, params.scroll);
                 SchemeDesigner.Tools.configure(this.zoomManager, params.zoom);
                 SchemeDesigner.Tools.configure(this.storageManager, params.storage);
@@ -289,7 +294,7 @@ var SchemeDesigner;
          * Creating screen shot
          */
         Scheme.prototype.createScreenShot = function () {
-            var storage = this.storageManager.getImageStorage('screenShot');
+            var storage = this.storageManager.getImageStorage('screen-shot');
             var boundingRect = this.storageManager.getObjectsBoundingRect();
             var scale = this.zoomManager.getScale();
             var rectWidth = boundingRect.right * scale;
@@ -297,6 +302,32 @@ var SchemeDesigner;
             var imageData = this.canvas2DContext.getImageData(this.scrollManager.getScrollLeft() * scale, this.scrollManager.getScrollTop() * scale, rectWidth, rectHeight);
             storage.setImageData(imageData, rectWidth, rectHeight);
             this.screenShotStorage = storage;
+        };
+        /**
+         * Set fakeSchemeRatio
+         * @param value
+         */
+        Scheme.prototype.setFakeSchemeRatio = function (value) {
+            this.fakeSchemeRatio = value;
+        };
+        /**
+         * get fakeSchemeRatio
+         * @returns {number}
+         */
+        Scheme.prototype.getFakeSchemeRatio = function () {
+            return this.fakeSchemeRatio;
+        };
+        /**
+         * Use fake scheme
+         * @returns {boolean}
+         */
+        Scheme.prototype.useFakeScheme = function () {
+            var objectsDimensions = this.storageManager.getObjectsDimensions();
+            var ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.width;
+            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
+                return true;
+            }
+            return false;
         };
         return Scheme;
     }());
@@ -469,14 +500,17 @@ var SchemeDesigner;
         /**
          * Constructor
          * @param id
+         * @param scheme
          */
-        function ImageStorage(id) {
+        function ImageStorage(id, scheme) {
+            this.id = 'scheme-designer-image-storage-' + SchemeDesigner.Tools.getRandomString() + '-' + id;
+            this.scheme = scheme;
             var canvas = document.getElementById(id);
             if (!canvas) {
                 canvas = document.createElement('canvas');
-                canvas.id = id;
+                canvas.id = this.id;
                 canvas.style.display = 'none';
-                document.body.appendChild(canvas);
+                this.scheme.getCanvas().parentNode.appendChild(canvas);
             }
             this.canvas = canvas;
             this.context = this.canvas.getContext("2d");
@@ -786,6 +820,13 @@ var SchemeDesigner;
                 result[k] = obj[k];
             }
             return result;
+        };
+        /**
+         * Get random string
+         * @returns {string}
+         */
+        Tools.getRandomString = function () {
+            return Math.random().toString(36).substr(2, 9);
         };
         return Tools;
     }());
@@ -1163,10 +1204,6 @@ var SchemeDesigner;
              * Max hidden part on scroll
              */
             this.maxHiddenPart = 0.85;
-            /**
-             * Ratio, when scroll fake scheme
-             */
-            this.fakeSchemeRatio = 1.8;
             this.scheme = scheme;
         }
         /**
@@ -1189,6 +1226,7 @@ var SchemeDesigner;
          * @param {number} top
          */
         ScrollManager.prototype.scroll = function (left, top) {
+            var _this = this;
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var scale = this.scheme.getZoomManager().getScale();
             var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
@@ -1213,12 +1251,11 @@ var SchemeDesigner;
             }
             this.scrollLeft = left;
             this.scrollTop = top;
-            // scroll screen shot
-            var objectsDimensions = this.scheme.getStorageManager().getObjectsDimensions();
-            var ratio = (objectsDimensions.width * scale) / this.scheme.getWidth();
             // scroll fake scheme
-            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
-                this.scheme.drawScreenShot(left * scale, top * scale);
+            if (this.scheme.useFakeScheme()) {
+                this.scheme.requestFrameAnimationApply(function () {
+                    _this.scheme.drawScreenShot(left * scale, top * scale);
+                });
             }
             else {
                 this.scheme.requestRenderAll();
@@ -1273,13 +1310,6 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.setMaxHiddenPart = function (value) {
             this.maxHiddenPart = value;
-        };
-        /**
-         * Set fakeSchemeRatio
-         * @param value
-         */
-        ScrollManager.prototype.setFakeSchemeRatio = function (value) {
-            this.fakeSchemeRatio = value;
         };
         return ScrollManager;
     }());
@@ -1577,7 +1607,7 @@ var SchemeDesigner;
          * @returns {ImageStorage}
          */
         StorageManager.prototype.getImageStorage = function (id) {
-            return new SchemeDesigner.ImageStorage(id);
+            return new SchemeDesigner.ImageStorage(id, this.scheme);
         };
         return StorageManager;
     }());
@@ -1774,6 +1804,10 @@ var SchemeDesigner;
          * @returns {boolean}
          */
         ZoomManager.prototype.zoomByFactor = function (factor) {
+            var _this = this;
+            if (this.renderAllTimer) {
+                clearTimeout(this.renderAllTimer);
+            }
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var canScaleX = true;
             var canScaleY = true;
@@ -1796,7 +1830,13 @@ var SchemeDesigner;
             if (canScaleX || canScaleY) {
                 this.scheme.getCanvas2DContext().scale(factor, factor);
                 this.scale = newScale;
-                this.scheme.requestRenderAll();
+                if (this.scheme.useFakeScheme()) {
+                    this.scheme.drawScreenShot(this.scheme.getScrollManager().getScrollLeft(), this.scheme.getScrollManager().getScrollTop());
+                    setTimeout(function () { _this.scheme.requestRenderAll(); }, 50);
+                }
+                else {
+                    this.scheme.requestRenderAll();
+                }
                 this.scheme.getEventManager().sendEvent('zoom', {
                     oldScale: oldScale,
                     newScale: newScale

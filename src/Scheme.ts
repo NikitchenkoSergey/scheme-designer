@@ -81,6 +81,11 @@ namespace SchemeDesigner {
         protected renderAllCallback: Function;
 
         /**
+         * Ratio, when scroll fake scheme
+         */
+        protected fakeSchemeRatio: number = 1.8;
+
+        /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
          * @param {Object} params
@@ -112,6 +117,7 @@ namespace SchemeDesigner {
              * Configure
              */
             if (params) {
+                Tools.configure(this, params.options);
                 Tools.configure(this.scrollManager, params.scroll);
                 Tools.configure(this.zoomManager, params.zoom);
                 Tools.configure(this.storageManager, params.storage);
@@ -201,7 +207,7 @@ namespace SchemeDesigner {
          * @param animation
          * @returns {number}
          */
-        protected requestFrameAnimationApply(animation: Function): number
+        public requestFrameAnimationApply(animation: Function): number
         {
             return this.requestFrameAnimation.apply(window, [animation]);
         }
@@ -210,7 +216,7 @@ namespace SchemeDesigner {
          * Cancel animation
          * @param requestId
          */
-        protected cancelAnimationFrameApply(requestId: number): void
+        public cancelAnimationFrameApply(requestId: number): void
         {
             return this.cancelFrameAnimation.apply(window, [requestId]);
         }
@@ -431,7 +437,7 @@ namespace SchemeDesigner {
          */
         public createScreenShot()
         {
-            let storage = this.storageManager.getImageStorage('screenShot');
+            let storage = this.storageManager.getImageStorage('screen-shot');
             let boundingRect = this.storageManager.getObjectsBoundingRect();
 
             let scale = this.zoomManager.getScale();
@@ -448,6 +454,41 @@ namespace SchemeDesigner {
             storage.setImageData(imageData, rectWidth, rectHeight);
 
             this.screenShotStorage = storage;
+        }
+
+        /**
+         * Set fakeSchemeRatio
+         * @param value
+         */
+        public setFakeSchemeRatio(value: number): void
+        {
+            this.fakeSchemeRatio = value;
+        }
+
+        /**
+         * get fakeSchemeRatio
+         * @returns {number}
+         */
+        public getFakeSchemeRatio(): number
+        {
+            return this.fakeSchemeRatio;
+        }
+
+        /**
+         * Use fake scheme
+         * @returns {boolean}
+         */
+        public useFakeScheme(): boolean
+        {
+            let objectsDimensions = this.storageManager.getObjectsDimensions();
+
+            let ratio = (objectsDimensions.width * this.zoomManager.getScale()) / this.width;
+
+            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
+                return true;
+            }
+
+            return false;
         }
     }
 }

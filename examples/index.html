@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?7"></script>
+    <script src="../dist/scheme-designer.min.js?8"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="col-sm-2">
-                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter()">
+                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll()">
                         Scroll to center
                     </button>
                 </div>
@@ -56,9 +56,11 @@
 <script>
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
-        scroll: {
-            maxHiddenPart: 0.85,
+        options: {
             fakeSchemeRatio: 2
+        },
+        scroll: {
+            maxHiddenPart: 0.85
         },
         zoom: {
             padding: 0.1,

@@ -357,13 +357,13 @@ namespace SchemeDesigner {
         {
             let lastTreeNodes = this.getTree().getLastChildren();
 
-            var context = this.scheme.getCanvas2DContext();
+            let context = this.scheme.getCanvas2DContext();
 
             for (let lastTreeNode of lastTreeNodes) {
-                var relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();
-                var relativeY = lastTreeNode.getBoundingRect().top + this.scheme.getScrollManager().getScrollTop();
-                var width = lastTreeNode.getBoundingRect().right - lastTreeNode.getBoundingRect().left;
-                var height = lastTreeNode.getBoundingRect().bottom - lastTreeNode.getBoundingRect().top;
+                let relativeX = lastTreeNode.getBoundingRect().left + this.scheme.getScrollManager().getScrollLeft();
+                let relativeY = lastTreeNode.getBoundingRect().top + this.scheme.getScrollManager().getScrollTop();
+                let width = lastTreeNode.getBoundingRect().right - lastTreeNode.getBoundingRect().left;
+                let height = lastTreeNode.getBoundingRect().bottom - lastTreeNode.getBoundingRect().top;
                 context.lineWidth = 1;
                 context.strokeStyle = 'black';
                 context.rect(relativeX, relativeY, width, height);
@@ -378,7 +378,7 @@ namespace SchemeDesigner {
          */
         public getImageStorage(id: string): ImageStorage
         {
-            return new ImageStorage(id);
+            return new ImageStorage(id, this.scheme);
         }
     }
 

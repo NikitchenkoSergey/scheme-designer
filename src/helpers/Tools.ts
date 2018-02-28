@@ -257,5 +257,14 @@ namespace SchemeDesigner {
 
             return result;
         }
+
+        /**
+         * Get random string
+         * @returns {string}
+         */
+        public static getRandomString(): string
+        {
+            return Math.random().toString(36).substr(2, 9);
+        }
     }
 }

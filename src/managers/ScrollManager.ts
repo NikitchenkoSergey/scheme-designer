@@ -25,11 +25,6 @@ namespace SchemeDesigner {
         protected maxHiddenPart: number = 0.85;
 
         /**
-         * Ratio, when scroll fake scheme
-         */
-        protected fakeSchemeRatio: number = 1.8;
-
-        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -98,14 +93,12 @@ namespace SchemeDesigner {
             this.scrollLeft = left;
             this.scrollTop = top;
 
-            // scroll screen shot
-            let objectsDimensions = this.scheme.getStorageManager().getObjectsDimensions();
-
-            let ratio = (objectsDimensions.width * scale) / this.scheme.getWidth();
 
             // scroll fake scheme
-            if (this.fakeSchemeRatio && ratio <= this.fakeSchemeRatio) {
-                this.scheme.drawScreenShot(left * scale, top * scale);
+            if (this.scheme.useFakeScheme()) {
+                this.scheme.requestFrameAnimationApply(() => {
+                    this.scheme.drawScreenShot(left * scale, top * scale)
+                });
             } else {
                 this.scheme.requestRenderAll();
             }
@@ -177,15 +170,6 @@ namespace SchemeDesigner {
         public setMaxHiddenPart(value: number): void
         {
             this.maxHiddenPart = value;
-        }
-
-        /**
-         * Set fakeSchemeRatio
-         * @param value
-         */
-        public setFakeSchemeRatio(value: number): void
-        {
-            this.fakeSchemeRatio = value;
         }
     }
 }
