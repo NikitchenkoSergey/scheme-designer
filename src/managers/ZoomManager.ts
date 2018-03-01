@@ -119,11 +119,7 @@ namespace SchemeDesigner {
                 this.scale = newScale;
 
                 if (this.scheme.useSchemeCache()) {
-                    this.scheme.drawFromCache(
-                        this.scheme.getScrollManager().getScrollLeft(),
-                        this.scheme.getScrollManager().getScrollTop(),
-                    );
-
+                    this.scheme.requestDrawFromCache();
                     this.renderAllTimer = setTimeout(() => {this.scheme.requestRenderAll();}, 300);
                 } else {
                     this.scheme.requestRenderAll();

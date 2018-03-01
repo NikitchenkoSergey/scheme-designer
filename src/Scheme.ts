@@ -218,9 +218,8 @@ namespace SchemeDesigner {
 
         /**
          * Request render all
-         * @param callback
          */
-        public requestRenderAll(callback?: Function): this
+        public requestRenderAll(): this
         {
             if (!this.renderingRequestId) {
                 this.renderingRequestId = this.requestFrameAnimationApply(() => {this.renderAll()});
@@ -247,7 +246,7 @@ namespace SchemeDesigner {
 
             this.updateCache();
 
-            this.drawFromCache(this.scrollManager.getScrollLeft(), this.scrollManager.getScrollTop());
+            this.requestDrawFromCache();
         }
 
         /**
@@ -378,27 +377,44 @@ namespace SchemeDesigner {
 
         /**
          * Draw from cache
-         * @param left
-         * @param top
          */
-        public drawFromCache(left: number, top: number)
+        public drawFromCache()
         {
             if (!this.cacheView) {
                 return false;
             }
 
+            if (this.renderingRequestId) {
+                this.cancelAnimationFrameApply(this.renderingRequestId);
+                this.renderingRequestId = 0;
+            }
+
             this.clearContext();
 
-            let scale = this.zoomManager.getScale();
-
             let boundingRect = this.storageManager.getObjectsBoundingRect();
-            let rectWidth = boundingRect.right * scale;
-            let rectHeight = boundingRect.bottom * scale;
+            let rectWidth = boundingRect.right;
+            let rectHeight = boundingRect.bottom;
 
-            this.view.getContext().save();
-            this.view.getContext().scale(1 / scale, 1 / scale);
-            this.view.getContext().drawImage(this.cacheView.getCanvas(), left, top, rectWidth, rectHeight);
-            this.view.getContext().restore();
+            this.view.getContext().drawImage(
+                this.cacheView.getCanvas(),
+                this.getScrollManager().getScrollLeft(),
+                this.getScrollManager().getScrollTop(),
+                rectWidth,
+                rectHeight
+            );
+        }
+
+        /**
+         * Request draw from cache
+         * @returns {Scheme}
+         */
+        public requestDrawFromCache(): this
+        {
+            if (!this.renderingRequestId) {
+                this.renderingRequestId = this.requestFrameAnimationApply(() => { this.drawFromCache(); });
+            }
+
+            return this;
         }
 
         /**

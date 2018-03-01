@@ -135,9 +135,8 @@ var SchemeDesigner;
         };
         /**
          * Request render all
-         * @param callback
          */
-        Scheme.prototype.requestRenderAll = function (callback) {
+        Scheme.prototype.requestRenderAll = function () {
             var _this = this;
             if (!this.renderingRequestId) {
                 this.renderingRequestId = this.requestFrameAnimationApply(function () { _this.renderAll(); });
@@ -158,7 +157,7 @@ var SchemeDesigner;
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
             this.updateCache();
-            this.drawFromCache(this.scrollManager.getScrollLeft(), this.scrollManager.getScrollTop());
+            this.requestDrawFromCache();
         };
         /**
          * Render visible objects
@@ -263,22 +262,31 @@ var SchemeDesigner;
         };
         /**
          * Draw from cache
-         * @param left
-         * @param top
          */
-        Scheme.prototype.drawFromCache = function (left, top) {
+        Scheme.prototype.drawFromCache = function () {
             if (!this.cacheView) {
                 return false;
             }
+            if (this.renderingRequestId) {
+                this.cancelAnimationFrameApply(this.renderingRequestId);
+                this.renderingRequestId = 0;
+            }
             this.clearContext();
-            var scale = this.zoomManager.getScale();
             var boundingRect = this.storageManager.getObjectsBoundingRect();
-            var rectWidth = boundingRect.right * scale;
-            var rectHeight = boundingRect.bottom * scale;
-            this.view.getContext().save();
-            this.view.getContext().scale(1 / scale, 1 / scale);
-            this.view.getContext().drawImage(this.cacheView.getCanvas(), left, top, rectWidth, rectHeight);
-            this.view.getContext().restore();
+            var rectWidth = boundingRect.right;
+            var rectHeight = boundingRect.bottom;
+            this.view.getContext().drawImage(this.cacheView.getCanvas(), this.getScrollManager().getScrollLeft(), this.getScrollManager().getScrollTop(), rectWidth, rectHeight);
+        };
+        /**
+         * Request draw from cache
+         * @returns {Scheme}
+         */
+        Scheme.prototype.requestDrawFromCache = function () {
+            var _this = this;
+            if (!this.renderingRequestId) {
+                this.renderingRequestId = this.requestFrameAnimationApply(function () { _this.drawFromCache(); });
+            }
+            return this;
         };
         /**
          * Update scheme cache
@@ -1356,7 +1364,6 @@ var SchemeDesigner;
          * @param {number} top
          */
         ScrollManager.prototype.scroll = function (left, top) {
-            var _this = this;
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var scale = this.scheme.getZoomManager().getScale();
             var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
@@ -1383,9 +1390,7 @@ var SchemeDesigner;
             this.scrollTop = top;
             // scroll fake scheme
             if (this.scheme.useSchemeCache()) {
-                this.scheme.requestFrameAnimationApply(function () {
-                    _this.scheme.drawFromCache(left * scale, top * scale);
-                });
+                this.scheme.requestDrawFromCache();
             }
             else {
                 this.scheme.requestRenderAll();
@@ -1961,7 +1966,7 @@ var SchemeDesigner;
                 this.scheme.getView().getContext().scale(factor, factor);
                 this.scale = newScale;
                 if (this.scheme.useSchemeCache()) {
-                    this.scheme.drawFromCache(this.scheme.getScrollManager().getScrollLeft(), this.scheme.getScrollManager().getScrollTop());
+                    this.scheme.requestDrawFromCache();
                     this.renderAllTimer = setTimeout(function () { _this.scheme.requestRenderAll(); }, 300);
                 }
                 else {
