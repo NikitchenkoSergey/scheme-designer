@@ -178,11 +178,13 @@ namespace SchemeDesigner {
                 let objects = this.findObjectsForEvent(e);
                 for (let schemeObject of objects) {
                     schemeObject.click(e, this.scheme, this.scheme.getView());
+                    this.scheme.addChangedObject(schemeObject);
                     this.sendEvent('clickOnObject', schemeObject);
                 }
 
                 if (objects.length) {
                     this.scheme.requestRenderAll();
+                    this.scheme.updateCache(true);
                 }
             }
         }
@@ -280,6 +282,7 @@ namespace SchemeDesigner {
                         schemeHoveredObject.isHovered = false;
 
                         schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
+                        this.scheme.addChangedObject(schemeHoveredObject);
 
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
 
@@ -296,6 +299,7 @@ namespace SchemeDesigner {
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
 
                     schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+                    this.scheme.addChangedObject(schemeObject);
 
                     this.sendEvent('mouseOverObject', schemeObject);
                 }
@@ -309,6 +313,7 @@ namespace SchemeDesigner {
 
             if (mustReRender) {
                 this.scheme.requestRenderAll();
+                this.scheme.updateCache(true);
             }
         }
 

@@ -56,6 +56,11 @@ namespace SchemeDesigner {
         protected mouseLeaveFunction: Function;
 
         /**
+         * Clear function
+         */
+        protected clearFunction: Function;
+
+        /**
          * All params of object
          */
         protected params: any;
@@ -80,6 +85,18 @@ namespace SchemeDesigner {
         {
             if (typeof this.renderFunction === 'function') {
                 this.renderFunction(this, scheme, view);
+            }
+        }
+
+        /**
+         * Clear object
+         * @param scheme
+         * @param view
+         */
+        public clear(scheme: Scheme, view: View): void
+        {
+            if (typeof this.clearFunction === 'function') {
+                this.clearFunction(this, scheme, view);
             }
         }
 
@@ -183,6 +200,15 @@ namespace SchemeDesigner {
         public setClickFunction(value: Function): void
         {
             this.clickFunction = value;
+        }
+
+        /**
+         * Set clearFunction
+         * @param {Function} value
+         */
+        public setClearFunction(value: Function): void
+        {
+            this.clearFunction = value;
         }
 
         /**

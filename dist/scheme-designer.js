@@ -27,6 +27,10 @@ var SchemeDesigner;
              * Ratio for cache scheme
              */
             this.cacheSchemeRatio = 2;
+            /**
+             * Changed objects
+             */
+            this.changedObjects = [];
             this.view = new SchemeDesigner.View(canvas);
             /**
              * Managers
@@ -156,7 +160,7 @@ var SchemeDesigner;
              */
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
-            this.updateCache();
+            this.updateCache(false);
             this.requestDrawFromCache();
         };
         /**
@@ -290,25 +294,43 @@ var SchemeDesigner;
         };
         /**
          * Update scheme cache
+         * @param onlyChanged
          */
-        Scheme.prototype.updateCache = function () {
+        Scheme.prototype.updateCache = function (onlyChanged) {
             if (!this.cacheView) {
                 var storage = this.storageManager.getImageStorage('scheme-cache');
                 this.cacheView = new SchemeDesigner.View(storage.getCanvas());
             }
-            var boundingRect = this.storageManager.getObjectsBoundingRect();
-            var scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
-            var rectWidth = boundingRect.right * scale;
-            var rectHeight = boundingRect.bottom * scale;
-            this.cacheView.setDimensions({
-                width: rectWidth,
-                height: rectHeight
-            });
-            this.cacheView.getContext().scale(scale, scale);
-            for (var _i = 0, _a = this.getObjects(); _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                schemeObject.render(this, this.cacheView);
+            if (onlyChanged) {
+                for (var _i = 0, _a = this.changedObjects; _i < _a.length; _i++) {
+                    var schemeObject = _a[_i];
+                    schemeObject.clear(this, this.cacheView);
+                    schemeObject.render(this, this.cacheView);
+                }
             }
+            else {
+                var boundingRect = this.storageManager.getObjectsBoundingRect();
+                var scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
+                var rectWidth = boundingRect.right * scale;
+                var rectHeight = boundingRect.bottom * scale;
+                this.cacheView.setDimensions({
+                    width: rectWidth,
+                    height: rectHeight
+                });
+                this.cacheView.getContext().scale(scale, scale);
+                for (var _b = 0, _c = this.getObjects(); _b < _c.length; _b++) {
+                    var schemeObject = _c[_b];
+                    schemeObject.render(this, this.cacheView);
+                }
+            }
+            this.changedObjects = [];
+        };
+        /**
+         * Add changed object
+         * @param schemeObject
+         */
+        Scheme.prototype.addChangedObject = function (schemeObject) {
+            this.changedObjects.push(schemeObject);
         };
         /**
          * Set cacheSchemeRatio
@@ -379,6 +401,16 @@ var SchemeDesigner;
         SchemeObject.prototype.render = function (scheme, view) {
             if (typeof this.renderFunction === 'function') {
                 this.renderFunction(this, scheme, view);
+            }
+        };
+        /**
+         * Clear object
+         * @param scheme
+         * @param view
+         */
+        SchemeObject.prototype.clear = function (scheme, view) {
+            if (typeof this.clearFunction === 'function') {
+                this.clearFunction(this, scheme, view);
             }
         };
         /**
@@ -462,6 +494,13 @@ var SchemeDesigner;
          */
         SchemeObject.prototype.setClickFunction = function (value) {
             this.clickFunction = value;
+        };
+        /**
+         * Set clearFunction
+         * @param {Function} value
+         */
+        SchemeObject.prototype.setClearFunction = function (value) {
+            this.clearFunction = value;
         };
         /**
          * Set mouseOverFunction
@@ -1116,10 +1155,12 @@ var SchemeDesigner;
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                     var schemeObject = objects_1[_i];
                     schemeObject.click(e, this.scheme, this.scheme.getView());
+                    this.scheme.addChangedObject(schemeObject);
                     this.sendEvent('clickOnObject', schemeObject);
                 }
                 if (objects.length) {
                     this.scheme.requestRenderAll();
+                    this.scheme.updateCache(true);
                 }
             }
         };
@@ -1198,6 +1239,7 @@ var SchemeDesigner;
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
                         schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
+                        this.scheme.addChangedObject(schemeHoveredObject);
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
                         mustReRender = true;
                         hasNewHovers = true;
@@ -1211,6 +1253,7 @@ var SchemeDesigner;
                     mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
                     schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+                    this.scheme.addChangedObject(schemeObject);
                     this.sendEvent('mouseOverObject', schemeObject);
                 }
             }
@@ -1220,6 +1263,7 @@ var SchemeDesigner;
             }
             if (mustReRender) {
                 this.scheme.requestRenderAll();
+                this.scheme.updateCache(true);
             }
         };
         /**
@@ -1369,7 +1413,8 @@ var SchemeDesigner;
             var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
             var maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
             var minScrollLeft = -boundingRect.right;
-            var minScrollTop = -boundingRect.bottom;
+            var minScrollTop = -(boundingRect.bottom / scale);
+            console.log(boundingRect.bottom, minScrollTop);
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
             minScrollLeft = minScrollLeft * this.maxHiddenPart;

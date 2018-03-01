@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?10"></script>
+    <script src="../dist/scheme-designer.min.js?11"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
@@ -40,12 +40,12 @@
                 </div>
                 <div class="col-sm-2" style="margin-bottom: 5px;">
                     <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().showNodesParts()">
-                        Show tree nodes
+                        Show grid
                     </button>
                 </div>
 
                 <div class="col-sm-2">
-                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll()">
+                    <button type="button" class="btn btn-info btn-sm" onclick="schemeDesigner.getScrollManager().toCenter(); schemeDesigner.requestRenderAll();">
                         Scroll to center
                     </button>
                 </div>
@@ -68,7 +68,7 @@
             zoomCoefficient: 1.04
         },
         storage: {
-            treeDepth: 6
+            treeDepth: 8
         }
     });
 
@@ -84,7 +84,8 @@
         var backgroundColor = '#' + schemeObject.params.backgroundColor;
 
         context.beginPath();
-        context.lineWidth = 4;
+        var borderWidth = 4;
+        context.lineWidth = borderWidth;
         context.strokeStyle = 'white';
 
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
@@ -199,7 +200,18 @@
             fontColor: objectData.FontColor,
 
             isSelected: false,
-            clickFunction: clickOnPlace
+            clickFunction: clickOnPlace,
+            clearFunction: function (schemeObject, schemeDesigner, view) {
+                var context = view.getContext();
+                var x = schemeObject.getRelativeX(view);
+                var y = schemeObject.getRelativeY(view);
+                var borderWidth = 5;
+                context.clearRect(x - borderWidth,
+                        y - borderWidth,
+                        this.width + (borderWidth * 2),
+                        this.height + (borderWidth * 2)
+                );
+            }
         });
 
         schemeDesigner.addObject(schemeObject);

@@ -67,6 +67,11 @@ namespace SchemeDesigner {
         protected cacheView: View;
 
         /**
+         * Changed objects
+         */
+        protected changedObjects: SchemeObject[] = [];
+
+        /**
          * Constructor
          * @param {HTMLCanvasElement} canvas
          * @param {Object} params
@@ -244,7 +249,7 @@ namespace SchemeDesigner {
             this.zoomManager.setScale(this.zoomManager.getScaleWithAllObjects());
             this.scrollManager.toCenter();
 
-            this.updateCache();
+            this.updateCache(false);
 
             this.requestDrawFromCache();
         }
@@ -419,32 +424,50 @@ namespace SchemeDesigner {
 
         /**
          * Update scheme cache
+         * @param onlyChanged
          */
-        public updateCache(): void
+        public updateCache(onlyChanged: boolean): void
         {
             if (!this.cacheView) {
                 let storage = this.storageManager.getImageStorage('scheme-cache');
                 this.cacheView = new View(storage.getCanvas());
             }
 
-            let boundingRect = this.storageManager.getObjectsBoundingRect();
 
+            if (onlyChanged) {
+                for (let schemeObject of this.changedObjects) {
+                    schemeObject.clear(this, this.cacheView);
+                    schemeObject.render(this, this.cacheView);
+                }
+            } else {
+                let boundingRect = this.storageManager.getObjectsBoundingRect();
 
-            let scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
-            let rectWidth = boundingRect.right * scale;
-            let rectHeight = boundingRect.bottom * scale;
+                let scale = (1 / this.zoomManager.getScaleWithAllObjects()) * this.cacheSchemeRatio;
+                let rectWidth = boundingRect.right * scale;
+                let rectHeight = boundingRect.bottom * scale;
 
-            this.cacheView.setDimensions({
-                width: rectWidth,
-                height: rectHeight
-            });
+                this.cacheView.setDimensions({
+                    width: rectWidth,
+                    height: rectHeight
+                });
 
-            this.cacheView.getContext().scale(scale, scale);
+                this.cacheView.getContext().scale(scale, scale);
 
-            for (let schemeObject of this.getObjects()) {
-                schemeObject.render(this, this.cacheView);
+                for (let schemeObject of this.getObjects()) {
+                    schemeObject.render(this, this.cacheView);
+                }
             }
 
+            this.changedObjects = [];
+        }
+
+        /**
+         * Add changed object
+         * @param schemeObject
+         */
+        public addChangedObject(schemeObject: SchemeObject): void
+        {
+            this.changedObjects.push(schemeObject);
         }
 
         /**
