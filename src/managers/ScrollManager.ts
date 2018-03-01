@@ -66,8 +66,7 @@ namespace SchemeDesigner {
             let maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
 
             let minScrollLeft = -boundingRect.right;
-            let minScrollTop = -(boundingRect.bottom / scale);
-            console.log(boundingRect.bottom, minScrollTop);
+            let minScrollTop = -boundingRect.bottom;
 
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;

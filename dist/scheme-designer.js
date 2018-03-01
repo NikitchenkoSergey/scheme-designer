@@ -1035,6 +1035,11 @@ var SchemeDesigner;
              * Hovered objects
              */
             this.hoveredObjects = [];
+            /**
+             * Last touch end time
+             * @type {number}
+             */
+            this.lastTouchEndTime = 0;
             this.scheme = scheme;
             this.setLastClientPosition({
                 x: this.scheme.getWidth() / 2,
@@ -1107,7 +1112,15 @@ var SchemeDesigner;
                 e.preventDefault();
             });
             this.scheme.getCanvas().addEventListener('touchend', function (e) {
-                _this.onMouseUp(e);
+                // prevent double tap zoom
+                var now = (new Date()).getTime();
+                if (_this.lastTouchEndTime && now - _this.lastTouchEndTime <= 300) {
+                    e.preventDefault();
+                }
+                else {
+                    _this.onMouseUp(e);
+                }
+                _this.lastTouchEndTime = now;
             });
             this.scheme.getCanvas().addEventListener('touchcancel', function (e) {
                 _this.onMouseUp(e);
@@ -1413,8 +1426,7 @@ var SchemeDesigner;
             var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
             var maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
             var minScrollLeft = -boundingRect.right;
-            var minScrollTop = -(boundingRect.bottom / scale);
-            console.log(boundingRect.bottom, minScrollTop);
+            var minScrollTop = -boundingRect.bottom;
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
             minScrollLeft = minScrollLeft * this.maxHiddenPart;

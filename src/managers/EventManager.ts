@@ -35,6 +35,12 @@ namespace SchemeDesigner {
         protected touchDistance: number;
 
         /**
+         * Last touch end time
+         * @type {number}
+         */
+        protected lastTouchEndTime: number = 0;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -93,6 +99,7 @@ namespace SchemeDesigner {
                 this.touchDistance = 0;
                 this.onMouseDown(e);
             });
+
             this.scheme.getCanvas().addEventListener('touchmove', (e: TouchEvent) => {
                 if (e.targetTouches.length == 1) {
                     // one finger - dragging
@@ -118,9 +125,18 @@ namespace SchemeDesigner {
                 }
                 e.preventDefault();
             });
+
             this.scheme.getCanvas().addEventListener('touchend', (e: TouchEvent) => {
-                this.onMouseUp(e);
+                // prevent double tap zoom
+                let now = (new Date()).getTime();
+                if (this.lastTouchEndTime && now - this.lastTouchEndTime <= 300) {
+                    e.preventDefault();
+                } else {
+                    this.onMouseUp(e);
+                }
+                this.lastTouchEndTime = now;
             });
+
             this.scheme.getCanvas().addEventListener('touchcancel', (e: TouchEvent) => {
                 this.onMouseUp(e)
             });
