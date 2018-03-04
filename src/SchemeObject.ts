@@ -26,6 +26,11 @@ namespace SchemeDesigner {
         protected height: number;
 
         /**
+         * Rotation
+         */
+        protected rotation: number = 0;
+
+        /**
          * Is hovered
          */
         public isHovered: boolean = false;
@@ -177,11 +182,20 @@ namespace SchemeDesigner {
 
         /**
          * Set cursorStyle
-         * @param {number} value
+         * @param {string} value
          */
         public setCursorStyle(value: string): void
         {
             this.cursorStyle = value;
+        }
+
+        /**
+         * Set rotation
+         * @param {number} value
+         */
+        public setRotation(value: number): void
+        {
+            this.rotation = value;
         }
 
         /**
@@ -261,6 +275,15 @@ namespace SchemeDesigner {
                 right: this.x + this.width,
                 bottom: this.y + this.height
             };
+        }
+
+        /**
+         * Get rotation
+         * @returns {number}
+         */
+        public getRotation(): number
+        {
+            return this.rotation;
         }
     }
 }

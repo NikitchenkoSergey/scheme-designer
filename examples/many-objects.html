@@ -127,7 +127,18 @@
             sectorName: 'Sector ' + (i % placesInRow),
 
             isSelected: false,
-            clickFunction: clickOnPlace
+            clickFunction: clickOnPlace,
+            clearFunction: function (schemeObject, schemeDesigner, view) {
+                var context = view.getContext();
+                var x = schemeObject.getRelativeX(view);
+                var y = schemeObject.getRelativeY(view);
+                var borderWidth = 5;
+                context.clearRect(x - borderWidth,
+                        y - borderWidth,
+                        this.width + (borderWidth * 2),
+                        this.height + (borderWidth * 2)
+                );
+            }
         });
 
         schemeDesigner.addObject(place);

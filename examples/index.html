@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?11"></script>
+    <script src="../dist/scheme-designer.min.js?12"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js"></script>
@@ -83,6 +83,7 @@
 
         var backgroundColor = '#' + schemeObject.params.backgroundColor;
 
+
         context.beginPath();
         var borderWidth = 4;
         context.lineWidth = borderWidth;
@@ -115,7 +116,16 @@
             height = height - (borderOffset * 2);
         }
 
-        context.rect(relativeX, relativeY, width, height);
+        if (schemeObject.rotation) {
+            context.save();
+            context.translate( relativeX+width/2, relativeY+height/2 );
+            context.rotate(schemeObject.rotation * Math.PI / 180);
+            context.rect(-width/2, -height/2, width, height);
+        } else {
+            context.rect(relativeX, relativeY, width, height);
+        }
+
+
 
         context.fill();
         context.stroke();
@@ -133,9 +143,19 @@
         if (schemeObject.params.isSelected || isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+            if (schemeObject.rotation) {
+                context.fillText(schemeObject.params.seat,
+                        -(schemeObject.width / 2) + (schemeObject.width / 2),
+                        -(schemeObject.height / 2)  + (schemeObject.height / 2)
+                );
+            } else {
+                context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+            }
         }
 
+        if (schemeObject.rotation) {
+            context.restore();
+        }
     };
 
     /**
@@ -175,6 +195,7 @@
         var topOffset = parseInt(objectData.CY);
         var width = parseInt(objectData.Width);
         var height = parseInt(objectData.Height);
+        var rotation = parseFloat(objectData.Angle);
 
         var schemeObject = new SchemeDesigner.SchemeObject({
             /**
@@ -190,6 +211,7 @@
             /**
              * Custom params (any names and count)
              */
+            rotation: rotation,
             id: 'place_' + i,
             price: objectData.Price,
             seat: objectData.Seat,

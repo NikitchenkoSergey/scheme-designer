@@ -46,14 +46,30 @@ namespace SchemeDesigner {
          * Check than point in rect
          * @param coordinates
          * @param boundingRect
+         * @param rotation - rotation of rect
          * @returns {boolean}
          */
-        public static pointInRect(coordinates: Coordinates, boundingRect: BoundingRect): boolean
+        public static pointInRect(coordinates: Coordinates, boundingRect: BoundingRect, rotation?: number): boolean
         {
             let result = false;
 
-            if (boundingRect.left <= coordinates.x && boundingRect.right >= coordinates.x
-                && boundingRect.top <= coordinates.y && boundingRect.bottom >= coordinates.y) {
+            let x = coordinates.x;
+            let y = coordinates.y;
+
+            // move point by rotation
+            if (rotation) {
+                rotation = -rotation;
+                let rectCenterX = (boundingRect.left + boundingRect.right) / 2;
+                let rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
+
+                let distance = Math.sqrt(Math.pow(x - rectCenterX, 2) + Math.pow(y - rectCenterY, 2));
+                x = x + distance * Math.cos(rotation);
+                y = y - distance * Math.sin(rotation);
+            }
+
+
+            if (boundingRect.left <= x && boundingRect.right >= x
+                && boundingRect.top <= y && boundingRect.bottom >= y) {
                 result = true;
             }
 

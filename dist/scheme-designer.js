@@ -383,6 +383,10 @@ var SchemeDesigner;
          */
         function SchemeObject(params) {
             /**
+             * Rotation
+             */
+            this.rotation = 0;
+            /**
              * Is hovered
              */
             this.isHovered = false;
@@ -476,10 +480,17 @@ var SchemeDesigner;
         };
         /**
          * Set cursorStyle
-         * @param {number} value
+         * @param {string} value
          */
         SchemeObject.prototype.setCursorStyle = function (value) {
             this.cursorStyle = value;
+        };
+        /**
+         * Set rotation
+         * @param {number} value
+         */
+        SchemeObject.prototype.setRotation = function (value) {
+            this.rotation = value;
         };
         /**
          * Set renderFunction
@@ -543,6 +554,13 @@ var SchemeDesigner;
                 right: this.x + this.width,
                 bottom: this.y + this.height
             };
+        };
+        /**
+         * Get rotation
+         * @returns {number}
+         */
+        SchemeObject.prototype.getRotation = function () {
+            return this.rotation;
         };
         return SchemeObject;
     }());
@@ -714,12 +732,24 @@ var SchemeDesigner;
          * Check than point in rect
          * @param coordinates
          * @param boundingRect
+         * @param rotation - rotation of rect
          * @returns {boolean}
          */
-        Tools.pointInRect = function (coordinates, boundingRect) {
+        Tools.pointInRect = function (coordinates, boundingRect, rotation) {
             var result = false;
-            if (boundingRect.left <= coordinates.x && boundingRect.right >= coordinates.x
-                && boundingRect.top <= coordinates.y && boundingRect.bottom >= coordinates.y) {
+            var x = coordinates.x;
+            var y = coordinates.y;
+            // move point by rotation
+            if (rotation) {
+                rotation = -rotation;
+                var rectCenterX = (boundingRect.left + boundingRect.right) / 2;
+                var rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
+                var distance = Math.sqrt(Math.pow(x - rectCenterX, 2) + Math.pow(y - rectCenterY, 2));
+                x = x + distance * Math.cos(rotation);
+                y = y - distance * Math.sin(rotation);
+            }
+            if (boundingRect.left <= x && boundingRect.right >= x
+                && boundingRect.top <= y && boundingRect.bottom >= y) {
                 result = true;
             }
             return result;
@@ -1585,7 +1615,7 @@ var SchemeDesigner;
             for (var _i = 0, nodeObjects_1 = nodeObjects; _i < nodeObjects_1.length; _i++) {
                 var schemeObject = nodeObjects_1[_i];
                 var boundingRect = schemeObject.getBoundingRect();
-                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect)) {
+                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect, schemeObject.getRotation())) {
                     result.push(schemeObject);
                 }
             }

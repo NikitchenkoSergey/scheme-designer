@@ -115,7 +115,7 @@ namespace SchemeDesigner {
             for (let schemeObject of nodeObjects) {
                 let boundingRect = schemeObject.getBoundingRect();
 
-                if (Tools.pointInRect({x: x, y: y}, boundingRect)) {
+                if (Tools.pointInRect({x: x, y: y}, boundingRect, schemeObject.getRotation())) {
                     result.push(schemeObject)
                 }
             }
