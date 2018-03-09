@@ -556,6 +556,30 @@ var SchemeDesigner;
             };
         };
         /**
+         * Outer bound rect
+         * @returns {BoundingRect}
+         */
+        SchemeObject.prototype.getOuterBoundingRect = function () {
+            var boundingRect = this.getBoundingRect();
+            if (!this.rotation) {
+                return boundingRect;
+            }
+            // rotate from center
+            var rectCenterX = (boundingRect.left + boundingRect.right) / 2;
+            var rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
+            var axis = { x: rectCenterX, y: rectCenterY };
+            var leftTop = SchemeDesigner.Tools.rotatePointByAxis({ x: this.x, y: this.y }, axis, this.rotation);
+            var leftBottom = SchemeDesigner.Tools.rotatePointByAxis({ x: this.x, y: this.y + this.height }, axis, this.rotation);
+            var rightTop = SchemeDesigner.Tools.rotatePointByAxis({ x: this.x + this.width, y: this.y }, axis, this.rotation);
+            var rightBottom = SchemeDesigner.Tools.rotatePointByAxis({ x: this.x + this.width, y: this.y + this.height }, axis, this.rotation);
+            return {
+                left: Math.min(leftTop.x, leftBottom.x, rightTop.x, rightBottom.x),
+                top: Math.min(leftTop.y, leftBottom.y, rightTop.y, rightBottom.y),
+                right: Math.max(leftTop.x, leftBottom.x, rightTop.x, rightBottom.x),
+                bottom: Math.max(leftTop.y, leftBottom.y, rightTop.y, rightBottom.y),
+            };
+        };
+        /**
          * Get rotation
          * @returns {number}
          */
@@ -744,15 +768,28 @@ var SchemeDesigner;
                 rotation = -rotation;
                 var rectCenterX = (boundingRect.left + boundingRect.right) / 2;
                 var rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
-                var distance = Math.sqrt(Math.pow(x - rectCenterX, 2) + Math.pow(y - rectCenterY, 2));
-                x = x + distance * Math.cos(rotation);
-                y = y - distance * Math.sin(rotation);
+                var rotatedPoint = Tools.rotatePointByAxis(coordinates, { x: rectCenterX, y: rectCenterY }, rotation);
+                x = rotatedPoint.x;
+                y = rotatedPoint.y;
             }
             if (boundingRect.left <= x && boundingRect.right >= x
                 && boundingRect.top <= y && boundingRect.bottom >= y) {
                 result = true;
             }
             return result;
+        };
+        /**
+         * Rotate point by axis
+         * @param point
+         * @param axis
+         * @param rotation
+         * @returns {{x: number, y: number}}
+         */
+        Tools.rotatePointByAxis = function (point, axis, rotation) {
+            rotation = rotation * Math.PI / 180;
+            var x = axis.x + (point.x - axis.x) * Math.cos(rotation) - (point.y - axis.y) * Math.sin(rotation);
+            var y = axis.y + (point.x - axis.x) * Math.sin(rotation) + (point.y - axis.y) * Math.cos(rotation);
+            return { x: x, y: y };
         };
         /**
          * Rect intersect rect
@@ -776,7 +813,7 @@ var SchemeDesigner;
             var result = [];
             for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                 var schemeObject = objects_1[_i];
-                var objectBoundingRect = schemeObject.getBoundingRect();
+                var objectBoundingRect = schemeObject.getOuterBoundingRect();
                 var isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
                 if (isPart) {
                     result.push(schemeObject);

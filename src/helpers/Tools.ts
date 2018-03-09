@@ -62,9 +62,9 @@ namespace SchemeDesigner {
                 let rectCenterX = (boundingRect.left + boundingRect.right) / 2;
                 let rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
 
-                let distance = Math.sqrt(Math.pow(x - rectCenterX, 2) + Math.pow(y - rectCenterY, 2));
-                x = x + distance * Math.cos(rotation);
-                y = y - distance * Math.sin(rotation);
+                let rotatedPoint = Tools.rotatePointByAxis(coordinates, {x: rectCenterX, y: rectCenterY}, rotation);
+                x = rotatedPoint.x;
+                y = rotatedPoint.y;
             }
 
 
@@ -74,6 +74,23 @@ namespace SchemeDesigner {
             }
 
             return result;
+        }
+
+        /**
+         * Rotate point by axis
+         * @param point
+         * @param axis
+         * @param rotation
+         * @returns {{x: number, y: number}}
+         */
+        public static rotatePointByAxis(point: Coordinates, axis: Coordinates, rotation: number): Coordinates
+        {
+            rotation = rotation * Math.PI / 180;
+
+            let x = axis.x + (point.x - axis.x) * Math.cos(rotation) - (point.y - axis.y) * Math.sin(rotation);
+            let y = axis.y + (point.x - axis.x) * Math.sin(rotation) + (point.y - axis.y) * Math.cos(rotation);
+
+            return {x: x, y: y};
         }
 
         /**
@@ -104,7 +121,7 @@ namespace SchemeDesigner {
 
 
             for (let schemeObject of objects) {
-                let objectBoundingRect = schemeObject.getBoundingRect();
+                let objectBoundingRect = schemeObject.getOuterBoundingRect();
 
                 let isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
 

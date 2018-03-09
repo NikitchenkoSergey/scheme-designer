@@ -277,6 +277,38 @@ namespace SchemeDesigner {
             };
         }
 
+
+        /**
+         * Outer bound rect
+         * @returns {BoundingRect}
+         */
+        public getOuterBoundingRect(): BoundingRect
+        {
+            let boundingRect = this.getBoundingRect();
+
+            if (!this.rotation) {
+                return boundingRect;
+            }
+
+            // rotate from center
+            let rectCenterX = (boundingRect.left + boundingRect.right) / 2;
+            let rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
+
+            let axis: Coordinates = {x: rectCenterX, y: rectCenterY};
+
+            let leftTop = Tools.rotatePointByAxis({x: this.x, y: this.y}, axis, this.rotation);
+            let leftBottom = Tools.rotatePointByAxis({x: this.x, y: this.y + this.height}, axis, this.rotation);
+            let rightTop = Tools.rotatePointByAxis({x: this.x + this.width, y: this.y}, axis, this.rotation);
+            let rightBottom = Tools.rotatePointByAxis({x: this.x + this.width, y: this.y + this.height}, axis, this.rotation);
+
+            return {
+                left: Math.min(leftTop.x, leftBottom.x, rightTop.x, rightBottom.x),
+                top: Math.min(leftTop.y, leftBottom.y, rightTop.y, rightBottom.y),
+                right: Math.max(leftTop.x, leftBottom.x, rightTop.x, rightBottom.x),
+                bottom: Math.max(leftTop.y, leftBottom.y, rightTop.y, rightBottom.y),
+            };
+        }
+
         /**
          * Get rotation
          * @returns {number}
