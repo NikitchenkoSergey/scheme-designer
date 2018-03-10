@@ -4,17 +4,19 @@
   "description": "Canvas scheme designer, scheme constructor on javascript (typescript)",
   "main": "scheme-designer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "Nikitchenko Sergey",
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.1",
+    "gulp-header-comment": "^0.4.0",
     "gulp-rename": "^1.2.2",
     "gulp-sequence": "^1.0.0",
     "gulp-typescript": "^4.0.1",
     "gulp-uglify": "^3.0.0",
     "gulp-watch": "^5.0.0",
+    "mocha": "^5.0.4",
     "pump": "^3.0.0",
     "typescript": "^2.7.2"
   }

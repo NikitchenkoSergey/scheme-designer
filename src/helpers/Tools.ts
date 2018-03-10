@@ -9,7 +9,7 @@ namespace SchemeDesigner {
          * @param obj
          * @param params
          */
-        public static configure(obj: any, params: any)
+        public static configure(obj: any, params: any): void
         {
             if (params) {
                 for (let paramName in params) {
@@ -27,7 +27,7 @@ namespace SchemeDesigner {
          * @param string
          * @returns {string}
          */
-        public static capitalizeFirstLetter(string: string)
+        public static capitalizeFirstLetter(string: string): string
         {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
@@ -81,7 +81,7 @@ namespace SchemeDesigner {
          * @param point
          * @param axis
          * @param rotation
-         * @returns {{x: number, y: number}}
+         * @returns {Coordinates}
          */
         public static rotatePointByAxis(point: Coordinates, axis: Coordinates, rotation: number): Coordinates
         {

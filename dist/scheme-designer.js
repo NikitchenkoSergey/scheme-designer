@@ -266,6 +266,7 @@ var SchemeDesigner;
         };
         /**
          * Draw from cache
+         * @returns {boolean}
          */
         Scheme.prototype.drawFromCache = function () {
             if (!this.cacheView) {
@@ -280,6 +281,7 @@ var SchemeDesigner;
             var rectWidth = boundingRect.right;
             var rectHeight = boundingRect.bottom;
             this.view.getContext().drawImage(this.cacheView.getCanvas(), this.getScrollManager().getScrollLeft(), this.getScrollManager().getScrollTop(), rectWidth, rectHeight);
+            return true;
         };
         /**
          * Request draw from cache
@@ -783,7 +785,7 @@ var SchemeDesigner;
          * @param point
          * @param axis
          * @param rotation
-         * @returns {{x: number, y: number}}
+         * @returns {Coordinates}
          */
         Tools.rotatePointByAxis = function (point, axis, rotation) {
             rotation = rotation * Math.PI / 180;

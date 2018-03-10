@@ -190,7 +190,7 @@ namespace SchemeDesigner {
          * Zoom to center
          * @param delta
          */
-        public zoomToCenter(delta: number)
+        public zoomToCenter(delta: number): void
         {
             this.zoomToPoint({
                 x: this.scheme.getWidth() / 2,
@@ -236,7 +236,7 @@ namespace SchemeDesigner {
          * Set padding
          * @param value
          */
-        public setPadding(value: number)
+        public setPadding(value: number): void
         {
             this.padding = value;
         }
@@ -245,7 +245,7 @@ namespace SchemeDesigner {
          * Set max scale
          * @param value
          */
-        public setMaxScale(value: number)
+        public setMaxScale(value: number): void
         {
             this.maxScale = value;
         }
@@ -254,7 +254,7 @@ namespace SchemeDesigner {
          * Set zoomCoefficient
          * @param value
          */
-        public setZoomCoefficient(value: number)
+        public setZoomCoefficient(value: number): void
         {
             this.zoomCoefficient = value;
         }

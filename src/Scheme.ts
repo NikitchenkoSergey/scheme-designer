@@ -382,8 +382,9 @@ namespace SchemeDesigner {
 
         /**
          * Draw from cache
+         * @returns {boolean}
          */
-        public drawFromCache()
+        public drawFromCache(): boolean
         {
             if (!this.cacheView) {
                 return false;
@@ -407,6 +408,8 @@ namespace SchemeDesigner {
                 rectWidth,
                 rectHeight
             );
+
+            return true;
         }
 
         /**
