@@ -37,6 +37,9 @@ for adaptive add wrapper (relative):
 ```
 var canvas = document.getElementById('canvas');
 var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
+    options: {
+        cacheSchemeRatio: 2
+    },
     scroll: {
         maxHiddenPart: 0.85
     },
@@ -70,6 +73,14 @@ schemeDesigner.render();
         <th>Option</th>
         <th>Default</th>
         <th>Description</th>
+    </tr>
+     <tr>
+        <td colspan=3 align=center><strong>Options</strong></td>
+    </tr>
+     <tr>
+        <td>cacheSchemeRatio</td>
+        <td>2</td>
+        <td>Ratio for scheme cache. Set false to disable cache.</td>
     </tr>
     <tr>
         <td colspan=3 align=center><strong>Scroll</strong></td>
@@ -129,6 +140,11 @@ schemeDesigner.render();
         <td>Height</td>
     </tr>
      <tr>
+        <td>rotation: number</td>
+        <td></td>
+        <td>Rotation</td>
+    </tr>
+     <tr>
         <td>cursorStyle: string</td>
         <td>pointer</td>
         <td>Cursor style on object</td>
@@ -152,6 +168,11 @@ schemeDesigner.render();
        <td>mouseLeaveFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View, e: Event)</td>
        <td></td>
        <td>Function for handle mouseleave on object</td>
+   </tr>
+     <tr>
+       <td>clearFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View)</td>
+       <td></td>
+       <td>Function for clear object on scheme cache</td>
    </tr>
 </table>
 
@@ -218,6 +239,11 @@ schemeDesigner.getStorageManager().showNodesParts();
         <td>Request redraw canvas</td>
     </tr>
     <tr>
+        <td>requestDrawFromCache()</td>
+        <td>SchemeDesigner</td>
+        <td>Request draw scheme from cache</td>
+    </tr>
+    <tr>
         <td>render()</td>
         <td></td>
         <td>Request redraw canvas, create search tree and scroll with zoom to center</td>
@@ -256,6 +282,21 @@ schemeDesigner.getStorageManager().showNodesParts();
         <td>setCursorStyle(cursor: string)</td>
         <td>SchemeDesigner</td>
         <td>Set cursor style</td>
+    </tr>
+     <tr>
+        <td>updateCache(onlyChanged: boolean)</td>
+        <td></td>
+        <td>Redraw scheme cache</td>
+    </tr>
+    <tr>
+        <td>getView()</td>
+        <td>View</td>
+        <td>Main view</td>
+    </tr>
+    <tr>
+        <td>addChangedObject(schemeObject: SchemeObject)</td>
+        <td></td>
+        <td>Add object to changed list for redraw cache</td>
     </tr>
     <tr>
         <td colspan=3 align=center><strong>Scroll manager</strong></td>
