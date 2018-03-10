@@ -1,12 +1,17 @@
 {
   "name": "scheme-designer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Canvas scheme designer, scheme constructor on javascript (typescript)",
   "main": "scheme-designer.js",
   "scripts": {
     "test": "mocha"
   },
-  "author": "Nikitchenko Sergey",
+  "author":
+  { "name" : "Nikitchenko Sergey",
+    "email" : "nikitchenko.sergey@yandex.ru",
+    "url" : "http://nikitchenko.ru/"
+  }
+,
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.1",
