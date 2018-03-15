@@ -12,7 +12,7 @@ namespace SchemeDesigner {
         /**
          * All objects
          */
-        protected objects: SchemeObject[];
+        protected objects: SchemeObjectsByLayers = {};
 
         /**
          * Objects bounding rect
@@ -30,21 +30,24 @@ namespace SchemeDesigner {
         protected treeDepth: number = 6;
 
         /**
+         * Layers
+         */
+        protected layers: Layers = {};
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
         constructor(scheme: Scheme)
         {
             this.scheme = scheme;
-
-            this.objects = [];
         }
 
         /**
          * Get objects
-         * @returns {SchemeObject[]}
+         * @returns {SchemeObjectsByLayers}
          */
-        public getObjects(): SchemeObject[]
+        public getObjects(): SchemeObjectsByLayers
         {
             return this.objects;
         }
@@ -52,12 +55,45 @@ namespace SchemeDesigner {
         /**
          * Add object
          * @param {SchemeObject} object
+         * @param layerId
          */
-        public addObject(object: SchemeObject): void
+        public addObject(object: SchemeObject, layerId: string): void
         {
-            this.objects.push(object);
+            let layer = this.getLayerById(layerId);
+            if (!(layer instanceof Layer)) {
+                throw new Error('Layer #' + layerId + ' not exist');
+            }
+
+            this.addObjectToLayer(object, layer);
+        }
+
+        /**
+         * Add object to layer
+         * @param {SchemeDesigner.SchemeObject} object
+         * @param {SchemeDesigner.Layer} layer
+         */
+        protected addObjectToLayer(object: SchemeObject, layer: Layer): void
+        {
+            let layerId = layer.getId();
+            if (typeof this.objects[layerId] == 'undefined') {
+                this.objects[layerId] = [];
+            }
+            this.objects[layerId].push(object);
             this.reCalcObjectsBoundingRect();
             this.requestBuildTree();
+        }
+
+        /**
+         * Get layer by id
+         * @param {string} id
+         * @return {SchemeDesigner.Layer | null}
+         */
+        public getLayerById(id: string): Layer|null
+        {
+           if (typeof this.layers[id] != 'undefined') {
+               return this.layers[id];
+           }
+            return null;
         }
 
         /**
@@ -66,9 +102,29 @@ namespace SchemeDesigner {
          */
         public removeObject(object: SchemeObject): void
         {
-            this.objects.filter(existObject => existObject !== object);
+            for (let layerId in this.objects) {
+                this.objects[layerId].filter(existObject => existObject !== object);
+            }
+
             this.reCalcObjectsBoundingRect();
             this.requestBuildTree();
+        }
+
+        /**
+         * Get objects from visible layers
+         * @return {SchemeDesigner.SchemeObject[]}
+         */
+        public getVisibleObjects(): SchemeObject[]
+        {
+            let result: SchemeObject[] = [];
+            for (let layerId in this.objects) {
+                let layer = this.getLayerById(layerId);
+                if (layer.getVisible()) {
+                    result = [...result, ...this.objects[layerId]];
+                }
+            }
+
+            return result;
         }
 
         /**
@@ -76,8 +132,61 @@ namespace SchemeDesigner {
          */
         public removeObjects(): void
         {
-            this.objects = [];
+            this.objects = {};
+            this.reCalcObjectsBoundingRect();
             this.requestBuildTree();
+        }
+
+        /**
+         * Set layers
+         * @param {SchemeDesigner.Layer[]} layers
+         */
+        public setLayers(layers: Layer[]): void
+        {
+            for (let layer of layers) {
+                this.addLayer(layer);
+            }
+        }
+
+        /**
+         * Add layer
+         * @param {SchemeDesigner.Layer} layer
+         */
+        public addLayer(layer: Layer): void
+        {
+            let existLayer = this.getLayerById(layer.getId());
+            if (existLayer instanceof Layer) {
+                throw new Error('Layer with such id already exist');
+            }
+            this.layers[layer.getId()] = layer;
+        }
+
+        /**
+         * Remove all layers
+         */
+        public removeLayers(): void
+        {
+            this.layers = {};
+            this.objects = {};
+        }
+
+        /**
+         * Set layer visibility
+         * @param {string} layerId
+         * @param {boolean} visible
+         */
+        public setLayerVisibility(layerId: string, visible: boolean): void
+        {
+            let layer = this.getLayerById(layerId);
+            if (!(layer instanceof Layer)) {
+                throw new Error('Layer not found');
+            }
+
+            layer.setVisible(visible);
+            this.requestBuildTree();
+            this.reCalcObjectsBoundingRect();
+            this.scheme.updateCache(false);
+            this.scheme.requestRenderAll();
         }
 
         /**
@@ -169,7 +278,7 @@ namespace SchemeDesigner {
             let right: number;
             let bottom: number;
 
-            for (let schemeObject of this.objects) {
+            for (let schemeObject of this.getVisibleObjects()) {
                 let schemeObjectBoundingRect = schemeObject.getBoundingRect();
 
                 if (top == undefined || schemeObjectBoundingRect.top < top) {
@@ -236,7 +345,7 @@ namespace SchemeDesigner {
         {
             let boundingRect = this.getObjectsBoundingRect();
 
-            this.rootTreeNode = new TreeNode(null, boundingRect, this.objects, 0);
+            this.rootTreeNode = new TreeNode(null, boundingRect, this.getVisibleObjects(), 0);
 
             this.explodeTreeNodes(this.rootTreeNode, this.treeDepth);
 

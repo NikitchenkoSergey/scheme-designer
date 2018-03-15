@@ -298,10 +298,11 @@ namespace SchemeDesigner {
         /**
          * Add object
          * @param {SchemeObject} object
+         * @param {string} layerId
          */
-        public addObject(object: SchemeObject): void
+        public addObject(object: SchemeObject, layerId: string): void
         {
-            this.storageManager.addObject(object);
+            this.storageManager.addObject(object, layerId);
         }
 
         /**
@@ -344,9 +345,9 @@ namespace SchemeDesigner {
 
         /**
          * All objects
-         * @returns {SchemeObject[]}
+         * @returns {SchemeObjectsByLayers}
          */
-        public getObjects(): SchemeObject[]
+        public getObjects(): SchemeObjectsByLayers
         {
             return this.storageManager.getObjects();
         }
@@ -456,7 +457,7 @@ namespace SchemeDesigner {
 
                 this.cacheView.getContext().scale(scale, scale);
 
-                for (let schemeObject of this.getObjects()) {
+                for (let schemeObject of this.storageManager.getVisibleObjects()) {
                     schemeObject.render(this, this.cacheView);
                 }
             }

@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?13"></script>
+    <script src="../dist/scheme-designer.js?13"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -54,6 +54,8 @@
     </div>
 </div>
 <script>
+    var defaultLayer = new SchemeDesigner.Layer('default');
+
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
         options: {
@@ -68,7 +70,10 @@
             zoomCoefficient: 1.04
         },
         storage: {
-            treeDepth: 8
+            treeDepth: 8,
+            layers: [
+                defaultLayer
+            ]
         }
     });
 
@@ -236,7 +241,7 @@
             }
         });
 
-        schemeDesigner.addObject(schemeObject);
+        schemeDesigner.addObject(schemeObject, 'default');
     }
 
 

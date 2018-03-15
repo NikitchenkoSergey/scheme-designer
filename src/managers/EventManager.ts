@@ -181,7 +181,7 @@ namespace SchemeDesigner {
             }
 
             // defer for prevent trigger click on mouseUp
-            setTimeout(() => {this.isDragging = false; }, 10);
+            setTimeout(() => {this.isDragging = false; }, 1);
         }
 
         /**
