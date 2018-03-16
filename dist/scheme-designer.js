@@ -1750,10 +1750,30 @@ var SchemeDesigner;
          */
         StorageManager.prototype.getVisibleObjects = function () {
             var result = [];
-            for (var layerId in this.objects) {
-                var layer = this.getLayerById(layerId);
+            var layers = [];
+            for (var layerId in this.layers) {
+                var layer = this.layers[layerId];
                 if (layer.getVisible()) {
-                    result = result.concat(this.objects[layerId]);
+                    layers.push(layer);
+                }
+            }
+            // sort layers by z-index
+            layers.sort(function (a, b) {
+                if (a.getZIndex() < b.getZIndex()) {
+                    return -1;
+                }
+                if (a.getZIndex() > b.getZIndex()) {
+                    return 1;
+                }
+                return 0;
+            });
+            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
+                var layer = layers_1[_i];
+                if (layer.getVisible()) {
+                    var objects = this.objects[layer.getId()];
+                    if (typeof objects !== 'undefined' && objects.length) {
+                        result = result.concat(this.objects[layer.getId()]);
+                    }
                 }
             }
             return result;
@@ -1771,8 +1791,8 @@ var SchemeDesigner;
          * @param {SchemeDesigner.Layer[]} layers
          */
         StorageManager.prototype.setLayers = function (layers) {
-            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
-                var layer = layers_1[_i];
+            for (var _i = 0, layers_2 = layers; _i < layers_2.length; _i++) {
+                var layer = layers_2[_i];
                 this.addLayer(layer);
             }
         };
@@ -1874,24 +1894,27 @@ var SchemeDesigner;
          * @returns {{left: number, top: number, right: number, bottom: number}}
          */
         StorageManager.prototype.calculateObjectsBoundingRect = function () {
-            var top;
-            var left;
-            var right;
-            var bottom;
-            for (var _i = 0, _a = this.getVisibleObjects(); _i < _a.length; _i++) {
-                var schemeObject = _a[_i];
-                var schemeObjectBoundingRect = schemeObject.getBoundingRect();
-                if (top == undefined || schemeObjectBoundingRect.top < top) {
-                    top = schemeObjectBoundingRect.top;
-                }
-                if (left == undefined || schemeObjectBoundingRect.left < left) {
-                    left = schemeObjectBoundingRect.left;
-                }
-                if (right == undefined || schemeObjectBoundingRect.right > right) {
-                    right = schemeObjectBoundingRect.right;
-                }
-                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
-                    bottom = schemeObjectBoundingRect.bottom;
+            var top = 0;
+            var left = 0;
+            var right = 0;
+            var bottom = 0;
+            var visibleObjects = this.getVisibleObjects();
+            if (visibleObjects.length) {
+                for (var _i = 0, _a = this.getVisibleObjects(); _i < _a.length; _i++) {
+                    var schemeObject = _a[_i];
+                    var schemeObjectBoundingRect = schemeObject.getBoundingRect();
+                    if (top == undefined || schemeObjectBoundingRect.top < top) {
+                        top = schemeObjectBoundingRect.top;
+                    }
+                    if (left == undefined || schemeObjectBoundingRect.left < left) {
+                        left = schemeObjectBoundingRect.left;
+                    }
+                    if (right == undefined || schemeObjectBoundingRect.right > right) {
+                        right = schemeObjectBoundingRect.right;
+                    }
+                    if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                        bottom = schemeObjectBoundingRect.bottom;
+                    }
                 }
             }
             return {

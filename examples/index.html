@@ -54,7 +54,8 @@
     </div>
 </div>
 <script>
-    var defaultLayer = new SchemeDesigner.Layer('default');
+    var background = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false});
+    var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
@@ -72,6 +73,7 @@
         storage: {
             treeDepth: 8,
             layers: [
+                background,
                 defaultLayer
             ]
         }
@@ -244,6 +246,37 @@
         schemeDesigner.addObject(schemeObject, 'default');
     }
 
+    /**
+     * add background object
+     */
+    schemeDesigner.addObject(new SchemeDesigner.SchemeObject({
+        x: 0.5,
+        y: 0.5,
+        width: 2000,
+        height: 2000,
+        cursorStyle: 'default',
+        renderFunction: function (schemeObject, schemeDesigner, view) {
+            var context = view.getContext();
+            context.beginPath();
+            context.lineWidth = 4;
+            context.strokeStyle = 'blue';
+
+            context.fillStyle = 'blue';
+
+
+            var relativeX = schemeObject.getRelativeX(view);
+            var relativeY = schemeObject.getRelativeY(view);
+
+            var width = schemeObject.width;
+            var height = schemeObject.height;
+
+            context.rect(relativeX, relativeY, width, height);
+
+
+            context.fill();
+            context.stroke();
+        }
+    }), 'background');
 
     /**
      * Show scheme

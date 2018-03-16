@@ -117,10 +117,32 @@ namespace SchemeDesigner {
         public getVisibleObjects(): SchemeObject[]
         {
             let result: SchemeObject[] = [];
-            for (let layerId in this.objects) {
-                let layer = this.getLayerById(layerId);
+
+            let layers: Layer[] = [];
+            for (let layerId in this.layers) {
+                let layer = this.layers[layerId];
                 if (layer.getVisible()) {
-                    result = [...result, ...this.objects[layerId]];
+                    layers.push(layer);
+                }
+            }
+
+            // sort layers by z-index
+            layers.sort(function (a: Layer, b: Layer): number {
+                if (a.getZIndex() < b.getZIndex()) {
+                    return -1;
+                }
+                if (a.getZIndex() > b.getZIndex()) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            for (let layer of layers) {
+                if (layer.getVisible()) {
+                    let objects = this.objects[layer.getId()];
+                    if (typeof objects !== 'undefined' && objects.length) {
+                        result = [...result, ...this.objects[layer.getId()]];
+                    }
                 }
             }
 
@@ -273,28 +295,31 @@ namespace SchemeDesigner {
          */
         public calculateObjectsBoundingRect(): BoundingRect
         {
-            let top: number;
-            let left: number;
-            let right: number;
-            let bottom: number;
+            let top: number = 0;
+            let left: number = 0;
+            let right: number = 0;
+            let bottom: number = 0;
 
-            for (let schemeObject of this.getVisibleObjects()) {
-                let schemeObjectBoundingRect = schemeObject.getBoundingRect();
+            let visibleObjects = this.getVisibleObjects();
+            if (visibleObjects.length) {
+                for (let schemeObject of this.getVisibleObjects()) {
+                    let schemeObjectBoundingRect = schemeObject.getBoundingRect();
 
-                if (top == undefined || schemeObjectBoundingRect.top < top) {
-                    top = schemeObjectBoundingRect.top;
-                }
+                    if (top == undefined || schemeObjectBoundingRect.top < top) {
+                        top = schemeObjectBoundingRect.top;
+                    }
 
-                if (left == undefined || schemeObjectBoundingRect.left < left) {
-                    left = schemeObjectBoundingRect.left;
-                }
+                    if (left == undefined || schemeObjectBoundingRect.left < left) {
+                        left = schemeObjectBoundingRect.left;
+                    }
 
-                if (right == undefined || schemeObjectBoundingRect.right > right) {
-                    right = schemeObjectBoundingRect.right;
-                }
+                    if (right == undefined || schemeObjectBoundingRect.right > right) {
+                        right = schemeObjectBoundingRect.right;
+                    }
 
-                if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
-                    bottom = schemeObjectBoundingRect.bottom;
+                    if (bottom == undefined || schemeObjectBoundingRect.bottom > bottom) {
+                        bottom = schemeObjectBoundingRect.bottom;
+                    }
                 }
             }
 
