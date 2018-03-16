@@ -6,6 +6,11 @@ namespace SchemeDesigner {
     export class SchemeObject
     {
         /**
+         * Object unique id
+         */
+        protected id: number;
+
+        /**
          * X position
          */
         protected x: number;
@@ -76,9 +81,20 @@ namespace SchemeDesigner {
          */
         constructor(params: any)
         {
+            this.id = Tools.generateUniqueId();
+
             Tools.configure(this, params);
 
             this.params = params;
+        }
+
+        /**
+         * Get id
+         * @returns {number}
+         */
+        public getId(): number
+        {
+            return this.id;
         }
 
         /**

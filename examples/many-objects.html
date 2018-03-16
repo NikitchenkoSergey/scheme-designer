@@ -16,20 +16,7 @@
     </div>
 </div>
 <script>
-    var canvas = document.getElementById('canvas1');
-    var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
-        scroll: {
-            maxHiddenPart: 0.85
-        },
-        zoom: {
-            padding: 0.1,
-            maxScale: 8,
-            zoomCoefficient: 1.04
-        },
-        storage: {
-            treeDepth: 6
-        }
-    });
+    var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
     var placesCount = 20000;
     var placesInRow = 100;
@@ -141,8 +128,26 @@
             }
         });
 
-        schemeDesigner.addObject(place);
+        defaultLayer.addObject(place);
     }
+
+
+    var canvas = document.getElementById('canvas1');
+    var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
+        scroll: {
+            maxHiddenPart: 0.85
+        },
+        zoom: {
+            padding: 0.1,
+            maxScale: 8,
+            zoomCoefficient: 1.04
+        },
+        storage: {
+            treeDepth: 6
+        }
+    });
+
+    schemeDesigner.addLayer(defaultLayer);
 
 
     /**

@@ -9,6 +9,7 @@ Demo: <a href="http://nikitchenko.ru/scheme-designer/examples/">http://nikitchen
 <ul>
     <li>No dependencies</li>
     <li>Render only visible objects</li>
+    <li>Layers support</li>
     <li>Responsible</li>
     <li>Objects stored in search tree</li>
     <li>Touch support</li>
@@ -33,8 +34,20 @@ for adaptive add wrapper (relative):
  </div>
 ```
 
-3. Init, add objects and render (see examples)
+3. Init, create layers, add objects to layers and render (see examples)
 ```
+var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 1});
+
+var schemeObject = new SchemeDesigner.SchemeObject({
+            x: 0.5 + leftOffset,
+            y: 0.5 + topOffset,
+            width: width,
+            height: height,
+            renderFunction: renderPlace
+});
+
+defaultLayer.addObject(schemeObject);
+
 var canvas = document.getElementById('canvas');
 var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
     options: {
@@ -53,15 +66,7 @@ var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
     }
 });
 
-var schemeObject = new SchemeDesigner.SchemeObject({
-            x: 0.5 + leftOffset,
-            y: 0.5 + topOffset,
-            width: width,
-            height: height,
-            renderFunction: renderPlace
-});
-
-schemeDesigner.addObject(schemeObject);
+schemeDesigner.addLayer(defaultLayer);
 
 schemeDesigner.render();
 ```
@@ -117,6 +122,31 @@ schemeDesigner.render();
         <td>Depth of search tree</td>
     </tr>
 </table>
+
+<h3>Layer</h3>
+<table>
+    <tr>
+        <th>Option</th>
+        <th>Default</th>
+        <th>Description</th>
+    </tr>
+     <tr>
+        <td>zIndex: number</td>
+        <td>0</td>
+        <td>Z index</td>
+    </tr>
+    <tr>
+        <td>visible: boolean</td>
+        <td>true</td>
+        <td>Layer is visible</td>
+    </tr>
+    <tr>
+        <td>active: boolean</td>
+        <td>true</td>
+        <td>Layer is active: objects can process events</td>
+    </tr>
+</table>
+
 <h3>SchemeObject</h3>
 <table>
     <tr>
@@ -186,7 +216,7 @@ SchemeDesigner.setCursorStyle('move');
 schemeDesigner.getZoomManager().zoomToCenter(10);
 schemeDesigner.getScrollManager().scroll(100, 200);
 schemeDesigner.getStorageManager().showNodesParts();
-
+schemeDesigner.getStorageManager().setLayerVisibility('background', true);
 ```
 
 <table>

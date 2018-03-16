@@ -10,11 +10,6 @@ namespace SchemeDesigner {
         protected scheme: Scheme;
 
         /**
-         * All objects
-         */
-        protected objects: SchemeObjectsByLayers = {};
-
-        /**
          * Objects bounding rect
          */
         protected objectsBoundingRect: BoundingRect;
@@ -44,46 +39,6 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Get objects
-         * @returns {SchemeObjectsByLayers}
-         */
-        public getObjects(): SchemeObjectsByLayers
-        {
-            return this.objects;
-        }
-
-        /**
-         * Add object
-         * @param {SchemeObject} object
-         * @param layerId
-         */
-        public addObject(object: SchemeObject, layerId: string): void
-        {
-            let layer = this.getLayerById(layerId);
-            if (!(layer instanceof Layer)) {
-                throw new Error('Layer #' + layerId + ' not exist');
-            }
-
-            this.addObjectToLayer(object, layer);
-        }
-
-        /**
-         * Add object to layer
-         * @param {SchemeDesigner.SchemeObject} object
-         * @param {SchemeDesigner.Layer} layer
-         */
-        protected addObjectToLayer(object: SchemeObject, layer: Layer): void
-        {
-            let layerId = layer.getId();
-            if (typeof this.objects[layerId] == 'undefined') {
-                this.objects[layerId] = [];
-            }
-            this.objects[layerId].push(object);
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        }
-
-        /**
          * Get layer by id
          * @param {string} id
          * @return {SchemeDesigner.Layer | null}
@@ -96,19 +51,6 @@ namespace SchemeDesigner {
             return null;
         }
 
-        /**
-         * Remove object
-         * @param {SchemeObject} object
-         */
-        public removeObject(object: SchemeObject): void
-        {
-            for (let layerId in this.objects) {
-                this.objects[layerId].filter(existObject => existObject !== object);
-            }
-
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        }
 
         /**
          * Get objects from visible layers
@@ -116,8 +58,68 @@ namespace SchemeDesigner {
          */
         public getVisibleObjects(): SchemeObject[]
         {
-            let result: SchemeObject[] = [];
+            let result: SchemeObject[]  = [];
 
+            let visibleObjectsByLayers = this.getVisibleObjectsByLayers();
+
+            for (let layerId in visibleObjectsByLayers) {
+                let objects = visibleObjectsByLayers[layerId];
+                if (typeof objects !== 'undefined' && objects.length) {
+                    result = [...result, ...objects];
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         * Get visible objects by layers
+         * @returns {SchemeObjectsByLayers}
+         */
+        public getVisibleObjectsByLayers(): SchemeObjectsByLayers
+        {
+            let result: SchemeObjectsByLayers = {};
+
+            let layers = this.getSortedLayers();
+
+            for (let layer of layers) {
+                if (layer.getVisible()) {
+                    let objects = layer.getObjects();
+                    if (typeof objects !== 'undefined' && objects.length) {
+                        result[layer.getId()] = objects;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         * Set layers
+         * @param {SchemeDesigner.Layer[]} layers
+         */
+        public setLayers(layers: Layer[]): void
+        {
+            for (let layer of layers) {
+                this.addLayer(layer);
+            }
+        }
+
+        /**
+         * Get layers
+         * @returns {Layers}
+         */
+        public getLayers(): Layers
+        {
+            return this.layers;
+        }
+
+        /**
+         * Get sorted layers by z-index
+         * @returns {Layer[]}
+         */
+        public getSortedLayers(): Layer[]
+        {
             let layers: Layer[] = [];
             for (let layerId in this.layers) {
                 let layer = this.layers[layerId];
@@ -137,37 +139,7 @@ namespace SchemeDesigner {
                 return 0;
             });
 
-            for (let layer of layers) {
-                if (layer.getVisible()) {
-                    let objects = this.objects[layer.getId()];
-                    if (typeof objects !== 'undefined' && objects.length) {
-                        result = [...result, ...this.objects[layer.getId()]];
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        /**
-         * Remove all objects
-         */
-        public removeObjects(): void
-        {
-            this.objects = {};
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        }
-
-        /**
-         * Set layers
-         * @param {SchemeDesigner.Layer[]} layers
-         */
-        public setLayers(layers: Layer[]): void
-        {
-            for (let layer of layers) {
-                this.addLayer(layer);
-            }
+            return layers;
         }
 
         /**
@@ -189,7 +161,18 @@ namespace SchemeDesigner {
         public removeLayers(): void
         {
             this.layers = {};
-            this.objects = {};
+
+            this.applyStructureChange();
+        }
+
+        /**
+         * Remove layer
+         */
+        public removeLayer(layerId: string): void
+        {
+            delete this.layers[layerId];
+
+            this.applyStructureChange();
         }
 
         /**
@@ -205,6 +188,15 @@ namespace SchemeDesigner {
             }
 
             layer.setVisible(visible);
+
+            this.applyStructureChange();
+        }
+
+        /**
+         * Apple structure change
+         */
+        public applyStructureChange(): void
+        {
             this.requestBuildTree();
             this.reCalcObjectsBoundingRect();
             this.scheme.updateCache(false);
@@ -236,18 +228,25 @@ namespace SchemeDesigner {
             let rootNode = this.getTree();
             let node = this.findNodeByCoordinates(rootNode, {x: x, y: y});
 
-            let nodeObjects: SchemeObject[] = [];
+            let nodeObjectsByLayers: SchemeObjectsByLayers = {};
 
             if (node) {
-                nodeObjects = node.getObjects();
+                nodeObjectsByLayers = node.getObjectsByLayers();
             }
 
             // search object in node
-            for (let schemeObject of nodeObjects) {
-                let boundingRect = schemeObject.getBoundingRect();
+            for (let layerId in nodeObjectsByLayers) {
+                let layer = this.getLayerById(layerId);
+                if (!layer.getActive()) {
+                    continue;
+                }
 
-                if (Tools.pointInRect({x: x, y: y}, boundingRect, schemeObject.getRotation())) {
-                    result.push(schemeObject)
+                let objects = nodeObjectsByLayers[layerId];
+                for (let schemeObject of objects) {
+                    let boundingRect = schemeObject.getBoundingRect();
+                    if (Tools.pointInRect({x: x, y: y}, boundingRect, schemeObject.getRotation())) {
+                        result.push(schemeObject)
+                    }
                 }
             }
 
@@ -302,7 +301,7 @@ namespace SchemeDesigner {
 
             let visibleObjects = this.getVisibleObjects();
             if (visibleObjects.length) {
-                for (let schemeObject of this.getVisibleObjects()) {
+                for (let schemeObject of visibleObjects) {
                     let schemeObjectBoundingRect = schemeObject.getBoundingRect();
 
                     if (top == undefined || schemeObjectBoundingRect.top < top) {
@@ -370,7 +369,7 @@ namespace SchemeDesigner {
         {
             let boundingRect = this.getObjectsBoundingRect();
 
-            this.rootTreeNode = new TreeNode(null, boundingRect, this.getVisibleObjects(), 0);
+            this.rootTreeNode = new TreeNode(null, boundingRect, this.getVisibleObjectsByLayers(), 0);
 
             this.explodeTreeNodes(this.rootTreeNode, this.treeDepth);
 
@@ -420,8 +419,8 @@ namespace SchemeDesigner {
                 rightBoundingRect.top = rightBoundingRect.top + delta;
             }
 
-            let leftNodeObjects = Tools.filterObjectsByBoundingRect(leftBoundingRect, node.getObjects());
-            let rightNodeObjects = Tools.filterObjectsByBoundingRect(rightBoundingRect, node.getObjects());
+            let leftNodeObjects = Tools.filterLayersObjectsByBoundingRect(leftBoundingRect, node.getObjectsByLayers());
+            let rightNodeObjects = Tools.filterLayersObjectsByBoundingRect(rightBoundingRect, node.getObjectsByLayers());
 
             let leftNode = new TreeNode(node, leftBoundingRect, leftNodeObjects, newDepth);
             let rightNode = new TreeNode(node, rightBoundingRect, rightNodeObjects, newDepth);
@@ -537,9 +536,9 @@ namespace SchemeDesigner {
         protected boundingRect: BoundingRect;
 
         /**
-         * Objects in node
+         * Objects in node by layers
          */
-        protected objects: SchemeObject[] = [];
+        protected objectsByLayers: SchemeObjectsByLayers = {};
 
         /**
          * Depth
@@ -553,11 +552,11 @@ namespace SchemeDesigner {
          * @param objects
          * @param depth
          */
-        constructor(parent: null | TreeNode, boundingRect: BoundingRect, objects: SchemeObject[], depth: number)
+        constructor(parent: null | TreeNode, boundingRect: BoundingRect, objects: SchemeObjectsByLayers, depth: number)
         {
             this.parent = parent;
             this.boundingRect = boundingRect;
-            this.objects = objects;
+            this.objectsByLayers = objects;
             this.depth = depth;
         }
 
@@ -576,7 +575,36 @@ namespace SchemeDesigner {
          */
         public getObjects(): SchemeObject[]
         {
-            return this.objects;
+            let result: SchemeObject[] = [];
+            for (let layerId in this.objectsByLayers) {
+                let objects = this.objectsByLayers[layerId];
+                if (typeof objects !== 'undefined' && objects.length) {
+                    result = [...result, ...objects];
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Get objects in layer
+         * @param layerId
+         * @returns {SchemeObject[]}
+         */
+        public getObjectsByLayer(layerId: string): SchemeObject[]
+        {
+            if (typeof this.objectsByLayers[layerId] != 'undefined') {
+                return this.objectsByLayers[layerId];
+            }
+            return [];
+        }
+
+        /**
+         * Get objects by layers
+         * @returns {SchemeObjectsByLayers}
+         */
+        public getObjectsByLayers(): SchemeObjectsByLayers
+        {
+            return this.objectsByLayers;
         }
 
         /**
@@ -594,7 +622,7 @@ namespace SchemeDesigner {
          */
         public isLastNode(): boolean
         {
-            return this.objects.length > 0;
+            return Object.keys(this.objectsByLayers).length > 0;
         }
 
         /**
@@ -657,7 +685,7 @@ namespace SchemeDesigner {
          */
         public removeObjects(): void
         {
-            this.objects = [];
+            this.objectsByLayers = {};
         }
 
         /**

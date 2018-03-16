@@ -286,9 +286,20 @@ namespace SchemeDesigner {
                 bottom: topOffset + height
             });
 
-            for (let node of nodes) {
-                for (let schemeObject of node.getObjects()) {
-                    schemeObject.render(this, this.view);
+            let layers = this.storageManager.getSortedLayers();
+
+            let renderedObjectIds: number[] = [];
+
+            for (let layer of layers) {
+                for (let node of nodes) {
+                    for (let schemeObject of node.getObjectsByLayer(layer.getId())) {
+                        let objectId = schemeObject.getId();
+                        if (renderedObjectIds.indexOf(objectId) > -1) {
+                            continue;
+                        }
+                        renderedObjectIds.push(objectId);
+                        schemeObject.render(this, this.view);
+                    }
                 }
             }
 
@@ -296,30 +307,21 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Add object
-         * @param {SchemeObject} object
-         * @param {string} layerId
+         * Add layer
+         * @param layer
          */
-        public addObject(object: SchemeObject, layerId: string): void
+        public addLayer(layer: Layer): void
         {
-            this.storageManager.addObject(object, layerId);
+            this.storageManager.addLayer(layer);
         }
 
         /**
-         * Remove object
-         * @param {SchemeObject} object
+         * Remove layer
+         * @param layerId
          */
-        public removeObject(object: SchemeObject): void
+        public removeLayer(layerId: string): void
         {
-            this.storageManager.removeObject(object);
-        }
-
-        /**
-         * Remove all objects
-         */
-        public removeObjects(): void
-        {
-            this.storageManager.removeObjects();
+            this.storageManager.removeLayer(layerId);
         }
 
         /**
@@ -342,15 +344,6 @@ namespace SchemeDesigner {
             return this;
         }
 
-
-        /**
-         * All objects
-         * @returns {SchemeObjectsByLayers}
-         */
-        public getObjects(): SchemeObjectsByLayers
-        {
-            return this.storageManager.getObjects();
-        }
 
         /**
          * Get default cursor style
@@ -457,8 +450,11 @@ namespace SchemeDesigner {
 
                 this.cacheView.getContext().scale(scale, scale);
 
-                for (let schemeObject of this.storageManager.getVisibleObjects()) {
-                    schemeObject.render(this, this.cacheView);
+                let layers = this.storageManager.getSortedLayers();
+                for (let layer of layers) {
+                    for (let schemeObject of layer.getObjects()) {
+                        schemeObject.render(this, this.cacheView);
+                    }
                 }
             }
 

@@ -5,6 +5,12 @@ namespace SchemeDesigner {
     export class Tools {
 
         /**
+         * Number for id generator
+         * @type {number}
+         */
+        protected static idNumber: number = 0;
+
+        /**
          * Object configurator
          * @param obj
          * @param params
@@ -128,6 +134,23 @@ namespace SchemeDesigner {
                 if (isPart) {
                     result.push(schemeObject);
                 }
+            }
+
+            return result;
+        }
+
+        /**
+         * Filter by bounding rect objects in layers
+         * @param boundingRect
+         * @param objectsByLayers
+         * @returns {SchemeObjectsByLayers}
+         */
+        public static filterLayersObjectsByBoundingRect(boundingRect: BoundingRect, objectsByLayers: SchemeObjectsByLayers): SchemeObjectsByLayers
+        {
+            let result: SchemeObjectsByLayers = {};
+            for (let layerId in objectsByLayers) {
+                let objects = objectsByLayers[layerId];
+                result[layerId] = Tools.filterObjectsByBoundingRect(boundingRect, objects);
             }
 
             return result;
@@ -257,6 +280,17 @@ namespace SchemeDesigner {
                 element.currentStyle[property] :
                 document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
         };
+
+        /**
+         * Generate unique id
+         * @returns {number}
+         */
+        public static generateUniqueId(): number
+        {
+            this.idNumber++;
+
+            return this.idNumber;
+        }
 
 
         /**

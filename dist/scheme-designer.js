@@ -23,12 +23,43 @@ var SchemeDesigner;
              * Is visible
              */
             this.visible = true;
+            /**
+             * Objects
+             */
+            this.objects = [];
             if (id.length == 0) {
                 throw new Error('Empty layer id');
             }
             this.id = id;
             SchemeDesigner.Tools.configure(this, params);
         }
+        /**
+         * Remove object
+         * @param {SchemeObject} object
+         */
+        Layer.prototype.removeObject = function (object) {
+            this.objects.filter(function (existObject) { return existObject !== object; });
+        };
+        /**
+         * Remove all objects
+         */
+        Layer.prototype.removeObjects = function () {
+            this.objects = [];
+        };
+        /**
+         * Get objects
+         * @returns {SchemeObject[]}
+         */
+        Layer.prototype.getObjects = function () {
+            return this.objects;
+        };
+        /**
+         * Add object
+         * @param {SchemeObject} object
+         */
+        Layer.prototype.addObject = function (object) {
+            this.objects.push(object);
+        };
         /**
          * Set zIndex
          * @param {number} value
@@ -272,35 +303,38 @@ var SchemeDesigner;
                 right: leftOffset + width,
                 bottom: topOffset + height
             });
-            for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
-                var node = nodes_1[_i];
-                for (var _a = 0, _b = node.getObjects(); _a < _b.length; _a++) {
-                    var schemeObject = _b[_a];
-                    schemeObject.render(this, this.view);
+            var layers = this.storageManager.getSortedLayers();
+            var renderedObjectIds = [];
+            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
+                var layer = layers_1[_i];
+                for (var _a = 0, nodes_1 = nodes; _a < nodes_1.length; _a++) {
+                    var node = nodes_1[_a];
+                    for (var _b = 0, _c = node.getObjectsByLayer(layer.getId()); _b < _c.length; _b++) {
+                        var schemeObject = _c[_b];
+                        var objectId = schemeObject.getId();
+                        if (renderedObjectIds.indexOf(objectId) > -1) {
+                            continue;
+                        }
+                        renderedObjectIds.push(objectId);
+                        schemeObject.render(this, this.view);
+                    }
                 }
             }
             this.eventManager.sendEvent('afterRenderAll');
         };
         /**
-         * Add object
-         * @param {SchemeObject} object
-         * @param {string} layerId
+         * Add layer
+         * @param layer
          */
-        Scheme.prototype.addObject = function (object, layerId) {
-            this.storageManager.addObject(object, layerId);
+        Scheme.prototype.addLayer = function (layer) {
+            this.storageManager.addLayer(layer);
         };
         /**
-         * Remove object
-         * @param {SchemeObject} object
+         * Remove layer
+         * @param layerId
          */
-        Scheme.prototype.removeObject = function (object) {
-            this.storageManager.removeObject(object);
-        };
-        /**
-         * Remove all objects
-         */
-        Scheme.prototype.removeObjects = function () {
-            this.storageManager.removeObjects();
+        Scheme.prototype.removeLayer = function (layerId) {
+            this.storageManager.removeLayer(layerId);
         };
         /**
          * Canvas getter
@@ -317,13 +351,6 @@ var SchemeDesigner;
         Scheme.prototype.setCursorStyle = function (cursor) {
             this.view.getCanvas().style.cursor = cursor;
             return this;
-        };
-        /**
-         * All objects
-         * @returns {SchemeObjectsByLayers}
-         */
-        Scheme.prototype.getObjects = function () {
-            return this.storageManager.getObjects();
         };
         /**
          * Get default cursor style
@@ -406,9 +433,13 @@ var SchemeDesigner;
                     height: rectHeight
                 });
                 this.cacheView.getContext().scale(scale, scale);
-                for (var _b = 0, _c = this.storageManager.getVisibleObjects(); _b < _c.length; _b++) {
-                    var schemeObject = _c[_b];
-                    schemeObject.render(this, this.cacheView);
+                var layers = this.storageManager.getSortedLayers();
+                for (var _b = 0, layers_2 = layers; _b < layers_2.length; _b++) {
+                    var layer = layers_2[_b];
+                    for (var _c = 0, _d = layer.getObjects(); _c < _d.length; _c++) {
+                        var schemeObject = _d[_c];
+                        schemeObject.render(this, this.cacheView);
+                    }
                 }
             }
             this.changedObjects = [];
@@ -482,9 +513,17 @@ var SchemeDesigner;
              * Cursor style
              */
             this.cursorStyle = 'pointer';
+            this.id = SchemeDesigner.Tools.generateUniqueId();
             SchemeDesigner.Tools.configure(this, params);
             this.params = params;
         }
+        /**
+         * Get id
+         * @returns {number}
+         */
+        SchemeObject.prototype.getId = function () {
+            return this.id;
+        };
         /**
          * Rendering object
          * @param scheme
@@ -910,6 +949,20 @@ var SchemeDesigner;
             return result;
         };
         /**
+         * Filter by bounding rect objects in layers
+         * @param boundingRect
+         * @param objectsByLayers
+         * @returns {SchemeObjectsByLayers}
+         */
+        Tools.filterLayersObjectsByBoundingRect = function (boundingRect, objectsByLayers) {
+            var result = {};
+            for (var layerId in objectsByLayers) {
+                var objects = objectsByLayers[layerId];
+                result[layerId] = Tools.filterObjectsByBoundingRect(boundingRect, objects);
+            }
+            return result;
+        };
+        /**
          * convert max-width/max-height values that may be percentages into a number
          * @param styleValue
          * @param node
@@ -1020,6 +1073,14 @@ var SchemeDesigner;
         };
         ;
         /**
+         * Generate unique id
+         * @returns {number}
+         */
+        Tools.generateUniqueId = function () {
+            this.idNumber++;
+            return this.idNumber;
+        };
+        /**
          * Touch supported
          * @returns {boolean}
          */
@@ -1048,6 +1109,11 @@ var SchemeDesigner;
         Tools.getRandomString = function () {
             return Math.random().toString(36).substr(2, 9);
         };
+        /**
+         * Number for id generator
+         * @type {number}
+         */
+        Tools.idNumber = 0;
         return Tools;
     }());
     SchemeDesigner.Tools = Tools;
@@ -1676,10 +1742,6 @@ var SchemeDesigner;
          */
         function StorageManager(scheme) {
             /**
-             * All objects
-             */
-            this.objects = {};
-            /**
              * Depth of tree
              */
             this.treeDepth = 6;
@@ -1689,39 +1751,6 @@ var SchemeDesigner;
             this.layers = {};
             this.scheme = scheme;
         }
-        /**
-         * Get objects
-         * @returns {SchemeObjectsByLayers}
-         */
-        StorageManager.prototype.getObjects = function () {
-            return this.objects;
-        };
-        /**
-         * Add object
-         * @param {SchemeObject} object
-         * @param layerId
-         */
-        StorageManager.prototype.addObject = function (object, layerId) {
-            var layer = this.getLayerById(layerId);
-            if (!(layer instanceof SchemeDesigner.Layer)) {
-                throw new Error('Layer #' + layerId + ' not exist');
-            }
-            this.addObjectToLayer(object, layer);
-        };
-        /**
-         * Add object to layer
-         * @param {SchemeDesigner.SchemeObject} object
-         * @param {SchemeDesigner.Layer} layer
-         */
-        StorageManager.prototype.addObjectToLayer = function (object, layer) {
-            var layerId = layer.getId();
-            if (typeof this.objects[layerId] == 'undefined') {
-                this.objects[layerId] = [];
-            }
-            this.objects[layerId].push(object);
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        };
         /**
          * Get layer by id
          * @param {string} id
@@ -1734,22 +1763,60 @@ var SchemeDesigner;
             return null;
         };
         /**
-         * Remove object
-         * @param {SchemeObject} object
-         */
-        StorageManager.prototype.removeObject = function (object) {
-            for (var layerId in this.objects) {
-                this.objects[layerId].filter(function (existObject) { return existObject !== object; });
-            }
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        };
-        /**
          * Get objects from visible layers
          * @return {SchemeDesigner.SchemeObject[]}
          */
         StorageManager.prototype.getVisibleObjects = function () {
             var result = [];
+            var visibleObjectsByLayers = this.getVisibleObjectsByLayers();
+            for (var layerId in visibleObjectsByLayers) {
+                var objects = visibleObjectsByLayers[layerId];
+                if (typeof objects !== 'undefined' && objects.length) {
+                    result = result.concat(objects);
+                }
+            }
+            return result;
+        };
+        /**
+         * Get visible objects by layers
+         * @returns {SchemeObjectsByLayers}
+         */
+        StorageManager.prototype.getVisibleObjectsByLayers = function () {
+            var result = {};
+            var layers = this.getSortedLayers();
+            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
+                var layer = layers_1[_i];
+                if (layer.getVisible()) {
+                    var objects = layer.getObjects();
+                    if (typeof objects !== 'undefined' && objects.length) {
+                        result[layer.getId()] = objects;
+                    }
+                }
+            }
+            return result;
+        };
+        /**
+         * Set layers
+         * @param {SchemeDesigner.Layer[]} layers
+         */
+        StorageManager.prototype.setLayers = function (layers) {
+            for (var _i = 0, layers_2 = layers; _i < layers_2.length; _i++) {
+                var layer = layers_2[_i];
+                this.addLayer(layer);
+            }
+        };
+        /**
+         * Get layers
+         * @returns {Layers}
+         */
+        StorageManager.prototype.getLayers = function () {
+            return this.layers;
+        };
+        /**
+         * Get sorted layers by z-index
+         * @returns {Layer[]}
+         */
+        StorageManager.prototype.getSortedLayers = function () {
             var layers = [];
             for (var layerId in this.layers) {
                 var layer = this.layers[layerId];
@@ -1767,34 +1834,7 @@ var SchemeDesigner;
                 }
                 return 0;
             });
-            for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
-                var layer = layers_1[_i];
-                if (layer.getVisible()) {
-                    var objects = this.objects[layer.getId()];
-                    if (typeof objects !== 'undefined' && objects.length) {
-                        result = result.concat(this.objects[layer.getId()]);
-                    }
-                }
-            }
-            return result;
-        };
-        /**
-         * Remove all objects
-         */
-        StorageManager.prototype.removeObjects = function () {
-            this.objects = {};
-            this.reCalcObjectsBoundingRect();
-            this.requestBuildTree();
-        };
-        /**
-         * Set layers
-         * @param {SchemeDesigner.Layer[]} layers
-         */
-        StorageManager.prototype.setLayers = function (layers) {
-            for (var _i = 0, layers_2 = layers; _i < layers_2.length; _i++) {
-                var layer = layers_2[_i];
-                this.addLayer(layer);
-            }
+            return layers;
         };
         /**
          * Add layer
@@ -1812,7 +1852,14 @@ var SchemeDesigner;
          */
         StorageManager.prototype.removeLayers = function () {
             this.layers = {};
-            this.objects = {};
+            this.applyStructureChange();
+        };
+        /**
+         * Remove layer
+         */
+        StorageManager.prototype.removeLayer = function (layerId) {
+            delete this.layers[layerId];
+            this.applyStructureChange();
         };
         /**
          * Set layer visibility
@@ -1825,6 +1872,12 @@ var SchemeDesigner;
                 throw new Error('Layer not found');
             }
             layer.setVisible(visible);
+            this.applyStructureChange();
+        };
+        /**
+         * Apple structure change
+         */
+        StorageManager.prototype.applyStructureChange = function () {
             this.requestBuildTree();
             this.reCalcObjectsBoundingRect();
             this.scheme.updateCache(false);
@@ -1848,16 +1901,23 @@ var SchemeDesigner;
             // search node
             var rootNode = this.getTree();
             var node = this.findNodeByCoordinates(rootNode, { x: x, y: y });
-            var nodeObjects = [];
+            var nodeObjectsByLayers = {};
             if (node) {
-                nodeObjects = node.getObjects();
+                nodeObjectsByLayers = node.getObjectsByLayers();
             }
             // search object in node
-            for (var _i = 0, nodeObjects_1 = nodeObjects; _i < nodeObjects_1.length; _i++) {
-                var schemeObject = nodeObjects_1[_i];
-                var boundingRect = schemeObject.getBoundingRect();
-                if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect, schemeObject.getRotation())) {
-                    result.push(schemeObject);
+            for (var layerId in nodeObjectsByLayers) {
+                var layer = this.getLayerById(layerId);
+                if (!layer.getActive()) {
+                    continue;
+                }
+                var objects = nodeObjectsByLayers[layerId];
+                for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
+                    var schemeObject = objects_1[_i];
+                    var boundingRect = schemeObject.getBoundingRect();
+                    if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect, schemeObject.getRotation())) {
+                        result.push(schemeObject);
+                    }
                 }
             }
             return result;
@@ -1900,8 +1960,8 @@ var SchemeDesigner;
             var bottom = 0;
             var visibleObjects = this.getVisibleObjects();
             if (visibleObjects.length) {
-                for (var _i = 0, _a = this.getVisibleObjects(); _i < _a.length; _i++) {
-                    var schemeObject = _a[_i];
+                for (var _i = 0, visibleObjects_1 = visibleObjects; _i < visibleObjects_1.length; _i++) {
+                    var schemeObject = visibleObjects_1[_i];
                     var schemeObjectBoundingRect = schemeObject.getBoundingRect();
                     if (top == undefined || schemeObjectBoundingRect.top < top) {
                         top = schemeObjectBoundingRect.top;
@@ -1953,7 +2013,7 @@ var SchemeDesigner;
          */
         StorageManager.prototype.buildTree = function () {
             var boundingRect = this.getObjectsBoundingRect();
-            this.rootTreeNode = new TreeNode(null, boundingRect, this.getVisibleObjects(), 0);
+            this.rootTreeNode = new TreeNode(null, boundingRect, this.getVisibleObjectsByLayers(), 0);
             this.explodeTreeNodes(this.rootTreeNode, this.treeDepth);
             return this.rootTreeNode;
         };
@@ -1996,8 +2056,8 @@ var SchemeDesigner;
                 leftBoundingRect.bottom = leftBoundingRect.bottom - delta;
                 rightBoundingRect.top = rightBoundingRect.top + delta;
             }
-            var leftNodeObjects = SchemeDesigner.Tools.filterObjectsByBoundingRect(leftBoundingRect, node.getObjects());
-            var rightNodeObjects = SchemeDesigner.Tools.filterObjectsByBoundingRect(rightBoundingRect, node.getObjects());
+            var leftNodeObjects = SchemeDesigner.Tools.filterLayersObjectsByBoundingRect(leftBoundingRect, node.getObjectsByLayers());
+            var rightNodeObjects = SchemeDesigner.Tools.filterLayersObjectsByBoundingRect(rightBoundingRect, node.getObjectsByLayers());
             var leftNode = new TreeNode(node, leftBoundingRect, leftNodeObjects, newDepth);
             var rightNode = new TreeNode(node, rightBoundingRect, rightNodeObjects, newDepth);
             node.addChild(leftNode);
@@ -2095,12 +2155,12 @@ var SchemeDesigner;
              */
             this.children = [];
             /**
-             * Objects in node
+             * Objects in node by layers
              */
-            this.objects = [];
+            this.objectsByLayers = {};
             this.parent = parent;
             this.boundingRect = boundingRect;
-            this.objects = objects;
+            this.objectsByLayers = objects;
             this.depth = depth;
         }
         /**
@@ -2115,7 +2175,32 @@ var SchemeDesigner;
          * @returns {SchemeObject[]}
          */
         TreeNode.prototype.getObjects = function () {
-            return this.objects;
+            var result = [];
+            for (var layerId in this.objectsByLayers) {
+                var objects = this.objectsByLayers[layerId];
+                if (typeof objects !== 'undefined' && objects.length) {
+                    result = result.concat(objects);
+                }
+            }
+            return result;
+        };
+        /**
+         * Get objects in layer
+         * @param layerId
+         * @returns {SchemeObject[]}
+         */
+        TreeNode.prototype.getObjectsByLayer = function (layerId) {
+            if (typeof this.objectsByLayers[layerId] != 'undefined') {
+                return this.objectsByLayers[layerId];
+            }
+            return [];
+        };
+        /**
+         * Get objects by layers
+         * @returns {SchemeObjectsByLayers}
+         */
+        TreeNode.prototype.getObjectsByLayers = function () {
+            return this.objectsByLayers;
         };
         /**
          * Get children
@@ -2129,7 +2214,7 @@ var SchemeDesigner;
          * @returns {boolean}
          */
         TreeNode.prototype.isLastNode = function () {
-            return this.objects.length > 0;
+            return Object.keys(this.objectsByLayers).length > 0;
         };
         /**
          * Get last children
@@ -2185,7 +2270,7 @@ var SchemeDesigner;
          * Remove objects
          */
         TreeNode.prototype.removeObjects = function () {
-            this.objects = [];
+            this.objectsByLayers = {};
         };
         /**
          * Get bounding rect

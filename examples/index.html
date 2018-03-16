@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.js?13"></script>
+    <script src="../dist/scheme-designer.min.js?14"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -49,35 +49,20 @@
                         Scroll to center
                     </button>
                 </div>
+
+                <div class="col-sm-2" style="margin-bottom: 5px;">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').getVisible())">
+                        Show/hide background
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 <script>
-    var background = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false});
+    var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: true, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
-
-    var canvas = document.getElementById('canvas1');
-    var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
-        options: {
-            cacheSchemeRatio: 2
-        },
-        scroll: {
-            maxHiddenPart: 0.85
-        },
-        zoom: {
-            padding: 0.1,
-            maxScale: 8,
-            zoomCoefficient: 1.04
-        },
-        storage: {
-            treeDepth: 8,
-            layers: [
-                background,
-                defaultLayer
-            ]
-        }
-    });
 
     /**
      * Render place function
@@ -243,25 +228,25 @@
             }
         });
 
-        schemeDesigner.addObject(schemeObject, 'default');
+        defaultLayer.addObject(schemeObject);
     }
 
     /**
      * add background object
      */
-    schemeDesigner.addObject(new SchemeDesigner.SchemeObject({
+    backgroundLayer.addObject(new SchemeDesigner.SchemeObject({
         x: 0.5,
         y: 0.5,
-        width: 2000,
-        height: 2000,
+        width: 8600,
+        height: 7000,
         cursorStyle: 'default',
         renderFunction: function (schemeObject, schemeDesigner, view) {
             var context = view.getContext();
             context.beginPath();
             context.lineWidth = 4;
-            context.strokeStyle = 'blue';
+            context.strokeStyle = 'rgba(12, 200, 15, 0.2)';
 
-            context.fillStyle = 'blue';
+            context.fillStyle = 'rgba(12, 200, 15, 0.2)';
 
 
             var relativeX = schemeObject.getRelativeX(view);
@@ -276,7 +261,31 @@
             context.fill();
             context.stroke();
         }
-    }), 'background');
+    }));
+
+    var canvas = document.getElementById('canvas1');
+    var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
+        options: {
+            cacheSchemeRatio: 2
+        },
+        scroll: {
+            maxHiddenPart: 0.85
+        },
+        zoom: {
+            padding: 0.1,
+            maxScale: 8,
+            zoomCoefficient: 1.04
+        },
+        storage: {
+            treeDepth: 6
+        }
+    });
+
+    /**
+     * Adding layers with objects
+     */
+    schemeDesigner.addLayer(defaultLayer);
+    schemeDesigner.addLayer(backgroundLayer);
 
     /**
      * Show scheme

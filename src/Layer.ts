@@ -26,6 +26,11 @@ namespace SchemeDesigner {
         protected visible: boolean = true;
 
         /**
+         * Objects
+         */
+        protected objects: SchemeObject[] = [];
+
+        /**
          * Constructor
          * @param id
          * @param {Object} params
@@ -40,6 +45,42 @@ namespace SchemeDesigner {
 
             Tools.configure(this, params);
         }
+
+        /**
+         * Remove object
+         * @param {SchemeObject} object
+         */
+        public removeObject(object: SchemeObject): void
+        {
+            this.objects.filter(existObject => existObject !== object);
+        }
+
+        /**
+         * Remove all objects
+         */
+        public removeObjects(): void
+        {
+            this.objects = [];
+        }
+
+        /**
+         * Get objects
+         * @returns {SchemeObject[]}
+         */
+        public getObjects(): SchemeObject[]
+        {
+            return this.objects;
+        }
+
+        /**
+         * Add object
+         * @param {SchemeObject} object
+         */
+        public addObject(object: SchemeObject): void
+        {
+            this.objects.push(object);
+        }
+
 
         /**
          * Set zIndex
