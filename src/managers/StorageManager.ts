@@ -193,6 +193,21 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Set layer activity
+         * @param layerId
+         * @param active
+         */
+        public setLayerActivity(layerId: string, active: boolean): void
+        {
+            let layer = this.getLayerById(layerId);
+            if (!(layer instanceof Layer)) {
+                throw new Error('Layer not found');
+            }
+
+            layer.setActive(active);
+        }
+
+        /**
          * Apple structure change
          */
         public applyStructureChange(): void

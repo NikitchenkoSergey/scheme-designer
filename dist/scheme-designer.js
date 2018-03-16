@@ -1875,6 +1875,18 @@ var SchemeDesigner;
             this.applyStructureChange();
         };
         /**
+         * Set layer activity
+         * @param layerId
+         * @param active
+         */
+        StorageManager.prototype.setLayerActivity = function (layerId, active) {
+            var layer = this.getLayerById(layerId);
+            if (!(layer instanceof SchemeDesigner.Layer)) {
+                throw new Error('Layer not found');
+            }
+            layer.setActive(active);
+        };
+        /**
          * Apple structure change
          */
         StorageManager.prototype.applyStructureChange = function () {
