@@ -219,6 +219,7 @@ schemeDesigner.getStorageManager().showNodesParts();
 schemeDesigner.getStorageManager().setLayerVisibility('background', true);
 ```
 
+
 <table>
     <tr>
         <th>Method</th>
@@ -278,26 +279,6 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td></td>
         <td>Request redraw canvas, create search tree and scroll with zoom to center</td>
     </tr>
-    <tr>
-        <td>addObject(object: SchemeObject)</td>
-        <td></td>
-        <td>Wrapper for storageManager.addObject</td>
-    </tr>
-    <tr>
-        <td>removeObject(object: SchemeObject)</td>
-        <td></td>
-        <td>Wrapper for storageManager.removeObject</td>
-    </tr>
-     <tr>
-        <td>getObjects()</td>
-        <td>SchemeObject[]</td>
-        <td>Wrapper for storageManager.getObjects</td>
-    </tr>
-     <tr>
-        <td>removeObjects(object: SchemeObject)</td>
-        <td></td>
-        <td>Wrapper for storageManager.removeObjects</td>
-    </tr>
         <tr>
         <td>getCanvas()</td>
         <td>HTMLCanvasElement</td>
@@ -327,6 +308,44 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td>addChangedObject(schemeObject: SchemeObject)</td>
         <td></td>
         <td>Add object to changed list for redraw cache</td>
+    </tr>
+     <tr>
+        <td colspan=3 align=center><strong>Layer</strong></td>
+    </tr>
+    <tr>
+        <td>getObjects()</td>
+        <td>SchemeObject[]</td>
+        <td>Get all objects</td>
+    </tr>
+    <tr>
+        <td>addObject(object: SchemeObject)</td>
+        <td></td>
+        <td>Add object</td>
+    </tr>
+    <tr>
+        <td>removeObject(object: SchemeObject)</td>
+        <td></td>
+        <td>Remove object</td>
+    </tr>
+    <tr>
+        <td>removeObjects()</td>
+        <td></td>
+        <td>Remove all objects</td>
+    </tr>
+    <tr>
+        <td>setZIndex(value: number)</td>
+        <td></td>
+        <td>Set z-index</td>
+    </tr>
+    <tr>
+        <td>setActive(value: boolean)</td>
+        <td></td>
+        <td>Set active flag</td>
+    </tr>
+    <tr>
+        <td>setVisible(value: boolean)</td>
+        <td></td>
+        <td>Set visible flag</td>
     </tr>
     <tr>
         <td colspan=3 align=center><strong>Scroll manager</strong></td>
@@ -413,24 +432,29 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td colspan=3 align=center><strong>Storage manager</strong></td>
     </tr>
      <tr>
-        <td>getObjects()</td>
-        <td>SchemeObject[]</td>
-        <td>Get all objects</td>
+        <td>addLayer(layer: Layer)</td>
+        <td></td>
+        <td>Add layer</td>
     </tr>
     <tr>
-        <td>addObject(object: SchemeObject)</td>
+        <td>removeLayers()</td>
         <td></td>
-        <td>Add object</td>
+        <td>Remove all layers</td>
     </tr>
     <tr>
-        <td>removeObject(object: SchemeObject)</td>
+        <td>removeLayer(layerId: string)</td>
         <td></td>
-        <td>Remove object</td>
+        <td>Remove layer by id</td>
     </tr>
-    <tr>
-        <td>removeObjects()</td>
+     <tr>
+        <td>setLayerVisibility(layerId: string, visible: boolean)</td>
         <td></td>
-        <td>Remove all objects</td>
+        <td>Set layer visibility and rerender scheme</td>
+    </tr>
+     <tr>
+        <td>setLayerActivity(layerId: string, activity: boolean)</td>
+        <td></td>
+        <td>Set layer activity</td>
     </tr>
     <tr>
         <td>findObjectsByCoordinates(coordinates: Coordinates)</td>
@@ -461,6 +485,11 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td>getTree()</td>
         <td>TreeNode</td>
         <td>Get root tree node</td>
+    </tr>
+    <tr>
+        <td>applyStructureChange()</td>
+        <td></td>
+        <td>Recalculate all cructure dependencies</td>
     </tr>
     <tr>
         <td>showNodesParts()</td>
