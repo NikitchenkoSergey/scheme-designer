@@ -212,12 +212,16 @@ namespace SchemeDesigner {
          */
         public clearContext(): this
         {
-            this.view.getContext().clearRect(
+            let context = this.view.getContext();
+            context.save();
+            context.setTransform(1,0,0,1,0,0);
+            context.clearRect(
                 0,
                 0,
-                this.getWidth() / this.zoomManager.getScale(),
-                this.getHeight() / this.zoomManager.getScale()
+                this.getWidth(),
+                this.getHeight()
             );
+            context.restore();
             return this;
         }
 
@@ -270,14 +274,12 @@ namespace SchemeDesigner {
 
             let scrollLeft = this.scrollManager.getScrollLeft();
             let scrollTop = this.scrollManager.getScrollTop();
-
-            this.view.setScrollLeft(scrollLeft);
-            this.view.setScrollTop(scrollTop);
+            let scale = this.zoomManager.getScale();
 
             let width = this.getWidth() / this.zoomManager.getScale();
             let height = this.getHeight() / this.zoomManager.getScale();
-            let leftOffset = -scrollLeft;
-            let topOffset = -scrollTop;
+            let leftOffset = -scrollLeft / this.zoomManager.getScale();
+            let topOffset = -scrollTop / this.zoomManager.getScale();
 
             let nodes = this.storageManager.findNodesByBoundingRect(null, {
                 left: leftOffset,
@@ -392,15 +394,13 @@ namespace SchemeDesigner {
             this.clearContext();
 
             let boundingRect = this.storageManager.getObjectsBoundingRect();
-            let rectWidth = boundingRect.right;
-            let rectHeight = boundingRect.bottom;
 
             this.view.getContext().drawImage(
                 this.cacheView.getCanvas(),
-                this.getScrollManager().getScrollLeft(),
-                this.getScrollManager().getScrollTop(),
-                rectWidth,
-                rectHeight
+                0,
+                0,
+                boundingRect.right,
+                boundingRect.bottom
             );
 
             return true;

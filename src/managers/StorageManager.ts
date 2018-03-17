@@ -227,17 +227,17 @@ namespace SchemeDesigner {
         {
             let result: SchemeObject[] = [];
 
-            // scale
             let x = coordinates.x;
             let y = coordinates.y;
 
-            x = x / this.scheme.getZoomManager().getScale();
-            y = y / this.scheme.getZoomManager().getScale();
 
             // scroll
             x = x - this.scheme.getScrollManager().getScrollLeft();
             y = y - this.scheme.getScrollManager().getScrollTop();
 
+            // scale
+            x = x / this.scheme.getZoomManager().getScale();
+            y = y / this.scheme.getZoomManager().getScale();
 
             // search node
             let rootNode = this.getTree();
@@ -309,10 +309,10 @@ namespace SchemeDesigner {
          */
         public calculateObjectsBoundingRect(): BoundingRect
         {
-            let top: number = 0;
-            let left: number = 0;
-            let right: number = 0;
-            let bottom: number = 0;
+            let top: number;
+            let left: number;
+            let right: number;
+            let bottom: number;
 
             let visibleObjects = this.getVisibleObjects();
             if (visibleObjects.length) {

@@ -260,26 +260,6 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Relative x
-         * @param {SchemeDesigner.View} view
-         * @returns {number}
-         */
-        public getRelativeX(view: View): number
-        {
-            return this.x + view.getScrollLeft();
-        }
-
-        /**
-         * Relative y
-         * @param {SchemeDesigner.View} view
-         * @returns {number}
-         */
-        public getRelativeY(view: View): number
-        {
-            return this.y + view.getScrollTop();
-        }
-
-        /**
          * Bounding rect
          * @returns BoundingRect
          */

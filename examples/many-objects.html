@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Example</title>
-    <script src="../dist/scheme-designer.min.js?5"></script>
+    <script src="../dist/scheme-designer.min.js?15"></script>
 </head>
 <body>
 <div style="margin: 20px auto; max-width: 1000px;">
@@ -47,8 +47,8 @@
             context.fillStyle = '#B143B0';
         }
 
-        var relativeX = schemeObject.getRelativeX(view);
-        var relativeY = schemeObject.getRelativeY(view);
+        var relativeX = schemeObject.x;
+        var relativeY = schemeObject.y;
 
         var width = schemeObject.width;
         var height = schemeObject.height;
@@ -117,8 +117,8 @@
             clickFunction: clickOnPlace,
             clearFunction: function (schemeObject, schemeDesigner, view) {
                 var context = view.getContext();
-                var x = schemeObject.getRelativeX(view);
-                var y = schemeObject.getRelativeY(view);
+                var x = schemeObject.x;
+                var y = schemeObject.y;
                 var borderWidth = 5;
                 context.clearRect(x - borderWidth,
                         y - borderWidth,

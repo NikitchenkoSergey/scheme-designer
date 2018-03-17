@@ -115,8 +115,9 @@ namespace SchemeDesigner {
             }
 
             if (canScaleX || canScaleY) {
-                this.scheme.getView().getContext().scale(factor, factor);
                 this.scale = newScale;
+                this.scheme.getView().setScale(newScale);
+                this.scheme.getView().applyTransformation();
 
                 if (this.scheme.useSchemeCache()) {
                     this.scheme.requestDrawFromCache();
@@ -222,13 +223,19 @@ namespace SchemeDesigner {
                     y: point.y / newScale,
                 };
 
-                let leftOffsetDelta = newCenter.x - prevCenter.x;
-                let topOffsetDelta = newCenter.y - prevCenter.y;
+                let scaleFactor = prevScale / newScale;
+
+                let leftOffsetDelta = (newCenter.x - prevCenter.x) * newScale;
+                let topOffsetDelta = (newCenter.y - prevCenter.y) * newScale;
+
+                let scrollLeft = this.scheme.getScrollManager().getScrollLeft() / scaleFactor;
+                let scrollTop = this.scheme.getScrollManager().getScrollTop() / scaleFactor;
 
                 this.scheme.getScrollManager().scroll(
-                    this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta,
-                    this.scheme.getScrollManager().getScrollTop() + topOffsetDelta
+                    scrollLeft + leftOffsetDelta,
+                    scrollTop + topOffsetDelta
                 );
+
             }
         }
 

@@ -62,11 +62,13 @@ namespace SchemeDesigner {
 
             let scale = this.scheme.getZoomManager().getScale();
 
-            let maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
-            let maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
 
-            let minScrollLeft = -boundingRect.right;
-            let minScrollTop = -boundingRect.bottom;
+            let maxScrollLeft = this.scheme.getWidth() - boundingRect.left;
+
+            let maxScrollTop = this.scheme.getHeight() - boundingRect.top;
+
+            let minScrollLeft = -boundingRect.right * scale;
+            let minScrollTop = -boundingRect.bottom * scale;
 
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
@@ -93,6 +95,10 @@ namespace SchemeDesigner {
             this.scrollLeft = left;
             this.scrollTop = top;
 
+            this.scheme.getView().setScrollTop(top);
+            this.scheme.getView().setScrollLeft(left);
+
+            this.scheme.getView().applyTransformation();
 
             // scroll fake scheme
             if (this.scheme.useSchemeCache()) {
@@ -119,20 +125,15 @@ namespace SchemeDesigner {
         public toCenter(): void
         {
             let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
+            let objectsDimensions = this.scheme.getStorageManager().getObjectsDimensions();
 
-            let boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
-            let boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
+            let scale = this.scheme.getZoomManager().getScale();
 
-            let widthDelta =  this.scheme.getWidth() - boundingRectWidth;
-            let heightDelta = this.scheme.getHeight() - boundingRectHeight;
+            let widthDelta = this.scheme.getWidth() / scale - objectsDimensions.width;
+            let heightDelta = this.scheme.getHeight() / scale - objectsDimensions.height;
 
-            let scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
-            let scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();
-
-
-            // left and top empty space
-            scrollLeft = scrollLeft  - boundingRect.left;
-            scrollTop = scrollTop  - boundingRect.top;
+            let scrollLeft = (widthDelta / 2) * scale;
+            let scrollTop = (heightDelta / 2) * scale;
 
             this.scroll(scrollLeft, scrollTop);
         }
@@ -150,10 +151,6 @@ namespace SchemeDesigner {
 
             let leftCenterOffset =  this.scheme.getEventManager().getLastClientX() - lastClientX;
             let topCenterOffset =  this.scheme.getEventManager().getLastClientY() - lastClientY;
-
-            // scale
-            leftCenterOffset = leftCenterOffset / this.scheme.getZoomManager().getScale();
-            topCenterOffset = topCenterOffset / this.scheme.getZoomManager().getScale();
 
             let scrollLeft = leftCenterOffset + this.getScrollLeft();
             let scrollTop = topCenterOffset + this.getScrollTop();

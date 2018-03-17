@@ -250,7 +250,11 @@ var SchemeDesigner;
          * Clear canvas context
          */
         Scheme.prototype.clearContext = function () {
-            this.view.getContext().clearRect(0, 0, this.getWidth() / this.zoomManager.getScale(), this.getHeight() / this.zoomManager.getScale());
+            var context = this.view.getContext();
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, this.getWidth(), this.getHeight());
+            context.restore();
             return this;
         };
         /**
@@ -291,12 +295,11 @@ var SchemeDesigner;
             this.clearContext();
             var scrollLeft = this.scrollManager.getScrollLeft();
             var scrollTop = this.scrollManager.getScrollTop();
-            this.view.setScrollLeft(scrollLeft);
-            this.view.setScrollTop(scrollTop);
+            var scale = this.zoomManager.getScale();
             var width = this.getWidth() / this.zoomManager.getScale();
             var height = this.getHeight() / this.zoomManager.getScale();
-            var leftOffset = -scrollLeft;
-            var topOffset = -scrollTop;
+            var leftOffset = -scrollLeft / this.zoomManager.getScale();
+            var topOffset = -scrollTop / this.zoomManager.getScale();
             var nodes = this.storageManager.findNodesByBoundingRect(null, {
                 left: leftOffset,
                 top: topOffset,
@@ -391,9 +394,7 @@ var SchemeDesigner;
             }
             this.clearContext();
             var boundingRect = this.storageManager.getObjectsBoundingRect();
-            var rectWidth = boundingRect.right;
-            var rectHeight = boundingRect.bottom;
-            this.view.getContext().drawImage(this.cacheView.getCanvas(), this.getScrollManager().getScrollLeft(), this.getScrollManager().getScrollTop(), rectWidth, rectHeight);
+            this.view.getContext().drawImage(this.cacheView.getCanvas(), 0, 0, boundingRect.right, boundingRect.bottom);
             return true;
         };
         /**
@@ -653,22 +654,6 @@ var SchemeDesigner;
          */
         SchemeObject.prototype.setMouseLeaveFunction = function (value) {
             this.mouseLeaveFunction = value;
-        };
-        /**
-         * Relative x
-         * @param {SchemeDesigner.View} view
-         * @returns {number}
-         */
-        SchemeObject.prototype.getRelativeX = function (view) {
-            return this.x + view.getScrollLeft();
-        };
-        /**
-         * Relative y
-         * @param {SchemeDesigner.View} view
-         * @returns {number}
-         */
-        SchemeObject.prototype.getRelativeY = function (view) {
-            return this.y + view.getScrollTop();
         };
         /**
          * Bounding rect
@@ -1204,6 +1189,13 @@ var SchemeDesigner;
             return this.scrollTop;
         };
         /**
+         * Get scale
+         * @returns {number}
+         */
+        View.prototype.getScale = function () {
+            return this.scale;
+        };
+        /**
          * Set dimensions
          * @param dimensions
          */
@@ -1226,6 +1218,12 @@ var SchemeDesigner;
          */
         View.prototype.getHeight = function () {
             return this.height;
+        };
+        /**
+         * Apply transformation
+         */
+        View.prototype.applyTransformation = function () {
+            this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
         };
         return View;
     }());
@@ -1644,10 +1642,10 @@ var SchemeDesigner;
         ScrollManager.prototype.scroll = function (left, top) {
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var scale = this.scheme.getZoomManager().getScale();
-            var maxScrollLeft = (this.scheme.getWidth() / scale) - boundingRect.left;
-            var maxScrollTop = (this.scheme.getHeight() / scale) - boundingRect.top;
-            var minScrollLeft = -boundingRect.right;
-            var minScrollTop = -boundingRect.bottom;
+            var maxScrollLeft = this.scheme.getWidth() - boundingRect.left;
+            var maxScrollTop = this.scheme.getHeight() - boundingRect.top;
+            var minScrollLeft = -boundingRect.right * scale;
+            var minScrollTop = -boundingRect.bottom * scale;
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
             minScrollLeft = minScrollLeft * this.maxHiddenPart;
@@ -1666,6 +1664,9 @@ var SchemeDesigner;
             }
             this.scrollLeft = left;
             this.scrollTop = top;
+            this.scheme.getView().setScrollTop(top);
+            this.scheme.getView().setScrollLeft(left);
+            this.scheme.getView().applyTransformation();
             // scroll fake scheme
             if (this.scheme.useSchemeCache()) {
                 this.scheme.requestDrawFromCache();
@@ -1689,15 +1690,12 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.toCenter = function () {
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
-            var boundingRectWidth = (boundingRect.right - boundingRect.left) * this.scheme.getZoomManager().getScale();
-            var boundingRectHeight = (boundingRect.bottom - boundingRect.top) * this.scheme.getZoomManager().getScale();
-            var widthDelta = this.scheme.getWidth() - boundingRectWidth;
-            var heightDelta = this.scheme.getHeight() - boundingRectHeight;
-            var scrollLeft = (widthDelta / 2) / this.scheme.getZoomManager().getScale();
-            var scrollTop = (heightDelta / 2) / this.scheme.getZoomManager().getScale();
-            // left and top empty space
-            scrollLeft = scrollLeft - boundingRect.left;
-            scrollTop = scrollTop - boundingRect.top;
+            var objectsDimensions = this.scheme.getStorageManager().getObjectsDimensions();
+            var scale = this.scheme.getZoomManager().getScale();
+            var widthDelta = this.scheme.getWidth() / scale - objectsDimensions.width;
+            var heightDelta = this.scheme.getHeight() / scale - objectsDimensions.height;
+            var scrollLeft = (widthDelta / 2) * scale;
+            var scrollTop = (heightDelta / 2) * scale;
             this.scroll(scrollLeft, scrollTop);
         };
         /**
@@ -1710,9 +1708,6 @@ var SchemeDesigner;
             this.scheme.getEventManager().setLastClientPositionFromEvent(e);
             var leftCenterOffset = this.scheme.getEventManager().getLastClientX() - lastClientX;
             var topCenterOffset = this.scheme.getEventManager().getLastClientY() - lastClientY;
-            // scale
-            leftCenterOffset = leftCenterOffset / this.scheme.getZoomManager().getScale();
-            topCenterOffset = topCenterOffset / this.scheme.getZoomManager().getScale();
             var scrollLeft = leftCenterOffset + this.getScrollLeft();
             var scrollTop = topCenterOffset + this.getScrollTop();
             this.scroll(scrollLeft, scrollTop);
@@ -1902,14 +1897,14 @@ var SchemeDesigner;
          */
         StorageManager.prototype.findObjectsByCoordinates = function (coordinates) {
             var result = [];
-            // scale
             var x = coordinates.x;
             var y = coordinates.y;
-            x = x / this.scheme.getZoomManager().getScale();
-            y = y / this.scheme.getZoomManager().getScale();
             // scroll
             x = x - this.scheme.getScrollManager().getScrollLeft();
             y = y - this.scheme.getScrollManager().getScrollTop();
+            // scale
+            x = x / this.scheme.getZoomManager().getScale();
+            y = y / this.scheme.getZoomManager().getScale();
             // search node
             var rootNode = this.getTree();
             var node = this.findNodeByCoordinates(rootNode, { x: x, y: y });
@@ -1966,10 +1961,10 @@ var SchemeDesigner;
          * @returns {{left: number, top: number, right: number, bottom: number}}
          */
         StorageManager.prototype.calculateObjectsBoundingRect = function () {
-            var top = 0;
-            var left = 0;
-            var right = 0;
-            var bottom = 0;
+            var top;
+            var left;
+            var right;
+            var bottom;
             var visibleObjects = this.getVisibleObjects();
             if (visibleObjects.length) {
                 for (var _i = 0, visibleObjects_1 = visibleObjects; _i < visibleObjects_1.length; _i++) {
@@ -2391,8 +2386,9 @@ var SchemeDesigner;
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRect.bottom * newScale;
             }
             if (canScaleX || canScaleY) {
-                this.scheme.getView().getContext().scale(factor, factor);
                 this.scale = newScale;
+                this.scheme.getView().setScale(newScale);
+                this.scheme.getView().applyTransformation();
                 if (this.scheme.useSchemeCache()) {
                     this.scheme.requestDrawFromCache();
                     this.renderAllTimer = setTimeout(function () { _this.scheme.requestRenderAll(); }, 300);
@@ -2474,9 +2470,12 @@ var SchemeDesigner;
                     x: point.x / newScale,
                     y: point.y / newScale,
                 };
-                var leftOffsetDelta = newCenter.x - prevCenter.x;
-                var topOffsetDelta = newCenter.y - prevCenter.y;
-                this.scheme.getScrollManager().scroll(this.scheme.getScrollManager().getScrollLeft() + leftOffsetDelta, this.scheme.getScrollManager().getScrollTop() + topOffsetDelta);
+                var scaleFactor = prevScale / newScale;
+                var leftOffsetDelta = (newCenter.x - prevCenter.x) * newScale;
+                var topOffsetDelta = (newCenter.y - prevCenter.y) * newScale;
+                var scrollLeft = this.scheme.getScrollManager().getScrollLeft() / scaleFactor;
+                var scrollTop = this.scheme.getScrollManager().getScrollTop() / scaleFactor;
+                this.scheme.getScrollManager().scroll(scrollLeft + leftOffsetDelta, scrollTop + topOffsetDelta);
             }
         };
         /**

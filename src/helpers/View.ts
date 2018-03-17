@@ -113,6 +113,15 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Get scale
+         * @returns {number}
+         */
+        public getScale(): number
+        {
+            return this.scale;
+        }
+
+        /**
          * Set dimensions
          * @param dimensions
          */
@@ -141,6 +150,14 @@ namespace SchemeDesigner {
         public getHeight(): number
         {
             return this.height;
+        }
+
+        /**
+         * Apply transformation
+         */
+        public applyTransformation()
+        {
+            this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
         }
     }
 }
