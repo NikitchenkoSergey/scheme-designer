@@ -1,6 +1,6 @@
 {
   "name": "scheme-designer",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Canvas scheme designer, scheme constructor on javascript (typescript)",
   "main": "scheme-designer.js",
   "scripts": {
