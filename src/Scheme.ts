@@ -290,16 +290,16 @@ namespace SchemeDesigner {
 
             let layers = this.storageManager.getSortedLayers();
 
-            let renderedObjectIds: number[] = [];
+            let renderedObjectIds: any = {};
 
             for (let layer of layers) {
                 for (let node of nodes) {
                     for (let schemeObject of node.getObjectsByLayer(layer.getId())) {
                         let objectId = schemeObject.getId();
-                        if (renderedObjectIds.indexOf(objectId) > -1) {
+                        if (typeof renderedObjectIds[objectId] !== 'undefined') {
                             continue;
                         }
-                        renderedObjectIds.push(objectId);
+                        renderedObjectIds[objectId] = true;
                         schemeObject.render(this, this.view);
                     }
                 }

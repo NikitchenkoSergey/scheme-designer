@@ -22,7 +22,7 @@ namespace SchemeDesigner {
         /**
          * Max hidden part on scroll
          */
-        protected maxHiddenPart: number = 0.85;
+        protected maxHiddenPart: number = 0.5;
 
         /**
          * Constructor
@@ -72,8 +72,8 @@ namespace SchemeDesigner {
 
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
-            minScrollLeft = minScrollLeft * this.maxHiddenPart;
-            minScrollTop = minScrollTop * this.maxHiddenPart;
+            minScrollLeft = minScrollLeft + (this.scheme.getWidth() * (1 - this.maxHiddenPart));
+            minScrollTop = minScrollTop + (this.scheme.getHeight() * (1 - this.maxHiddenPart));
 
 
             if (left > maxScrollLeft) {

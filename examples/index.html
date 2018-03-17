@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?15"></script>
+    <script src="../dist/scheme-designer.min.js?16"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -110,7 +110,7 @@
 
         if (schemeObject.rotation) {
             context.save();
-            context.translate( relativeX+width/2, relativeY+height/2 );
+            context.translate( relativeX + width/2, relativeY + height/2 );
             context.rotate(schemeObject.rotation * Math.PI / 180);
             context.rect(-width/2, -height/2, width, height);
         } else {
@@ -159,16 +159,13 @@
     var renderLabel = function(schemeObject, schemeDesigner, view) {
         var fontSize = parseInt(schemeObject.params.fontSize) * (96 / 72) * 3;
 
-        var relativeX = schemeObject.x;
-        var relativeY = schemeObject.y;
-
         var context = view.getContext();
 
         context.fillStyle = '#' + this.params.fontColor;
         context.font = fontSize + 'px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(schemeObject.params.sectorName, relativeX, relativeY);
+        context.fillText(schemeObject.params.sectorName, schemeObject.x, schemeObject.y);
     };
 
 
@@ -217,11 +214,10 @@
             clickFunction: clickOnPlace,
             clearFunction: function (schemeObject, schemeDesigner, view) {
                 var context = view.getContext();
-                var x = schemeObject.x;
-                var y = schemeObject.y;
+
                 var borderWidth = 5;
-                context.clearRect(x - borderWidth,
-                        y - borderWidth,
+                context.clearRect(schemeObject.x - borderWidth,
+                        schemeObject.y - borderWidth,
                         this.width + (borderWidth * 2),
                         this.height + (borderWidth * 2)
                 );
@@ -266,7 +262,7 @@
             cacheSchemeRatio: 2
         },
         scroll: {
-            maxHiddenPart: 0.85
+            maxHiddenPart: 0.5
         },
         zoom: {
             padding: 0.1,

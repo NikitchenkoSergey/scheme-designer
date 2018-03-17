@@ -307,7 +307,7 @@ var SchemeDesigner;
                 bottom: topOffset + height
             });
             var layers = this.storageManager.getSortedLayers();
-            var renderedObjectIds = [];
+            var renderedObjectIds = {};
             for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
                 var layer = layers_1[_i];
                 for (var _a = 0, nodes_1 = nodes; _a < nodes_1.length; _a++) {
@@ -315,10 +315,10 @@ var SchemeDesigner;
                     for (var _b = 0, _c = node.getObjectsByLayer(layer.getId()); _b < _c.length; _b++) {
                         var schemeObject = _c[_b];
                         var objectId = schemeObject.getId();
-                        if (renderedObjectIds.indexOf(objectId) > -1) {
+                        if (typeof renderedObjectIds[objectId] !== 'undefined') {
                             continue;
                         }
-                        renderedObjectIds.push(objectId);
+                        renderedObjectIds[objectId] = true;
                         schemeObject.render(this, this.view);
                     }
                 }
@@ -1617,7 +1617,7 @@ var SchemeDesigner;
             /**
              * Max hidden part on scroll
              */
-            this.maxHiddenPart = 0.85;
+            this.maxHiddenPart = 0.5;
             this.scheme = scheme;
         }
         /**
@@ -1648,8 +1648,8 @@ var SchemeDesigner;
             var minScrollTop = -boundingRect.bottom * scale;
             maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
             maxScrollTop = maxScrollTop * this.maxHiddenPart;
-            minScrollLeft = minScrollLeft * this.maxHiddenPart;
-            minScrollTop = minScrollTop * this.maxHiddenPart;
+            minScrollLeft = minScrollLeft + (this.scheme.getWidth() * (1 - this.maxHiddenPart));
+            minScrollTop = minScrollTop + (this.scheme.getHeight() * (1 - this.maxHiddenPart));
             if (left > maxScrollLeft) {
                 left = maxScrollLeft;
             }
