@@ -2366,7 +2366,7 @@ var SchemeDesigner;
             if (this.renderAllTimer) {
                 clearTimeout(this.renderAllTimer);
             }
-            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
+            var boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
             var canScaleX = true;
             var canScaleY = true;
             var oldScale = this.scale;
@@ -2375,15 +2375,15 @@ var SchemeDesigner;
                 /**
                  * Cant zoom less that 100% + padding
                  */
-                canScaleX = this.scheme.getWidth() * (1 - this.padding) < boundingRect.right * newScale;
-                canScaleY = this.scheme.getHeight() * (1 - this.padding) < boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * (1 - this.padding) < boundingRectDimensions.width * newScale;
+                canScaleY = this.scheme.getHeight() * (1 - this.padding) < boundingRectDimensions.height * newScale;
             }
             else {
                 /**
                  * Cant zoom more that maxScale
                  */
-                canScaleX = this.scheme.getWidth() * this.maxScale > boundingRect.right * newScale;
-                canScaleY = this.scheme.getHeight() * this.maxScale > boundingRect.bottom * newScale;
+                canScaleX = this.scheme.getWidth() * this.maxScale > boundingRectDimensions.width * newScale;
+                canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
             }
             if (canScaleX || canScaleY) {
                 this.scale = newScale;
