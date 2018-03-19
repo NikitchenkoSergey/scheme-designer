@@ -252,12 +252,17 @@ namespace SchemeDesigner {
             // search object in node
             for (let layerId in nodeObjectsByLayers) {
                 let layer = this.getLayerById(layerId);
-                if (!layer.getActive()) {
+                if (!layer.isActive()) {
                     continue;
                 }
 
                 let objects = nodeObjectsByLayers[layerId];
                 for (let schemeObject of objects) {
+
+                    if (!schemeObject.isActive()) {
+                        continue;
+                    }
+
                     let boundingRect = schemeObject.getBoundingRect();
                     if (Tools.pointInRect({x: x, y: y}, boundingRect, schemeObject.getRotation())) {
                         result.push(schemeObject)

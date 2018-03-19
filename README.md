@@ -171,8 +171,13 @@ schemeDesigner.render();
     </tr>
      <tr>
         <td>rotation: number</td>
-        <td></td>
+        <td>0</td>
         <td>Rotation</td>
+    </tr>
+     <tr>
+        <td>active: boolean</td>
+        <td>true</td>
+        <td>Active object can hanlde events.</td>
     </tr>
      <tr>
         <td>cursorStyle: string</td>

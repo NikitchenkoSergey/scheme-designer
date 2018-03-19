@@ -89,10 +89,10 @@ var SchemeDesigner;
             return this.visible;
         };
         /**
-         * Get active
+         * Get is active
          * @return {boolean}
          */
-        Layer.prototype.getActive = function () {
+        Layer.prototype.isActive = function () {
             return this.active;
         };
         /**
@@ -503,6 +503,10 @@ var SchemeDesigner;
          */
         function SchemeObject(params) {
             /**
+             * Is active
+             */
+            this.active = true;
+            /**
              * Rotation
              */
             this.rotation = 0;
@@ -697,6 +701,20 @@ var SchemeDesigner;
          */
         SchemeObject.prototype.getRotation = function () {
             return this.rotation;
+        };
+        /**
+         * Get is active
+         * @return {boolean}
+         */
+        SchemeObject.prototype.isActive = function () {
+            return this.active;
+        };
+        /**
+         * Set active
+         * @param {boolean} value
+         */
+        SchemeObject.prototype.setActive = function (value) {
+            this.active = value;
         };
         return SchemeObject;
     }());
@@ -1915,12 +1933,15 @@ var SchemeDesigner;
             // search object in node
             for (var layerId in nodeObjectsByLayers) {
                 var layer = this.getLayerById(layerId);
-                if (!layer.getActive()) {
+                if (!layer.isActive()) {
                     continue;
                 }
                 var objects = nodeObjectsByLayers[layerId];
                 for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
                     var schemeObject = objects_1[_i];
+                    if (!schemeObject.isActive()) {
+                        continue;
+                    }
                     var boundingRect = schemeObject.getBoundingRect();
                     if (SchemeDesigner.Tools.pointInRect({ x: x, y: y }, boundingRect, schemeObject.getRotation())) {
                         result.push(schemeObject);

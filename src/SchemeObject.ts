@@ -31,6 +31,11 @@ namespace SchemeDesigner {
         protected height: number;
 
         /**
+         * Is active
+         */
+        protected active: boolean = true;
+
+        /**
          * Rotation
          */
         protected rotation: number = 0;
@@ -312,6 +317,24 @@ namespace SchemeDesigner {
         public getRotation(): number
         {
             return this.rotation;
+        }
+
+        /**
+         * Get is active
+         * @return {boolean}
+         */
+        public isActive(): boolean
+        {
+            return this.active;
+        }
+
+        /**
+         * Set active
+         * @param {boolean} value
+         */
+        public setActive(value: boolean): void
+        {
+            this.active = value;
         }
     }
 }

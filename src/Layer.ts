@@ -119,10 +119,10 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Get active
+         * Get is active
          * @return {boolean}
          */
-        public getActive(): boolean
+        public isActive(): boolean
         {
             return this.active;
         }

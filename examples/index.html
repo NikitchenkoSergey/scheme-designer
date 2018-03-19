@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?16"></script>
+    <script src="../dist/scheme-designer.min.js?17"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -194,6 +194,7 @@
             y: 0.5 + topOffset,
             width: width,
             height: height,
+            active: objectData.ObjectType == 'Place'? true : false,
             renderFunction: objectData.ObjectType == 'Place' ? renderPlace : renderLabel,
             cursorStyle: objectData.ObjectType == 'Place' ? 'pointer' : 'default',
 
