@@ -78,6 +78,7 @@ namespace SchemeDesigner {
          */
         public addObject(object: SchemeObject): void
         {
+            object.setLayerId(this.id);
             this.objects.push(object);
         }
 
@@ -110,10 +111,10 @@ namespace SchemeDesigner {
         }
 
         /**
-         * Get visible
+         * Get is visible
          * @return {boolean}
          */
-        public getVisible(): boolean
+        public isVisible(): boolean
         {
             return this.visible;
         }

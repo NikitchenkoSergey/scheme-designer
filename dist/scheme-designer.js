@@ -58,6 +58,7 @@ var SchemeDesigner;
          * @param {SchemeObject} object
          */
         Layer.prototype.addObject = function (object) {
+            object.setLayerId(this.id);
             this.objects.push(object);
         };
         /**
@@ -82,10 +83,10 @@ var SchemeDesigner;
             this.visible = value;
         };
         /**
-         * Get visible
+         * Get is visible
          * @return {boolean}
          */
-        Layer.prototype.getVisible = function () {
+        Layer.prototype.isVisible = function () {
             return this.visible;
         };
         /**
@@ -420,8 +421,12 @@ var SchemeDesigner;
             if (onlyChanged) {
                 for (var _i = 0, _a = this.changedObjects; _i < _a.length; _i++) {
                     var schemeObject = _a[_i];
-                    schemeObject.clear(this, this.cacheView);
-                    schemeObject.render(this, this.cacheView);
+                    var layer = this.storageManager.getLayerById(schemeObject.getLayerId());
+                    console.log(layer);
+                    if (layer instanceof SchemeDesigner.Layer && layer.isVisible()) {
+                        schemeObject.clear(this, this.cacheView);
+                        schemeObject.render(this, this.cacheView);
+                    }
                 }
             }
             else {
@@ -522,6 +527,20 @@ var SchemeDesigner;
             SchemeDesigner.Tools.configure(this, params);
             this.params = params;
         }
+        /**
+         * Set layer id
+         * @param {string} layerId
+         */
+        SchemeObject.prototype.setLayerId = function (layerId) {
+            this.layerId = layerId;
+        };
+        /**
+         * Get layer id
+         * @return {string}
+         */
+        SchemeObject.prototype.getLayerId = function () {
+            return this.layerId;
+        };
         /**
          * Get id
          * @returns {number}
@@ -1799,7 +1818,7 @@ var SchemeDesigner;
             var layers = this.getSortedLayers();
             for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
                 var layer = layers_1[_i];
-                if (layer.getVisible()) {
+                if (layer.isVisible()) {
                     var objects = layer.getObjects();
                     if (typeof objects !== 'undefined' && objects.length) {
                         result[layer.getId()] = objects;
@@ -1833,7 +1852,7 @@ var SchemeDesigner;
             var layers = [];
             for (var layerId in this.layers) {
                 var layer = this.layers[layerId];
-                if (layer.getVisible()) {
+                if (layer.isVisible()) {
                     layers.push(layer);
                 }
             }

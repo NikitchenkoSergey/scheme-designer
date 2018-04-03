@@ -433,8 +433,12 @@ namespace SchemeDesigner {
 
             if (onlyChanged) {
                 for (let schemeObject of this.changedObjects) {
-                    schemeObject.clear(this, this.cacheView);
-                    schemeObject.render(this, this.cacheView);
+                    let layer = this.storageManager.getLayerById(schemeObject.getLayerId());
+
+                    if (layer instanceof Layer && layer.isVisible()) {
+                        schemeObject.clear(this, this.cacheView);
+                        schemeObject.render(this, this.cacheView);
+                    }
                 }
             } else {
                 let boundingRect = this.storageManager.getObjectsBoundingRect();

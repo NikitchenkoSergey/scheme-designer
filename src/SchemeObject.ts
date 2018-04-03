@@ -81,6 +81,11 @@ namespace SchemeDesigner {
         protected params: any;
 
         /**
+         * Layer id
+         */
+        protected layerId: string;
+
+        /**
          * Constructor
          * @param {Object} params
          */
@@ -91,6 +96,24 @@ namespace SchemeDesigner {
             Tools.configure(this, params);
 
             this.params = params;
+        }
+
+        /**
+         * Set layer id
+         * @param {string} layerId
+         */
+        public setLayerId(layerId: string)
+        {
+            this.layerId = layerId;
+        }
+
+        /**
+         * Get layer id
+         * @return {string}
+         */
+        public getLayerId(): string
+        {
+            return this.layerId;
         }
 
         /**

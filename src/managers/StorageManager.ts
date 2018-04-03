@@ -83,7 +83,7 @@ namespace SchemeDesigner {
             let layers = this.getSortedLayers();
 
             for (let layer of layers) {
-                if (layer.getVisible()) {
+                if (layer.isVisible()) {
                     let objects = layer.getObjects();
                     if (typeof objects !== 'undefined' && objects.length) {
                         result[layer.getId()] = objects;
@@ -123,7 +123,7 @@ namespace SchemeDesigner {
             let layers: Layer[] = [];
             for (let layerId in this.layers) {
                 let layer = this.layers[layerId];
-                if (layer.getVisible()) {
+                if (layer.isVisible()) {
                     layers.push(layer);
                 }
             }
