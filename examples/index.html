@@ -108,13 +108,16 @@
             height = height - (borderOffset * 2);
         }
 
+        var circleCenterX = relativeX + width / 2;
+        var circleCenterY = relativeY + height / 2;
+
         if (schemeObject.rotation) {
             context.save();
             context.translate( relativeX + width/2, relativeY + height/2 );
             context.rotate(schemeObject.rotation * Math.PI / 180);
             context.rect(-width/2, -height/2, width, height);
         } else {
-            context.rect(relativeX, relativeY, width, height);
+            context.arc(circleCenterX, circleCenterY, width / 2, 0, Math.PI * 2);
         }
 
 
