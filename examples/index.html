@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="col-sm-2" style="margin-bottom: 5px;">
-                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').getVisible())">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').isVisible())">
                         Show/hide background
                     </button>
                 </div>
@@ -75,7 +75,6 @@
 
         var backgroundColor = '#' + schemeObject.params.backgroundColor;
 
-
         context.beginPath();
         var borderWidth = 4;
         context.lineWidth = borderWidth;
@@ -84,14 +83,13 @@
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
 
         context.fillStyle = backgroundColor;
+		
         if (schemeObject.params.isSelected && isHovered) {
-            context.fillStyle = backgroundColor;
             context.strokeStyle = backgroundColor;
         } else if (isHovered) {
             context.fillStyle = 'white';
             context.strokeStyle = backgroundColor;
         } else if (schemeObject.params.isSelected) {
-            context.fillStyle = backgroundColor;
             context.strokeStyle = backgroundColor;
         }
 
@@ -107,25 +105,27 @@
             width = width - (borderOffset * 2);
             height = height - (borderOffset * 2);
         }
+		
+        var halfWidth = width / 2;
+        var halfHeight = height / 2
 
-        var circleCenterX = relativeX + width / 2;
-        var circleCenterY = relativeY + height / 2;
+        var circleCenterX = relativeX + halfWidth;
+        var circleCenterY = relativeY + halfHeight;
 
         if (schemeObject.rotation) {
             context.save();
-            context.translate( relativeX + width/2, relativeY + height/2 );
+            context.translate( relativeX + halfWidth, relativeY + halfHeight);
             context.rotate(schemeObject.rotation * Math.PI / 180);
-            context.rect(-width/2, -height/2, width, height);
+            context.rect(-halfWidth, -halfHeight, width, height);
         } else {
-            context.arc(circleCenterX, circleCenterY, width / 2, 0, Math.PI * 2);
+            context.arc(circleCenterX, circleCenterY, halfWidth, 0, Math.PI * 2);
         }
-
 
 
         context.fill();
         context.stroke();
 
-        context.font = (Math.floor((parseInt(schemeObject.width) + parseInt(schemeObject.height))/4)) + 'px Arial';
+        context.font = (Math.floor((schemeObject.width + schemeObject.height) / 4)) + 'px Arial';
 
         if (schemeObject.params.isSelected && isHovered) {
             context.fillStyle = 'white';
@@ -160,7 +160,7 @@
      * @param {View} view
      */
     var renderLabel = function(schemeObject, schemeDesigner, view) {
-        var fontSize = parseInt(schemeObject.params.fontSize) * (96 / 72) * 3;
+        var fontSize = (schemeObject.params.fontSize >> 0) * (96 / 72) * 3;
 
         var context = view.getContext();
 
@@ -183,11 +183,11 @@
     for (var i = 0; i < schemeData.length; i++)
     {
         var objectData = schemeData[i];
-        var leftOffset = parseInt(objectData.CX);
-        var topOffset = parseInt(objectData.CY);
-        var width = parseInt(objectData.Width);
-        var height = parseInt(objectData.Height);
-        var rotation = parseFloat(objectData.Angle);
+        var leftOffset = objectData.CX >> 0;
+        var topOffset = objectData.CY >> 0;
+        var width = objectData.Width >> 0;
+        var height = objectData.Height >> 0;
+        var rotation = objectData.Angle >> 0;
 
         var schemeObject = new SchemeDesigner.SchemeObject({
             /**
