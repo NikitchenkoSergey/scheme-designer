@@ -742,6 +742,533 @@ var SchemeDesigner;
 var SchemeDesigner;
 (function (SchemeDesigner) {
     /**
+     * ImageStorage
+     */
+    var ImageStorage = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param id
+         * @param scheme
+         */
+        function ImageStorage(id, scheme) {
+            this.id = 'scheme-designer-image-storage-' + SchemeDesigner.Tools.getRandomString() + '-' + id;
+            this.scheme = scheme;
+            var canvas = document.getElementById(id);
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = this.id;
+                canvas.style.display = 'none';
+                this.scheme.getCanvas().parentNode.appendChild(canvas);
+            }
+            this.canvas = canvas;
+            this.context = this.canvas.getContext('2d');
+        }
+        /**
+         * Set image data
+         * @param imageData
+         * @param width
+         * @param height
+         */
+        ImageStorage.prototype.setImageData = function (imageData, width, height) {
+            this.setDimensions({ width: width, height: height });
+            this.context.putImageData(imageData, 0, 0);
+        };
+        /**
+         * Set dimensions
+         * @param dimensions
+         */
+        ImageStorage.prototype.setDimensions = function (dimensions) {
+            this.canvas.width = dimensions.width;
+            this.canvas.height = dimensions.height;
+        };
+        /**
+         * Get canvas
+         * @returns {HTMLCanvasElement}
+         */
+        ImageStorage.prototype.getCanvas = function () {
+            return this.canvas;
+        };
+        /**
+         * Get context
+         * @returns {CanvasRenderingContext2D}
+         */
+        ImageStorage.prototype.getContext = function () {
+            return this.context;
+        };
+        return ImageStorage;
+    }());
+    SchemeDesigner.ImageStorage = ImageStorage;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * Polyfill
+     */
+    var Polyfill = /** @class */ (function () {
+        function Polyfill() {
+        }
+        /**
+         * Get request animation frame function
+         * @returns {Function}
+         */
+        Polyfill.getRequestAnimationFrameFunction = function () {
+            var variables = [
+                'requestAnimationFrame',
+                'webkitRequestAnimationFrame',
+                'mozRequestAnimationFrame',
+                'oRequestAnimationFrame',
+                'msRequestAnimationFrame'
+            ];
+            for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+                var variableName = variables_1[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return function (callback) {
+                return window.setTimeout(callback, 1000 / 60);
+            };
+        };
+        /**
+         * Get cancel animation function
+         * @returns {Function}
+         */
+        Polyfill.getCancelAnimationFunction = function () {
+            return window.cancelAnimationFrame || window.clearTimeout;
+        };
+        /**
+         * Get device pixel radio
+         * @returns {number}
+         */
+        Polyfill.getDevicePixelRatio = function () {
+            var variables = [
+                'devicePixelRatio',
+                'webkitDevicePixelRatio',
+                'mozDevicePixelRatio'
+            ];
+            for (var _i = 0, variables_2 = variables; _i < variables_2.length; _i++) {
+                var variableName = variables_2[_i];
+                if (window.hasOwnProperty(variableName)) {
+                    return window[variableName];
+                }
+            }
+            return 1;
+        };
+        return Polyfill;
+    }());
+    SchemeDesigner.Polyfill = Polyfill;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * Tools
+     */
+    var Tools = /** @class */ (function () {
+        function Tools() {
+        }
+        /**
+         * Object configurator
+         * @param obj
+         * @param params
+         */
+        Tools.configure = function (obj, params) {
+            if (params) {
+                for (var paramName in params) {
+                    var value = params[paramName];
+                    var setter = 'set' + Tools.capitalizeFirstLetter(paramName);
+                    if (typeof obj[setter] === 'function') {
+                        obj[setter].apply(obj, [value]);
+                    }
+                }
+            }
+        };
+        /**
+         * First latter to uppercase
+         * @param string
+         * @returns {string}
+         */
+        Tools.capitalizeFirstLetter = function (string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        };
+        /**
+         * Clone object
+         * @param obj
+         */
+        Tools.clone = function (obj) {
+            return JSON.parse(JSON.stringify(obj));
+        };
+        ;
+        /**
+         * Check than point in rect
+         * @param coordinates
+         * @param boundingRect
+         * @param rotation - rotation of rect
+         * @returns {boolean}
+         */
+        Tools.pointInRect = function (coordinates, boundingRect, rotation) {
+            var result = false;
+            var x = coordinates.x;
+            var y = coordinates.y;
+            // move point by rotation
+            if (rotation) {
+                rotation = -rotation;
+                var rectCenterX = (boundingRect.left + boundingRect.right) / 2;
+                var rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
+                var rotatedPoint = Tools.rotatePointByAxis(coordinates, { x: rectCenterX, y: rectCenterY }, rotation);
+                x = rotatedPoint.x;
+                y = rotatedPoint.y;
+            }
+            if (boundingRect.left <= x && boundingRect.right >= x
+                && boundingRect.top <= y && boundingRect.bottom >= y) {
+                result = true;
+            }
+            return result;
+        };
+        /**
+         * Rotate point by axis
+         * @param point
+         * @param axis
+         * @param rotation
+         * @returns {Coordinates}
+         */
+        Tools.rotatePointByAxis = function (point, axis, rotation) {
+            rotation = rotation * Math.PI / 180;
+            var x = axis.x + (point.x - axis.x) * Math.cos(rotation) - (point.y - axis.y) * Math.sin(rotation);
+            var y = axis.y + (point.x - axis.x) * Math.sin(rotation) + (point.y - axis.y) * Math.cos(rotation);
+            return { x: x, y: y };
+        };
+        /**
+         * Rect intersect rect
+         * @param boundingRect1
+         * @param boundingRect2
+         * @returns {boolean}
+         */
+        Tools.rectIntersectRect = function (boundingRect1, boundingRect2) {
+            return !(boundingRect1.top > boundingRect2.bottom
+                || boundingRect1.bottom < boundingRect2.top
+                || boundingRect1.right < boundingRect2.left
+                || boundingRect1.left > boundingRect2.right);
+        };
+        /**
+         * Find objects by coordinates
+         * @param boundingRect
+         * @param objects
+         * @returns {SchemeObject[]}
+         */
+        Tools.filterObjectsByBoundingRect = function (boundingRect, objects) {
+            var result = [];
+            for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
+                var schemeObject = objects_1[_i];
+                var objectBoundingRect = schemeObject.getOuterBoundingRect();
+                var isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
+                if (isPart) {
+                    result.push(schemeObject);
+                }
+            }
+            return result;
+        };
+        /**
+         * Filter by bounding rect objects in layers
+         * @param boundingRect
+         * @param objectsByLayers
+         * @returns {SchemeObjectsByLayers}
+         */
+        Tools.filterLayersObjectsByBoundingRect = function (boundingRect, objectsByLayers) {
+            var result = {};
+            for (var layerId in objectsByLayers) {
+                var objects = objectsByLayers[layerId];
+                result[layerId] = Tools.filterObjectsByBoundingRect(boundingRect, objects);
+            }
+            return result;
+        };
+        /**
+         * convert max-width/max-height values that may be percentages into a number
+         * @param styleValue
+         * @param node
+         * @param parentProperty
+         * @returns {number}
+         */
+        Tools.parseMaxStyle = function (styleValue, node, parentProperty) {
+            var valueInPixels;
+            if (typeof styleValue === 'string') {
+                valueInPixels = parseInt(styleValue, 10);
+                if (styleValue.indexOf('%') !== -1) {
+                    // percentage * size in dimension
+                    valueInPixels = valueInPixels / 100 * node.parentNode[parentProperty];
+                }
+            }
+            else {
+                valueInPixels = styleValue;
+            }
+            return valueInPixels;
+        };
+        /**
+         * Returns if the given value contains an effective constraint.
+         * @param value
+         * @returns {boolean}
+         */
+        Tools.isConstrainedValue = function (value) {
+            return value !== undefined && value !== null && value !== 'none';
+        };
+        /**
+         * Get constraint dimention
+         * @see http://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
+         * @param domNode
+         * @param maxStyle
+         * @param percentageProperty
+         * @returns {null|number}
+         */
+        Tools.getConstraintDimension = function (domNode, maxStyle, percentageProperty) {
+            var view = document.defaultView;
+            var parentNode = domNode.parentNode;
+            var constrainedNode = view.getComputedStyle(domNode)[maxStyle];
+            var constrainedContainer = view.getComputedStyle(parentNode)[maxStyle];
+            var hasCNode = this.isConstrainedValue(constrainedNode);
+            var hasCContainer = this.isConstrainedValue(constrainedContainer);
+            var infinity = Number.POSITIVE_INFINITY;
+            if (hasCNode || hasCContainer) {
+                return Math.min(hasCNode ? this.parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity, hasCContainer ? this.parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
+            }
+            return null;
+        };
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        Tools.getConstraintWidth = function (domNode) {
+            return this.getConstraintDimension(domNode, 'max-width', 'clientWidth');
+        };
+        /**
+         * Number or undefined if no constraint
+         * @param domNode
+         * @returns {number|string}
+         */
+        Tools.getConstraintHeight = function (domNode) {
+            return this.getConstraintDimension(domNode, 'max-height', 'clientHeight');
+        };
+        /**
+         * Get max width
+         * @param domNode
+         * @returns {number}
+         */
+        Tools.getMaximumWidth = function (domNode) {
+            var container = domNode.parentNode;
+            if (!container) {
+                return domNode.clientWidth;
+            }
+            var paddingLeft = parseInt(this.getStyle(container, 'padding-left'), 10);
+            var paddingRight = parseInt(this.getStyle(container, 'padding-right'), 10);
+            var w = container.clientWidth - paddingLeft - paddingRight;
+            var cw = this.getConstraintWidth(domNode);
+            return !cw ? w : Math.min(w, cw);
+        };
+        /**
+         * Get max height
+         * @param domNode
+         * @returns {number}
+         */
+        Tools.getMaximumHeight = function (domNode) {
+            var container = domNode.parentNode;
+            if (!container) {
+                return domNode.clientHeight;
+            }
+            var paddingTop = parseInt(this.getStyle(container, 'padding-top'), 10);
+            var paddingBottom = parseInt(this.getStyle(container, 'padding-bottom'), 10);
+            var h = container.clientHeight - paddingTop - paddingBottom;
+            var ch = this.getConstraintHeight(domNode);
+            return !ch ? h : Math.min(h, ch);
+        };
+        /**
+         * Get style
+         * @param element
+         * @param {string} property
+         * @returns {string}
+         */
+        Tools.getStyle = function (element, property) {
+            return element.currentStyle ?
+                element.currentStyle[property] :
+                document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
+        };
+        ;
+        /**
+         * Generate unique id
+         * @returns {number}
+         */
+        Tools.generateUniqueId = function () {
+            this.idNumber++;
+            return this.idNumber;
+        };
+        /**
+         * Touch supported
+         * @returns {boolean}
+         */
+        Tools.touchSupported = function () {
+            return 'ontouchstart' in window;
+        };
+        /**
+         * Sorting object
+         * @param obj
+         * @returns {{}}
+         */
+        Tools.sortObject = function (obj) {
+            var keys = Object.keys(obj), len = keys.length;
+            keys.sort();
+            var result = {};
+            for (var i = 0; i < len; i++) {
+                var k = keys[i];
+                result[k] = obj[k];
+            }
+            return result;
+        };
+        /**
+         * Get random string
+         * @returns {string}
+         */
+        Tools.getRandomString = function () {
+            return Math.random().toString(36).substr(2, 9);
+        };
+        /**
+         * Number for id generator
+         * @type {number}
+         */
+        Tools.idNumber = 0;
+        return Tools;
+    }());
+    SchemeDesigner.Tools = Tools;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * View
+     */
+    var View = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param canvas
+         */
+        function View(canvas) {
+            /**
+             * scroll left
+             */
+            this.scrollLeft = 0;
+            /**
+             * Scroll top
+             */
+            this.scrollTop = 0;
+            /**
+             * Scale
+             */
+            this.scale = 0;
+            /**
+             * Width
+             */
+            this.width = 0;
+            /**
+             * Height
+             */
+            this.height = 0;
+            this.canvas = canvas;
+            this.context = this.canvas.getContext('2d');
+        }
+        /**
+         * Get canvas
+         * @returns {HTMLCanvasElement}
+         */
+        View.prototype.getCanvas = function () {
+            return this.canvas;
+        };
+        /**
+         * Canvas context getter
+         * @returns {CanvasRenderingContext2D}
+         */
+        View.prototype.getContext = function () {
+            return this.context;
+        };
+        /**
+         * Set scroll left
+         * @param value
+         */
+        View.prototype.setScrollLeft = function (value) {
+            this.scrollLeft = value;
+        };
+        /**
+         * Set scroll top
+         * @param value
+         */
+        View.prototype.setScrollTop = function (value) {
+            this.scrollTop = value;
+        };
+        /**
+         * Set scale
+         * @param value
+         */
+        View.prototype.setScale = function (value) {
+            this.scale = value;
+        };
+        /**
+         * Get scroll left
+         * @returns {number}
+         */
+        View.prototype.getScrollLeft = function () {
+            return this.scrollLeft;
+        };
+        /**
+         * Get scroll top
+         * @returns {number}
+         */
+        View.prototype.getScrollTop = function () {
+            return this.scrollTop;
+        };
+        /**
+         * Get scale
+         * @returns {number}
+         */
+        View.prototype.getScale = function () {
+            return this.scale;
+        };
+        /**
+         * Set dimensions
+         * @param dimensions
+         */
+        View.prototype.setDimensions = function (dimensions) {
+            this.canvas.width = dimensions.width;
+            this.canvas.height = dimensions.height;
+            this.width = dimensions.width;
+            this.height = dimensions.height;
+        };
+        /**
+         * Get width
+         * @returns {number}
+         */
+        View.prototype.getWidth = function () {
+            return this.width;
+        };
+        /**
+         * Get height
+         * @returns {number}
+         */
+        View.prototype.getHeight = function () {
+            return this.height;
+        };
+        /**
+         * Apply transformation
+         */
+        View.prototype.applyTransformation = function () {
+            this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
+        };
+        return View;
+    }());
+    SchemeDesigner.View = View;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
      * Event manager
      * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
      */
@@ -1203,8 +1730,8 @@ var SchemeDesigner;
             var scale = this.scheme.getZoomManager().getScale();
             var widthDelta = this.scheme.getWidth() / scale - objectsDimensions.width;
             var heightDelta = this.scheme.getHeight() / scale - objectsDimensions.height;
-            var scrollLeft = (widthDelta / 2) * scale;
-            var scrollTop = (heightDelta / 2) * scale;
+            var scrollLeft = ((widthDelta / 2) - boundingRect.left) * scale;
+            var scrollTop = ((heightDelta / 2) - boundingRect.top) * scale;
             this.scroll(scrollLeft, scrollTop);
         };
         /**
@@ -2014,531 +2541,4 @@ var SchemeDesigner;
         return ZoomManager;
     }());
     SchemeDesigner.ZoomManager = ZoomManager;
-})(SchemeDesigner || (SchemeDesigner = {}));
-
-var SchemeDesigner;
-(function (SchemeDesigner) {
-    /**
-     * ImageStorage
-     */
-    var ImageStorage = /** @class */ (function () {
-        /**
-         * Constructor
-         * @param id
-         * @param scheme
-         */
-        function ImageStorage(id, scheme) {
-            this.id = 'scheme-designer-image-storage-' + SchemeDesigner.Tools.getRandomString() + '-' + id;
-            this.scheme = scheme;
-            var canvas = document.getElementById(id);
-            if (!canvas) {
-                canvas = document.createElement('canvas');
-                canvas.id = this.id;
-                canvas.style.display = 'none';
-                this.scheme.getCanvas().parentNode.appendChild(canvas);
-            }
-            this.canvas = canvas;
-            this.context = this.canvas.getContext('2d');
-        }
-        /**
-         * Set image data
-         * @param imageData
-         * @param width
-         * @param height
-         */
-        ImageStorage.prototype.setImageData = function (imageData, width, height) {
-            this.setDimensions({ width: width, height: height });
-            this.context.putImageData(imageData, 0, 0);
-        };
-        /**
-         * Set dimensions
-         * @param dimensions
-         */
-        ImageStorage.prototype.setDimensions = function (dimensions) {
-            this.canvas.width = dimensions.width;
-            this.canvas.height = dimensions.height;
-        };
-        /**
-         * Get canvas
-         * @returns {HTMLCanvasElement}
-         */
-        ImageStorage.prototype.getCanvas = function () {
-            return this.canvas;
-        };
-        /**
-         * Get context
-         * @returns {CanvasRenderingContext2D}
-         */
-        ImageStorage.prototype.getContext = function () {
-            return this.context;
-        };
-        return ImageStorage;
-    }());
-    SchemeDesigner.ImageStorage = ImageStorage;
-})(SchemeDesigner || (SchemeDesigner = {}));
-
-var SchemeDesigner;
-(function (SchemeDesigner) {
-    /**
-     * Polyfill
-     */
-    var Polyfill = /** @class */ (function () {
-        function Polyfill() {
-        }
-        /**
-         * Get request animation frame function
-         * @returns {Function}
-         */
-        Polyfill.getRequestAnimationFrameFunction = function () {
-            var variables = [
-                'requestAnimationFrame',
-                'webkitRequestAnimationFrame',
-                'mozRequestAnimationFrame',
-                'oRequestAnimationFrame',
-                'msRequestAnimationFrame'
-            ];
-            for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
-                var variableName = variables_1[_i];
-                if (window.hasOwnProperty(variableName)) {
-                    return window[variableName];
-                }
-            }
-            return function (callback) {
-                return window.setTimeout(callback, 1000 / 60);
-            };
-        };
-        /**
-         * Get cancel animation function
-         * @returns {Function}
-         */
-        Polyfill.getCancelAnimationFunction = function () {
-            return window.cancelAnimationFrame || window.clearTimeout;
-        };
-        /**
-         * Get device pixel radio
-         * @returns {number}
-         */
-        Polyfill.getDevicePixelRatio = function () {
-            var variables = [
-                'devicePixelRatio',
-                'webkitDevicePixelRatio',
-                'mozDevicePixelRatio'
-            ];
-            for (var _i = 0, variables_2 = variables; _i < variables_2.length; _i++) {
-                var variableName = variables_2[_i];
-                if (window.hasOwnProperty(variableName)) {
-                    return window[variableName];
-                }
-            }
-            return 1;
-        };
-        return Polyfill;
-    }());
-    SchemeDesigner.Polyfill = Polyfill;
-})(SchemeDesigner || (SchemeDesigner = {}));
-
-var SchemeDesigner;
-(function (SchemeDesigner) {
-    /**
-     * Tools
-     */
-    var Tools = /** @class */ (function () {
-        function Tools() {
-        }
-        /**
-         * Object configurator
-         * @param obj
-         * @param params
-         */
-        Tools.configure = function (obj, params) {
-            if (params) {
-                for (var paramName in params) {
-                    var value = params[paramName];
-                    var setter = 'set' + Tools.capitalizeFirstLetter(paramName);
-                    if (typeof obj[setter] === 'function') {
-                        obj[setter].apply(obj, [value]);
-                    }
-                }
-            }
-        };
-        /**
-         * First latter to uppercase
-         * @param string
-         * @returns {string}
-         */
-        Tools.capitalizeFirstLetter = function (string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        };
-        /**
-         * Clone object
-         * @param obj
-         */
-        Tools.clone = function (obj) {
-            return JSON.parse(JSON.stringify(obj));
-        };
-        ;
-        /**
-         * Check than point in rect
-         * @param coordinates
-         * @param boundingRect
-         * @param rotation - rotation of rect
-         * @returns {boolean}
-         */
-        Tools.pointInRect = function (coordinates, boundingRect, rotation) {
-            var result = false;
-            var x = coordinates.x;
-            var y = coordinates.y;
-            // move point by rotation
-            if (rotation) {
-                rotation = -rotation;
-                var rectCenterX = (boundingRect.left + boundingRect.right) / 2;
-                var rectCenterY = (boundingRect.top + boundingRect.bottom) / 2;
-                var rotatedPoint = Tools.rotatePointByAxis(coordinates, { x: rectCenterX, y: rectCenterY }, rotation);
-                x = rotatedPoint.x;
-                y = rotatedPoint.y;
-            }
-            if (boundingRect.left <= x && boundingRect.right >= x
-                && boundingRect.top <= y && boundingRect.bottom >= y) {
-                result = true;
-            }
-            return result;
-        };
-        /**
-         * Rotate point by axis
-         * @param point
-         * @param axis
-         * @param rotation
-         * @returns {Coordinates}
-         */
-        Tools.rotatePointByAxis = function (point, axis, rotation) {
-            rotation = rotation * Math.PI / 180;
-            var x = axis.x + (point.x - axis.x) * Math.cos(rotation) - (point.y - axis.y) * Math.sin(rotation);
-            var y = axis.y + (point.x - axis.x) * Math.sin(rotation) + (point.y - axis.y) * Math.cos(rotation);
-            return { x: x, y: y };
-        };
-        /**
-         * Rect intersect rect
-         * @param boundingRect1
-         * @param boundingRect2
-         * @returns {boolean}
-         */
-        Tools.rectIntersectRect = function (boundingRect1, boundingRect2) {
-            return !(boundingRect1.top > boundingRect2.bottom
-                || boundingRect1.bottom < boundingRect2.top
-                || boundingRect1.right < boundingRect2.left
-                || boundingRect1.left > boundingRect2.right);
-        };
-        /**
-         * Find objects by coordinates
-         * @param boundingRect
-         * @param objects
-         * @returns {SchemeObject[]}
-         */
-        Tools.filterObjectsByBoundingRect = function (boundingRect, objects) {
-            var result = [];
-            for (var _i = 0, objects_1 = objects; _i < objects_1.length; _i++) {
-                var schemeObject = objects_1[_i];
-                var objectBoundingRect = schemeObject.getOuterBoundingRect();
-                var isPart = this.rectIntersectRect(objectBoundingRect, boundingRect);
-                if (isPart) {
-                    result.push(schemeObject);
-                }
-            }
-            return result;
-        };
-        /**
-         * Filter by bounding rect objects in layers
-         * @param boundingRect
-         * @param objectsByLayers
-         * @returns {SchemeObjectsByLayers}
-         */
-        Tools.filterLayersObjectsByBoundingRect = function (boundingRect, objectsByLayers) {
-            var result = {};
-            for (var layerId in objectsByLayers) {
-                var objects = objectsByLayers[layerId];
-                result[layerId] = Tools.filterObjectsByBoundingRect(boundingRect, objects);
-            }
-            return result;
-        };
-        /**
-         * convert max-width/max-height values that may be percentages into a number
-         * @param styleValue
-         * @param node
-         * @param parentProperty
-         * @returns {number}
-         */
-        Tools.parseMaxStyle = function (styleValue, node, parentProperty) {
-            var valueInPixels;
-            if (typeof styleValue === 'string') {
-                valueInPixels = parseInt(styleValue, 10);
-                if (styleValue.indexOf('%') !== -1) {
-                    // percentage * size in dimension
-                    valueInPixels = valueInPixels / 100 * node.parentNode[parentProperty];
-                }
-            }
-            else {
-                valueInPixels = styleValue;
-            }
-            return valueInPixels;
-        };
-        /**
-         * Returns if the given value contains an effective constraint.
-         * @param value
-         * @returns {boolean}
-         */
-        Tools.isConstrainedValue = function (value) {
-            return value !== undefined && value !== null && value !== 'none';
-        };
-        /**
-         * Get constraint dimention
-         * @see http://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
-         * @param domNode
-         * @param maxStyle
-         * @param percentageProperty
-         * @returns {null|number}
-         */
-        Tools.getConstraintDimension = function (domNode, maxStyle, percentageProperty) {
-            var view = document.defaultView;
-            var parentNode = domNode.parentNode;
-            var constrainedNode = view.getComputedStyle(domNode)[maxStyle];
-            var constrainedContainer = view.getComputedStyle(parentNode)[maxStyle];
-            var hasCNode = this.isConstrainedValue(constrainedNode);
-            var hasCContainer = this.isConstrainedValue(constrainedContainer);
-            var infinity = Number.POSITIVE_INFINITY;
-            if (hasCNode || hasCContainer) {
-                return Math.min(hasCNode ? this.parseMaxStyle(constrainedNode, domNode, percentageProperty) : infinity, hasCContainer ? this.parseMaxStyle(constrainedContainer, parentNode, percentageProperty) : infinity);
-            }
-            return null;
-        };
-        /**
-         * Number or undefined if no constraint
-         * @param domNode
-         * @returns {number|string}
-         */
-        Tools.getConstraintWidth = function (domNode) {
-            return this.getConstraintDimension(domNode, 'max-width', 'clientWidth');
-        };
-        /**
-         * Number or undefined if no constraint
-         * @param domNode
-         * @returns {number|string}
-         */
-        Tools.getConstraintHeight = function (domNode) {
-            return this.getConstraintDimension(domNode, 'max-height', 'clientHeight');
-        };
-        /**
-         * Get max width
-         * @param domNode
-         * @returns {number}
-         */
-        Tools.getMaximumWidth = function (domNode) {
-            var container = domNode.parentNode;
-            if (!container) {
-                return domNode.clientWidth;
-            }
-            var paddingLeft = parseInt(this.getStyle(container, 'padding-left'), 10);
-            var paddingRight = parseInt(this.getStyle(container, 'padding-right'), 10);
-            var w = container.clientWidth - paddingLeft - paddingRight;
-            var cw = this.getConstraintWidth(domNode);
-            return !cw ? w : Math.min(w, cw);
-        };
-        /**
-         * Get max height
-         * @param domNode
-         * @returns {number}
-         */
-        Tools.getMaximumHeight = function (domNode) {
-            var container = domNode.parentNode;
-            if (!container) {
-                return domNode.clientHeight;
-            }
-            var paddingTop = parseInt(this.getStyle(container, 'padding-top'), 10);
-            var paddingBottom = parseInt(this.getStyle(container, 'padding-bottom'), 10);
-            var h = container.clientHeight - paddingTop - paddingBottom;
-            var ch = this.getConstraintHeight(domNode);
-            return !ch ? h : Math.min(h, ch);
-        };
-        /**
-         * Get style
-         * @param element
-         * @param {string} property
-         * @returns {string}
-         */
-        Tools.getStyle = function (element, property) {
-            return element.currentStyle ?
-                element.currentStyle[property] :
-                document.defaultView.getComputedStyle(element, null).getPropertyValue(property);
-        };
-        ;
-        /**
-         * Generate unique id
-         * @returns {number}
-         */
-        Tools.generateUniqueId = function () {
-            this.idNumber++;
-            return this.idNumber;
-        };
-        /**
-         * Touch supported
-         * @returns {boolean}
-         */
-        Tools.touchSupported = function () {
-            return 'ontouchstart' in window;
-        };
-        /**
-         * Sorting object
-         * @param obj
-         * @returns {{}}
-         */
-        Tools.sortObject = function (obj) {
-            var keys = Object.keys(obj), len = keys.length;
-            keys.sort();
-            var result = {};
-            for (var i = 0; i < len; i++) {
-                var k = keys[i];
-                result[k] = obj[k];
-            }
-            return result;
-        };
-        /**
-         * Get random string
-         * @returns {string}
-         */
-        Tools.getRandomString = function () {
-            return Math.random().toString(36).substr(2, 9);
-        };
-        /**
-         * Number for id generator
-         * @type {number}
-         */
-        Tools.idNumber = 0;
-        return Tools;
-    }());
-    SchemeDesigner.Tools = Tools;
-})(SchemeDesigner || (SchemeDesigner = {}));
-
-
-var SchemeDesigner;
-(function (SchemeDesigner) {
-    /**
-     * View
-     */
-    var View = /** @class */ (function () {
-        /**
-         * Constructor
-         * @param canvas
-         */
-        function View(canvas) {
-            /**
-             * scroll left
-             */
-            this.scrollLeft = 0;
-            /**
-             * Scroll top
-             */
-            this.scrollTop = 0;
-            /**
-             * Scale
-             */
-            this.scale = 0;
-            /**
-             * Width
-             */
-            this.width = 0;
-            /**
-             * Height
-             */
-            this.height = 0;
-            this.canvas = canvas;
-            this.context = this.canvas.getContext('2d');
-        }
-        /**
-         * Get canvas
-         * @returns {HTMLCanvasElement}
-         */
-        View.prototype.getCanvas = function () {
-            return this.canvas;
-        };
-        /**
-         * Canvas context getter
-         * @returns {CanvasRenderingContext2D}
-         */
-        View.prototype.getContext = function () {
-            return this.context;
-        };
-        /**
-         * Set scroll left
-         * @param value
-         */
-        View.prototype.setScrollLeft = function (value) {
-            this.scrollLeft = value;
-        };
-        /**
-         * Set scroll top
-         * @param value
-         */
-        View.prototype.setScrollTop = function (value) {
-            this.scrollTop = value;
-        };
-        /**
-         * Set scale
-         * @param value
-         */
-        View.prototype.setScale = function (value) {
-            this.scale = value;
-        };
-        /**
-         * Get scroll left
-         * @returns {number}
-         */
-        View.prototype.getScrollLeft = function () {
-            return this.scrollLeft;
-        };
-        /**
-         * Get scroll top
-         * @returns {number}
-         */
-        View.prototype.getScrollTop = function () {
-            return this.scrollTop;
-        };
-        /**
-         * Get scale
-         * @returns {number}
-         */
-        View.prototype.getScale = function () {
-            return this.scale;
-        };
-        /**
-         * Set dimensions
-         * @param dimensions
-         */
-        View.prototype.setDimensions = function (dimensions) {
-            this.canvas.width = dimensions.width;
-            this.canvas.height = dimensions.height;
-            this.width = dimensions.width;
-            this.height = dimensions.height;
-        };
-        /**
-         * Get width
-         * @returns {number}
-         */
-        View.prototype.getWidth = function () {
-            return this.width;
-        };
-        /**
-         * Get height
-         * @returns {number}
-         */
-        View.prototype.getHeight = function () {
-            return this.height;
-        };
-        /**
-         * Apply transformation
-         */
-        View.prototype.applyTransformation = function () {
-            this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
-        };
-        return View;
-    }());
-    SchemeDesigner.View = View;
 })(SchemeDesigner || (SchemeDesigner = {}));

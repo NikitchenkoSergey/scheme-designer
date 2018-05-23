@@ -132,8 +132,8 @@ namespace SchemeDesigner {
             let widthDelta = this.scheme.getWidth() / scale - objectsDimensions.width;
             let heightDelta = this.scheme.getHeight() / scale - objectsDimensions.height;
 
-            let scrollLeft = (widthDelta / 2) * scale;
-            let scrollTop = (heightDelta / 2) * scale;
+            let scrollLeft = ((widthDelta / 2) - boundingRect.left) * scale;
+            let scrollTop = ((heightDelta / 2) - boundingRect.top) * scale;
 
             this.scroll(scrollLeft, scrollTop);
         }

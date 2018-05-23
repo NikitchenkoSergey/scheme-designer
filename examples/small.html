@@ -11,8 +11,8 @@
     <script src="../dist/scheme-designer.min.js?19"></script>
 
     <!-- data for scheme -->
-    <script src="./scheme-data.js?1"></script>
-    
+    <script src="./small-scheme-data.js?1"></script>
+
     <style>
         .canvas-holder {
             width: 100%;
@@ -83,7 +83,7 @@
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
 
         context.fillStyle = backgroundColor;
-		
+
         if (schemeObject.params.isSelected && isHovered) {
             context.strokeStyle = backgroundColor;
         } else if (isHovered) {
@@ -105,7 +105,7 @@
             width = width - (borderOffset * 2);
             height = height - (borderOffset * 2);
         }
-		
+
         var halfWidth = width / 2;
         var halfHeight = height / 2
 
@@ -140,8 +140,8 @@
             context.textBaseline = 'middle';
             if (schemeObject.rotation) {
                 context.fillText(schemeObject.params.seat,
-                        -(schemeObject.width / 2) + (schemeObject.width / 2),
-                        -(schemeObject.height / 2)  + (schemeObject.height / 2)
+                    -(schemeObject.width / 2) + (schemeObject.width / 2),
+                    -(schemeObject.height / 2)  + (schemeObject.height / 2)
                 );
             } else {
                 context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
@@ -221,9 +221,9 @@
 
                 var borderWidth = 5;
                 context.clearRect(schemeObject.x - borderWidth,
-                        schemeObject.y - borderWidth,
-                        this.width + (borderWidth * 2),
-                        this.height + (borderWidth * 2)
+                    schemeObject.y - borderWidth,
+                    this.width + (borderWidth * 2),
+                    this.height + (borderWidth * 2)
                 );
             }
         });
@@ -304,15 +304,15 @@
     }, false);
 
     canvas.addEventListener('schemeDesigner.mouseOverObject', function (e) {
-       // console.log('mouseOverObject', e.detail);
+        // console.log('mouseOverObject', e.detail);
     }, false);
 
     canvas.addEventListener('schemeDesigner.mouseLeaveObject', function (e) {
-      //  console.log('mouseLeaveObject', e.detail);
+        //  console.log('mouseLeaveObject', e.detail);
     }, false);
 
     canvas.addEventListener('schemeDesigner.scroll', function (e) {
-      //  console.log('scroll', e.detail);
+        //  console.log('scroll', e.detail);
     }, false);
 
     canvas.addEventListener('schemeDesigner.zoom', function (e) {
