@@ -114,6 +114,13 @@ namespace SchemeDesigner {
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
             }
 
+            this.scheme.getEventManager().sendEvent('zoom', {
+                oldScale: oldScale,
+                newScale: newScale,
+                factor: factor,
+                success: canScaleX || canScaleY
+            });
+
             if (canScaleX || canScaleY) {
                 this.scale = newScale;
                 this.scheme.getView().setScale(newScale);
@@ -125,11 +132,6 @@ namespace SchemeDesigner {
                 } else {
                     this.scheme.requestRenderAll();
                 }
-
-                this.scheme.getEventManager().sendEvent('zoom', {
-                    oldScale: oldScale,
-                    newScale: newScale
-                });
 
                 return true;
             }

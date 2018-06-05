@@ -572,33 +572,39 @@ var SchemeDesigner;
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
         SchemeObject.prototype.click = function (e, schemeDesigner, view) {
             if (typeof this.clickFunction === 'function') {
-                this.clickFunction(this, SchemeDesigner.Scheme, view, e);
+                return this.clickFunction(this, SchemeDesigner.Scheme, view, e);
             }
+            return null;
         };
         /**
          * Mouse over
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
         SchemeObject.prototype.mouseOver = function (e, schemeDesigner, view) {
             if (typeof this.mouseOverFunction === 'function') {
-                this.mouseOverFunction(this, SchemeDesigner.Scheme, view, e);
+                return this.mouseOverFunction(this, SchemeDesigner.Scheme, view, e);
             }
+            return null;
         };
         /**
          * Mouse leave
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
         SchemeObject.prototype.mouseLeave = function (e, schemeDesigner, view) {
             if (typeof this.mouseLeaveFunction === 'function') {
-                this.mouseLeaveFunction(this, SchemeDesigner.Scheme, view, e);
+                return this.mouseLeaveFunction(this, SchemeDesigner.Scheme, view, e);
             }
+            return null;
         };
         /**
          * Set x
@@ -1506,10 +1512,12 @@ var SchemeDesigner;
                     }
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
-                        schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
+                        var result = schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
                         this.scheme.addChangedObject(schemeHoveredObject);
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
-                        mustReRender = true;
+                        if (result !== false) {
+                            mustReRender = true;
+                        }
                         hasNewHovers = true;
                     }
                 }
@@ -1518,9 +1526,11 @@ var SchemeDesigner;
                 for (var _c = 0, objects_3 = objects; _c < objects_3.length; _c++) {
                     var schemeObject = objects_3[_c];
                     schemeObject.isHovered = true;
-                    mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
-                    schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+                    var result = schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+                    if (result !== false) {
+                        mustReRender = true;
+                    }
                     this.scheme.addChangedObject(schemeObject);
                     this.sendEvent('mouseOverObject', schemeObject);
                 }
@@ -2424,6 +2434,12 @@ var SchemeDesigner;
                 canScaleX = this.scheme.getWidth() * this.maxScale > boundingRectDimensions.width * newScale;
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
             }
+            this.scheme.getEventManager().sendEvent('zoom', {
+                oldScale: oldScale,
+                newScale: newScale,
+                factor: factor,
+                success: canScaleX || canScaleY
+            });
             if (canScaleX || canScaleY) {
                 this.scale = newScale;
                 this.scheme.getView().setScale(newScale);
@@ -2435,10 +2451,6 @@ var SchemeDesigner;
                 else {
                     this.scheme.requestRenderAll();
                 }
-                this.scheme.getEventManager().sendEvent('zoom', {
-                    oldScale: oldScale,
-                    newScale: newScale
-                });
                 return true;
             }
             return false;

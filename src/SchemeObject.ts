@@ -154,12 +154,14 @@ namespace SchemeDesigner {
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
-        public click(e: MouseEvent, schemeDesigner: Scheme, view: View): void
+        public click(e: MouseEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.clickFunction === 'function') {
-                this.clickFunction(this, Scheme, view, e);
+                return this.clickFunction(this, Scheme, view, e);
             }
+            return null;
         }
 
         /**
@@ -167,12 +169,14 @@ namespace SchemeDesigner {
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
-        public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): void
+        public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.mouseOverFunction === 'function') {
-                this.mouseOverFunction(this, Scheme, view, e);
+                return this.mouseOverFunction(this, Scheme, view, e);
             }
+            return null;
         }
 
         /**
@@ -180,12 +184,14 @@ namespace SchemeDesigner {
          * @param {MouseEvent} e
          * @param {Scheme} schemeDesigner
          * @param view
+         * @return null|boolean
          */
-        public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): void
+        public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.mouseLeaveFunction === 'function') {
-                this.mouseLeaveFunction(this, Scheme, view, e);
+                return this.mouseLeaveFunction(this, Scheme, view, e);
             }
+            return null;
         }
 
         /**

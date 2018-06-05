@@ -297,12 +297,14 @@ namespace SchemeDesigner {
                     if (!alreadyHovered) {
                         schemeHoveredObject.isHovered = false;
 
-                        schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
+                        let result = schemeHoveredObject.mouseLeave(e, this.scheme, this.scheme.getView());
                         this.scheme.addChangedObject(schemeHoveredObject);
 
                         this.sendEvent('mouseLeaveObject', schemeHoveredObject);
 
-                        mustReRender = true;
+                        if (result !== false) {
+                            mustReRender = true;
+                        }
                         hasNewHovers = true;
                     }
                 }
@@ -311,10 +313,14 @@ namespace SchemeDesigner {
             if (!this.hoveredObjects.length || hasNewHovers) {
                 for (let schemeObject of objects) {
                     schemeObject.isHovered = true;
-                    mustReRender = true;
                     this.scheme.setCursorStyle(schemeObject.cursorStyle);
 
-                    schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+                    let result = schemeObject.mouseOver(e, this.scheme, this.scheme.getView());
+
+                    if (result !== false) {
+                        mustReRender = true;
+                    }
+
                     this.scheme.addChangedObject(schemeObject);
 
                     this.sendEvent('mouseOverObject', schemeObject);
