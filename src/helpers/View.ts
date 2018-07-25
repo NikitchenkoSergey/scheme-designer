@@ -159,5 +159,19 @@ namespace SchemeDesigner {
         {
             this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
         }
+
+        /**
+         * Resize view
+         */
+        public resize(): void
+        {
+            let newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.getCanvas())));
+            let newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.getCanvas())));
+
+            this.setDimensions({
+                width: newWidth,
+                height: newHeight
+            });
+        }
     }
 }

@@ -61,37 +61,37 @@ namespace SchemeDesigner {
         {
             // mouse events
             this.scheme.getCanvas().addEventListener('mousedown', (e: MouseEvent) => {
-                this.onMouseDown(e)
+                this.onMouseDown(e);
             });
             this.scheme.getCanvas().addEventListener('mouseup', (e: MouseEvent) => {
-                this.onMouseUp(e)
+                this.onMouseUp(e);
             });
             this.scheme.getCanvas().addEventListener('click', (e: MouseEvent) => {
-                this.onClick(e)
+                this.onClick(e);
             });
             this.scheme.getCanvas().addEventListener('dblclick', (e: MouseEvent) => {
-                this.onDoubleClick(e)
+                this.onDoubleClick(e);
             });
             this.scheme.getCanvas().addEventListener('mousemove', (e: MouseEvent) => {
-                this.onMouseMove(e)
+                this.onMouseMove(e);
             });
             this.scheme.getCanvas().addEventListener('mouseout', (e: MouseEvent) => {
-                this.onMouseOut(e)
+                this.onMouseOut(e);
             });
             this.scheme.getCanvas().addEventListener('mouseenter', (e: MouseEvent) => {
-                this.onMouseEnter(e)
+                this.onMouseEnter(e);
             });
             this.scheme.getCanvas().addEventListener('contextmenu', (e: MouseEvent) => {
-                this.onContextMenu(e)
+                this.onContextMenu(e);
             });
 
             // wheel
             this.scheme.getCanvas().addEventListener('mousewheel', (e: MouseWheelEvent) => {
-                this.onMouseWheel(e)
+                this.onMouseWheel(e);
             });
             // for FF
             this.scheme.getCanvas().addEventListener('DOMMouseScroll', (e: MouseWheelEvent) => {
-                this.onMouseWheel(e)
+                this.onMouseWheel(e);
             });
 
             // touch events
@@ -138,7 +138,7 @@ namespace SchemeDesigner {
             });
 
             this.scheme.getCanvas().addEventListener('touchcancel', (e: TouchEvent) => {
-                this.onMouseUp(e)
+                this.onMouseUp(e);
             });
 
             // resize
@@ -246,30 +246,6 @@ namespace SchemeDesigner {
             } else {
                 this.scheme.getScrollManager().handleDragging(e);
             }
-        }
-
-        /**
-         * Get pointer from event
-         * @param e
-         * @param clientProp
-         * @returns {number}
-         */
-        protected getPointer(e: MouseEvent | TouchEvent, clientProp: string): number
-        {
-            let touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
-
-            let event = (e as any);
-
-            // touch event
-            if (event[touchProp] && event[touchProp][0]) {
-                if (event[touchProp].length == 2) {
-                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
-                }
-
-                return event[touchProp][0][clientProp];
-            }
-
-            return event[clientProp];
         }
 
         /**
@@ -398,8 +374,8 @@ namespace SchemeDesigner {
         protected getCoordinatesFromEvent(e: MouseEvent | TouchEvent): Coordinates
         {
             let clientRect = this.scheme.getCanvas().getBoundingClientRect();
-            let x = this.getPointer(e, 'clientX') - clientRect.left;
-            let y = this.getPointer(e, 'clientY') - clientRect.top;
+            let x = Tools.getPointer(e, 'clientX') - clientRect.left;
+            let y = Tools.getPointer(e, 'clientY') - clientRect.top;
 
             return {x, y};
         }
@@ -408,7 +384,7 @@ namespace SchemeDesigner {
          * Set last client position
          * @param coordinates
          */
-        public setLastClientPosition(coordinates: Coordinates): void
+        protected setLastClientPosition(coordinates: Coordinates): void
         {
             this.lastClientPosition = coordinates;
         }

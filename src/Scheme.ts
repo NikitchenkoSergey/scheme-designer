@@ -46,6 +46,11 @@ namespace SchemeDesigner {
         protected storageManager: StorageManager;
 
         /**
+         * Map manager
+         */
+        protected mapManager: MapManager;
+
+        /**
          * Default cursor style
          */
         protected defaultCursorStyle: string = 'default';
@@ -89,9 +94,10 @@ namespace SchemeDesigner {
 
             this.eventManager = new EventManager(this);
 
+            this.mapManager = new MapManager(this);
+
             this.storageManager = new StorageManager(this);
 
-            this.resize();
 
             this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
@@ -104,13 +110,19 @@ namespace SchemeDesigner {
                 Tools.configure(this, params.options);
                 Tools.configure(this.scrollManager, params.scroll);
                 Tools.configure(this.zoomManager, params.zoom);
+                Tools.configure(this.mapManager, params.map);
                 Tools.configure(this.storageManager, params.storage);
             }
 
             /**
              * Disable selections on canvas
              */
-            this.disableCanvasSelection();
+            Tools.disableElementSelection(this.view.getCanvas());
+
+            /**
+             * Set dimesions
+             */
+            this.resize();
 
             /**
              * Bind events
@@ -123,14 +135,8 @@ namespace SchemeDesigner {
          */
         public resize(): void
         {
-            let newWidth = Math.max(0, Math.floor(Tools.getMaximumWidth(this.view.getCanvas())));
-            let newHeight = Math.max(0, Math.floor(Tools.getMaximumHeight(this.view.getCanvas())));
-
-            this.view.setDimensions({
-                width: newWidth,
-                height: newHeight
-            });
-
+            this.view.resize();
+            this.mapManager.resize();
             this.zoomManager.resetScale();
         }
 
@@ -214,7 +220,7 @@ namespace SchemeDesigner {
         {
             let context = this.view.getContext();
             context.save();
-            context.setTransform(1,0,0,1,0,0);
+            context.setTransform(1, 0, 0, 1, 0, 0);
             context.clearRect(
                 0,
                 0,
@@ -259,6 +265,27 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Get visible bounding rect
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        public getVisibleBoundingRect(): BoundingRect
+        {
+            let scale = this.zoomManager.getScale();
+
+            let width = this.getWidth() / scale;
+            let height = this.getHeight() / scale;
+            let leftOffset = -this.scrollManager.getScrollLeft() / scale;
+            let topOffset = -this.scrollManager.getScrollTop() / scale;
+
+            return {
+                left: leftOffset,
+                top: topOffset,
+                right: leftOffset + width,
+                bottom: topOffset + height
+            };
+        }
+
+        /**
          * Render visible objects
          */
         protected renderAll(): void
@@ -272,21 +299,9 @@ namespace SchemeDesigner {
 
             this.clearContext();
 
-            let scrollLeft = this.scrollManager.getScrollLeft();
-            let scrollTop = this.scrollManager.getScrollTop();
-            let scale = this.zoomManager.getScale();
+            let visibleBoundingRect = this.getVisibleBoundingRect();
 
-            let width = this.getWidth() / this.zoomManager.getScale();
-            let height = this.getHeight() / this.zoomManager.getScale();
-            let leftOffset = -scrollLeft / this.zoomManager.getScale();
-            let topOffset = -scrollTop / this.zoomManager.getScale();
-
-            let nodes = this.storageManager.findNodesByBoundingRect(null, {
-                left: leftOffset,
-                top: topOffset,
-                right: leftOffset + width,
-                bottom: topOffset + height
-            });
+            let nodes = this.storageManager.findNodesByBoundingRect(null, visibleBoundingRect);
 
             let layers = this.storageManager.getSortedLayers();
 
@@ -304,6 +319,8 @@ namespace SchemeDesigner {
                     }
                 }
             }
+
+            this.mapManager.drawMap();
 
             this.eventManager.sendEvent('afterRenderAll');
         }
@@ -356,25 +373,6 @@ namespace SchemeDesigner {
             return this.defaultCursorStyle;
         }
 
-        /**
-         * Disable selection on canvas
-         */
-        protected disableCanvasSelection(): void
-        {
-            let styles = [
-                '-webkit-touch-callout',
-                '-webkit-user-select',
-                '-khtml-user-select',
-                '-moz-user-select',
-                '-ms-user-select',
-                'user-select',
-                'outline'
-            ];
-            for (let styleName of styles) {
-                (this.view.getCanvas().style as any)[styleName] = 'none';
-            }
-        }
-
 
         /**
          * Draw from cache
@@ -403,8 +401,11 @@ namespace SchemeDesigner {
                 boundingRect.bottom
             );
 
+            this.mapManager.drawMap();
+
             return true;
         }
+
 
         /**
          * Request draw from cache
@@ -516,6 +517,15 @@ namespace SchemeDesigner {
         public getView(): View
         {
             return this.view;
+        }
+
+        /**
+         * Get cache view
+         * @returns {View}
+         */
+        public getCacheView(): View
+        {
+            return this.cacheView;
         }
     }
 }

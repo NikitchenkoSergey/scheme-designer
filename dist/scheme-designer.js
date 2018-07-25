@@ -155,8 +155,8 @@ var SchemeDesigner;
             this.scrollManager = new SchemeDesigner.ScrollManager(this);
             this.zoomManager = new SchemeDesigner.ZoomManager(this);
             this.eventManager = new SchemeDesigner.EventManager(this);
+            this.mapManager = new SchemeDesigner.MapManager(this);
             this.storageManager = new SchemeDesigner.StorageManager(this);
-            this.resize();
             this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
             this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
             this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
@@ -167,12 +167,17 @@ var SchemeDesigner;
                 SchemeDesigner.Tools.configure(this, params.options);
                 SchemeDesigner.Tools.configure(this.scrollManager, params.scroll);
                 SchemeDesigner.Tools.configure(this.zoomManager, params.zoom);
+                SchemeDesigner.Tools.configure(this.mapManager, params.map);
                 SchemeDesigner.Tools.configure(this.storageManager, params.storage);
             }
             /**
              * Disable selections on canvas
              */
-            this.disableCanvasSelection();
+            SchemeDesigner.Tools.disableElementSelection(this.view.getCanvas());
+            /**
+             * Set dimesions
+             */
+            this.resize();
             /**
              * Bind events
              */
@@ -182,12 +187,8 @@ var SchemeDesigner;
          * Resize canvas
          */
         Scheme.prototype.resize = function () {
-            var newWidth = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumWidth(this.view.getCanvas())));
-            var newHeight = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumHeight(this.view.getCanvas())));
-            this.view.setDimensions({
-                width: newWidth,
-                height: newHeight
-            });
+            this.view.resize();
+            this.mapManager.resize();
             this.zoomManager.resetScale();
         };
         /**
@@ -285,6 +286,23 @@ var SchemeDesigner;
             this.requestDrawFromCache();
         };
         /**
+         * Get visible bounding rect
+         * @returns {{left: number, top: number, right: number, bottom: number}}
+         */
+        Scheme.prototype.getVisibleBoundingRect = function () {
+            var scale = this.zoomManager.getScale();
+            var width = this.getWidth() / scale;
+            var height = this.getHeight() / scale;
+            var leftOffset = -this.scrollManager.getScrollLeft() / scale;
+            var topOffset = -this.scrollManager.getScrollTop() / scale;
+            return {
+                left: leftOffset,
+                top: topOffset,
+                right: leftOffset + width,
+                bottom: topOffset + height
+            };
+        };
+        /**
          * Render visible objects
          */
         Scheme.prototype.renderAll = function () {
@@ -294,19 +312,8 @@ var SchemeDesigner;
             }
             this.eventManager.sendEvent('beforeRenderAll');
             this.clearContext();
-            var scrollLeft = this.scrollManager.getScrollLeft();
-            var scrollTop = this.scrollManager.getScrollTop();
-            var scale = this.zoomManager.getScale();
-            var width = this.getWidth() / this.zoomManager.getScale();
-            var height = this.getHeight() / this.zoomManager.getScale();
-            var leftOffset = -scrollLeft / this.zoomManager.getScale();
-            var topOffset = -scrollTop / this.zoomManager.getScale();
-            var nodes = this.storageManager.findNodesByBoundingRect(null, {
-                left: leftOffset,
-                top: topOffset,
-                right: leftOffset + width,
-                bottom: topOffset + height
-            });
+            var visibleBoundingRect = this.getVisibleBoundingRect();
+            var nodes = this.storageManager.findNodesByBoundingRect(null, visibleBoundingRect);
             var layers = this.storageManager.getSortedLayers();
             var renderedObjectIds = {};
             for (var _i = 0, layers_1 = layers; _i < layers_1.length; _i++) {
@@ -324,6 +331,7 @@ var SchemeDesigner;
                     }
                 }
             }
+            this.mapManager.drawMap();
             this.eventManager.sendEvent('afterRenderAll');
         };
         /**
@@ -364,24 +372,6 @@ var SchemeDesigner;
             return this.defaultCursorStyle;
         };
         /**
-         * Disable selection on canvas
-         */
-        Scheme.prototype.disableCanvasSelection = function () {
-            var styles = [
-                '-webkit-touch-callout',
-                '-webkit-user-select',
-                '-khtml-user-select',
-                '-moz-user-select',
-                '-ms-user-select',
-                'user-select',
-                'outline'
-            ];
-            for (var _i = 0, styles_1 = styles; _i < styles_1.length; _i++) {
-                var styleName = styles_1[_i];
-                this.view.getCanvas().style[styleName] = 'none';
-            }
-        };
-        /**
          * Draw from cache
          * @returns {boolean}
          */
@@ -396,6 +386,7 @@ var SchemeDesigner;
             this.clearContext();
             var boundingRect = this.storageManager.getObjectsBoundingRect();
             this.view.getContext().drawImage(this.cacheView.getCanvas(), 0, 0, boundingRect.right, boundingRect.bottom);
+            this.mapManager.drawMap();
             return true;
         };
         /**
@@ -488,6 +479,13 @@ var SchemeDesigner;
          */
         Scheme.prototype.getView = function () {
             return this.view;
+        };
+        /**
+         * Get cache view
+         * @returns {View}
+         */
+        Scheme.prototype.getCacheView = function () {
+            return this.cacheView;
         };
         return Scheme;
     }());
@@ -1137,6 +1135,43 @@ var SchemeDesigner;
             return Math.random().toString(36).substr(2, 9);
         };
         /**
+         * Disable selection on element
+         * @param element
+         */
+        Tools.disableElementSelection = function (element) {
+            var styles = [
+                '-webkit-touch-callout',
+                '-webkit-user-select',
+                '-khtml-user-select',
+                '-moz-user-select',
+                '-ms-user-select',
+                'user-select',
+                'outline'
+            ];
+            for (var _i = 0, styles_1 = styles; _i < styles_1.length; _i++) {
+                var styleName = styles_1[_i];
+                element.style[styleName] = 'none';
+            }
+        };
+        /**
+         * Get pointer from event
+         * @param e
+         * @param clientProp
+         * @returns {number}
+         */
+        Tools.getPointer = function (e, clientProp) {
+            var touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
+            var event = e;
+            // touch event
+            if (event[touchProp] && event[touchProp][0]) {
+                if (event[touchProp].length == 2) {
+                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
+                }
+                return event[touchProp][0][clientProp];
+            }
+            return event[clientProp];
+        };
+        /**
          * Number for id generator
          * @type {number}
          */
@@ -1266,6 +1301,17 @@ var SchemeDesigner;
          */
         View.prototype.applyTransformation = function () {
             this.context.setTransform(this.scale, 0, 0, this.scale, this.scrollLeft, this.scrollTop);
+        };
+        /**
+         * Resize view
+         */
+        View.prototype.resize = function () {
+            var newWidth = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumWidth(this.getCanvas())));
+            var newHeight = Math.max(0, Math.floor(SchemeDesigner.Tools.getMaximumHeight(this.getCanvas())));
+            this.setDimensions({
+                width: newWidth,
+                height: newHeight
+            });
         };
         return View;
     }());
@@ -1474,24 +1520,6 @@ var SchemeDesigner;
             }
         };
         /**
-         * Get pointer from event
-         * @param e
-         * @param clientProp
-         * @returns {number}
-         */
-        EventManager.prototype.getPointer = function (e, clientProp) {
-            var touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
-            var event = e;
-            // touch event
-            if (event[touchProp] && event[touchProp][0]) {
-                if (event[touchProp].length == 2) {
-                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
-                }
-                return event[touchProp][0][clientProp];
-            }
-            return event[clientProp];
-        };
-        /**
          * Handling hover
          * @param e
          */
@@ -1591,8 +1619,8 @@ var SchemeDesigner;
          */
         EventManager.prototype.getCoordinatesFromEvent = function (e) {
             var clientRect = this.scheme.getCanvas().getBoundingClientRect();
-            var x = this.getPointer(e, 'clientX') - clientRect.left;
-            var y = this.getPointer(e, 'clientY') - clientRect.top;
+            var x = SchemeDesigner.Tools.getPointer(e, 'clientX') - clientRect.left;
+            var y = SchemeDesigner.Tools.getPointer(e, 'clientY') - clientRect.top;
             return { x: x, y: y };
         };
         /**
@@ -1638,6 +1666,308 @@ var SchemeDesigner;
         return EventManager;
     }());
     SchemeDesigner.EventManager = EventManager;
+})(SchemeDesigner || (SchemeDesigner = {}));
+
+var SchemeDesigner;
+(function (SchemeDesigner) {
+    /**
+     * Map manager
+     * @author Nikitchenko Sergey <nikitchenko.sergey@yandex.ru>
+     */
+    var MapManager = /** @class */ (function () {
+        /**
+         * Constructor
+         * @param {SchemeDesigner.Scheme} scheme
+         */
+        function MapManager(scheme) {
+            /**
+             * Is dragging
+             */
+            this.isDragging = false;
+            /**
+             * Left button down
+             */
+            this.leftButtonDown = false;
+            /**
+             * Last touch end time
+             * @type {number}
+             */
+            this.lastTouchEndTime = 0;
+            this.scheme = scheme;
+        }
+        /**
+         * Scaled scheme rect
+         * @returns {number}
+         */
+        MapManager.prototype.getScaledSchemeRect = function () {
+            var imageBoundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
+            var imageWidth = imageBoundingRect.right;
+            var imageHeight = imageBoundingRect.bottom;
+            var mapWidth = this.mapView.getWidth();
+            var mapHeight = this.mapView.getHeight();
+            var mapRatio = mapWidth / mapHeight;
+            var imageRatio = imageWidth / imageHeight;
+            var scaleFactor = mapRatio < imageRatio ? mapWidth / imageWidth : mapHeight / imageHeight;
+            var newImageWidth = imageWidth * scaleFactor;
+            var newImageHeight = imageHeight * scaleFactor;
+            var leftOffset = (mapWidth - newImageWidth) / 2;
+            var topOffset = (mapHeight - newImageHeight) / 2;
+            return {
+                scaleFactor: scaleFactor,
+                width: newImageWidth,
+                height: newImageHeight,
+                leftOffset: leftOffset,
+                topOffset: topOffset
+            };
+        };
+        /**
+         * Get rect dimensions
+         * @param scaledSchemeRect
+         * @returns BoundingRect
+         */
+        MapManager.prototype.getRectBoundingRect = function (scaledSchemeRect) {
+            var visibleBoundingRect = this.scheme.getVisibleBoundingRect();
+            var rectX = visibleBoundingRect.left * scaledSchemeRect.scaleFactor + scaledSchemeRect.leftOffset;
+            var rectY = visibleBoundingRect.top * scaledSchemeRect.scaleFactor + scaledSchemeRect.topOffset;
+            var rectWidth = (visibleBoundingRect.right - visibleBoundingRect.left) * scaledSchemeRect.scaleFactor;
+            var rectHeight = (visibleBoundingRect.bottom - visibleBoundingRect.top) * scaledSchemeRect.scaleFactor;
+            return {
+                left: rectX,
+                top: rectY,
+                right: rectX + rectWidth,
+                bottom: rectY + rectHeight
+            };
+        };
+        /**
+         *
+         * @returns {boolean}
+         */
+        MapManager.prototype.drawMap = function () {
+            var cacheView = this.scheme.getCacheView();
+            if (!this.mapView || !cacheView) {
+                return false;
+            }
+            var scaledSchemeRect = this.getScaledSchemeRect();
+            var mapWidth = this.mapView.getWidth();
+            var mapHeight = this.mapView.getHeight();
+            var mapContext = this.mapView.getContext();
+            mapContext.clearRect(0, 0, mapWidth, mapHeight);
+            mapContext.drawImage(cacheView.getCanvas(), scaledSchemeRect.leftOffset, scaledSchemeRect.topOffset, scaledSchemeRect.width, scaledSchemeRect.height);
+            var rectBoundingRect = this.getRectBoundingRect(scaledSchemeRect);
+            /**
+             * todo custom rect render
+             */
+            mapContext.lineWidth = 1;
+            mapContext.strokeStyle = '#000';
+            mapContext.strokeRect(rectBoundingRect.left, rectBoundingRect.top, rectBoundingRect.right - rectBoundingRect.left, rectBoundingRect.bottom - rectBoundingRect.top);
+            return true;
+        };
+        /**
+         * Set mapCanvas
+         * @param value
+         */
+        MapManager.prototype.setMapCanvas = function (value) {
+            this.mapCanvas = value;
+            this.mapView = new SchemeDesigner.View(this.mapCanvas);
+            this.bindEvents();
+            SchemeDesigner.Tools.disableElementSelection(this.mapCanvas);
+        };
+        /**
+         * Resize map view
+         */
+        MapManager.prototype.resize = function () {
+            if (this.mapView) {
+                this.mapView.resize();
+            }
+        };
+        /**
+         * Bind events
+         */
+        MapManager.prototype.bindEvents = function () {
+            var _this = this;
+            // mouse events
+            this.mapCanvas.addEventListener('mousedown', function (e) {
+                _this.onMouseDown(e);
+            });
+            this.mapCanvas.addEventListener('mouseup', function (e) {
+                _this.onMouseUp(e);
+            });
+            this.mapCanvas.addEventListener('mousemove', function (e) {
+                _this.onMouseMove(e);
+            });
+            this.mapCanvas.addEventListener('mouseout', function (e) {
+                _this.onMouseOut(e);
+            });
+            this.mapCanvas.addEventListener('click', function (e) {
+                _this.onClick(e);
+            });
+            // wheel
+            this.mapCanvas.addEventListener('mousewheel', function (e) {
+                _this.onMouseWheel(e);
+            });
+            // for FF
+            this.mapCanvas.addEventListener('DOMMouseScroll', function (e) {
+                _this.onMouseWheel(e);
+            });
+        };
+        /**
+         * Zoom by wheel
+         * @param e
+         */
+        MapManager.prototype.onMouseWheel = function (e) {
+            var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
+            if (delta) {
+                var eventCoordinates = this.getCoordinatesFromEvent(e);
+                this.scrollByCoordinates(eventCoordinates);
+                this.scheme.getZoomManager().zoomToCenter(delta);
+            }
+            return e.preventDefault() && false;
+        };
+        /**
+         * Mouse down
+         * @param e
+         */
+        MapManager.prototype.onMouseDown = function (e) {
+            this.leftButtonDown = true;
+            this.setLastClientPositionFromEvent(e);
+        };
+        /**
+         * Mouse out
+         * @param e
+         */
+        MapManager.prototype.onMouseOut = function (e) {
+            this.setLastClientPositionFromEvent(e);
+            this.leftButtonDown = false;
+            this.isDragging = false;
+        };
+        /**
+         * Set cursor style
+         * @param {string} cursor
+         * @returns {SchemeDesigner}
+         */
+        MapManager.prototype.setCursorStyle = function (cursor) {
+            this.mapCanvas.style.cursor = cursor;
+            return this;
+        };
+        /**
+         * Mouse up
+         * @param e
+         */
+        MapManager.prototype.onMouseUp = function (e) {
+            var _this = this;
+            this.leftButtonDown = false;
+            this.setLastClientPositionFromEvent(e);
+            if (this.isDragging) {
+                var eventCoordinates = this.getCoordinatesFromEvent(e);
+                this.scrollByCoordinates(eventCoordinates);
+                this.setCursorStyle('default');
+            }
+            // defer for prevent trigger click on mouseUp
+            setTimeout(function () { _this.isDragging = false; }, 1);
+        };
+        /**
+         * On mouse move
+         * @param e
+         */
+        MapManager.prototype.onMouseMove = function (e) {
+            if (this.leftButtonDown) {
+                var newCoordinates = this.getCoordinatesFromEvent(e);
+                var deltaX = Math.abs(newCoordinates.x - this.getLastClientX());
+                var deltaY = Math.abs(newCoordinates.y - this.getLastClientY());
+                // 1 - is click with offset - mis drag
+                if (deltaX > 1 || deltaY > 1) {
+                    this.isDragging = true;
+                    this.setCursorStyle('move');
+                }
+            }
+            if (this.isDragging) {
+                var eventCoordinates = this.getCoordinatesFromEvent(e);
+                this.scrollByCoordinates(eventCoordinates);
+            }
+        };
+        /**
+         * Set last client position
+         * @param e
+         */
+        MapManager.prototype.setLastClientPositionFromEvent = function (e) {
+            var coordinates = this.getCoordinatesFromEvent(e);
+            this.setLastClientPosition(coordinates);
+        };
+        /**
+         * Set last client position
+         * @param coordinates
+         */
+        MapManager.prototype.setLastClientPosition = function (coordinates) {
+            this.lastClientPosition = coordinates;
+        };
+        /**
+         * Get last client x
+         * @returns {number}
+         */
+        MapManager.prototype.getLastClientX = function () {
+            return this.lastClientPosition.x;
+        };
+        /**
+         * Get last client y
+         * @returns {number}
+         */
+        MapManager.prototype.getLastClientY = function () {
+            return this.lastClientPosition.y;
+        };
+        /**
+         * Get real scheme coordinates
+         * @param coordinates
+         * @returns {{x: number, y: number}}
+         */
+        MapManager.prototype.getRealCoordinates = function (coordinates) {
+            var scaledSchemeRect = this.getScaledSchemeRect();
+            var schemeScale = this.scheme.getZoomManager().getScale();
+            var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
+            var rectBoundingRect = this.getRectBoundingRect(scaledSchemeRect);
+            var rectWidth = rectBoundingRect.right - rectBoundingRect.left;
+            var rectHeight = rectBoundingRect.bottom - rectBoundingRect.top;
+            var realX = (coordinates.x - scaledSchemeRect.leftOffset - (rectWidth / 2)) / scaledSchemeRect.scaleFactor;
+            var realY = (coordinates.y - scaledSchemeRect.topOffset - (rectHeight / 2)) / scaledSchemeRect.scaleFactor;
+            // process scheme scale
+            var x = (realX - boundingRect.left) * schemeScale;
+            var y = (realY - boundingRect.top) * schemeScale;
+            return {
+                x: x,
+                y: y
+            };
+        };
+        /**
+         * Scroll by coordinates
+         * @param coordinates
+         */
+        MapManager.prototype.scrollByCoordinates = function (coordinates) {
+            var realCoordinates = this.getRealCoordinates(coordinates);
+            this.scheme.getScrollManager().scroll(-realCoordinates.x, -realCoordinates.y);
+        };
+        /**
+         * On click
+         * @param e
+         */
+        MapManager.prototype.onClick = function (e) {
+            if (!this.isDragging) {
+                var eventCoordinates = this.getCoordinatesFromEvent(e);
+                this.scrollByCoordinates(eventCoordinates);
+            }
+        };
+        /**
+         * Get coordinates from event
+         * @param e
+         * @returns {number[]}
+         */
+        MapManager.prototype.getCoordinatesFromEvent = function (e) {
+            var clientRect = this.mapCanvas.getBoundingClientRect();
+            var x = SchemeDesigner.Tools.getPointer(e, 'clientX') - clientRect.left;
+            var y = SchemeDesigner.Tools.getPointer(e, 'clientY') - clientRect.top;
+            return { x: x, y: y };
+        };
+        return MapManager;
+    }());
+    SchemeDesigner.MapManager = MapManager;
 })(SchemeDesigner || (SchemeDesigner = {}));
 
 var SchemeDesigner;

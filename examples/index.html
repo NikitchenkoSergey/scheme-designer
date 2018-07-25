@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?19"></script>
+    <script src="../dist/scheme-designer.min.js?20"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -19,6 +19,20 @@
             height: 500px;
             position:relative;
         }
+        .canvas1_map_container {
+            width: 150px;
+            height: 150px;
+            position: absolute;
+            top: 2px;
+            right: 0px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+        @media (max-width: 767px) {
+            .canvas1_map_container {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -26,12 +40,18 @@
     <div style="text-align: center;">
         <h2>Hall scheme example</h2>
 
-        <div class="canvas-holder" style="">
-            <canvas id="canvas1" style="border: 1px solid #ccc;">
+        <div style="position: relative;">
+            <div class="canvas-holder" style="">
+                <canvas id="canvas1" style="border: 1px solid #ccc;">
+                    Ваш браузер не поддерживает элемент canvas.
+                </canvas>
+            </div>
+            <div class="canvas1_map_container">
+            <canvas id="canvas1_map">
                 Ваш браузер не поддерживает элемент canvas.
             </canvas>
+            </div>
         </div>
-
         <div class="well">
             <div class="row" >
                 <div class="col-sm-2" style="margin-bottom: 5px;">
@@ -76,8 +96,7 @@
         var backgroundColor = '#' + schemeObject.params.backgroundColor;
 
         context.beginPath();
-        var borderWidth = 4;
-        context.lineWidth = borderWidth;
+        context.lineWidth = 4;
         context.strokeStyle = 'white';
 
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
@@ -107,7 +126,7 @@
         }
 		
         var halfWidth = width / 2;
-        var halfHeight = height / 2
+        var halfHeight = height / 2;
 
         var circleCenterX = relativeX + halfWidth;
         var circleCenterY = relativeY + halfHeight;
@@ -197,7 +216,7 @@
             y: 0.5 + topOffset,
             width: width,
             height: height,
-            active: objectData.ObjectType == 'Place'? true : false,
+            active: objectData.ObjectType == 'Place',
             renderFunction: objectData.ObjectType == 'Place' ? renderPlace : renderLabel,
             cursorStyle: objectData.ObjectType == 'Place' ? 'pointer' : 'default',
 
@@ -261,6 +280,8 @@
     }));
 
     var canvas = document.getElementById('canvas1');
+    var mapCanvas = document.getElementById('canvas1_map');
+
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
         options: {
             cacheSchemeRatio: 2
@@ -275,6 +296,9 @@
         },
         storage: {
             treeDepth: 6
+        },
+        map: {
+            mapCanvas: mapCanvas
         }
     });
 

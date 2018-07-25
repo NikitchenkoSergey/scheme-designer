@@ -16,4 +16,6 @@ namespace SchemeDesigner {
     export interface Layers {
         [key: string]: Layer;
     }
+
+    export type ScaledRect = {scaleFactor: number, width: number, height: number, leftOffset: number, topOffset: number};
 }

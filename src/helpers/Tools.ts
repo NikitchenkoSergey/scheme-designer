@@ -333,5 +333,49 @@ namespace SchemeDesigner {
         {
             return Math.random().toString(36).substr(2, 9);
         }
+
+        /**
+         * Disable selection on element
+         * @param element
+         */
+        public static disableElementSelection(element: HTMLElement): void
+        {
+            let styles = [
+                '-webkit-touch-callout',
+                '-webkit-user-select',
+                '-khtml-user-select',
+                '-moz-user-select',
+                '-ms-user-select',
+                'user-select',
+                'outline'
+            ];
+            for (let styleName of styles) {
+                (element.style as any)[styleName] = 'none';
+            }
+        }
+
+        /**
+         * Get pointer from event
+         * @param e
+         * @param clientProp
+         * @returns {number}
+         */
+        public static getPointer(e: MouseEvent | TouchEvent, clientProp: string): number
+        {
+            let touchProp = e.type === 'touchend' ? 'changedTouches' : 'touches';
+
+            let event = (e as any);
+
+            // touch event
+            if (event[touchProp] && event[touchProp][0]) {
+                if (event[touchProp].length == 2) {
+                    return (event[touchProp][0][clientProp] + event[touchProp][1][clientProp]) / 2;
+                }
+
+                return event[touchProp][0][clientProp];
+            }
+
+            return event[clientProp];
+        }
     }
 }
