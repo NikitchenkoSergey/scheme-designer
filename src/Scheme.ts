@@ -120,14 +120,9 @@ namespace SchemeDesigner {
             Tools.disableElementSelection(this.view.getCanvas());
 
             /**
-             * Set dimesions
+             * Set dimensions
              */
             this.resize();
-
-            /**
-             * Bind events
-             */
-            this.eventManager.bindEvents();
         }
 
         /**
@@ -175,6 +170,16 @@ namespace SchemeDesigner {
         {
             return this.storageManager;
         }
+
+        /**
+         * Get map manager
+         * @returns {MapManager}
+         */
+        public getMapManager(): MapManager
+        {
+            return this.mapManager;
+        }
+
 
         /**
          * Get width

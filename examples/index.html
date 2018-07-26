@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?20"></script>
+    <script src="../dist/scheme-designer.min.js?21"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -19,12 +19,12 @@
             height: 500px;
             position:relative;
         }
-        .canvas1_map_container {
+        #canvas1_map_container {
             width: 150px;
             height: 150px;
             position: absolute;
             top: 2px;
-            right: 0px;
+            right: 0;
             background: white;
             border: 1px solid #ddd;
         }
@@ -46,7 +46,7 @@
                     Ваш браузер не поддерживает элемент canvas.
                 </canvas>
             </div>
-            <div class="canvas1_map_container">
+            <div id="canvas1_map_container">
             <canvas id="canvas1_map">
                 Ваш браузер не поддерживает элемент canvas.
             </canvas>
@@ -337,10 +337,6 @@
 
     canvas.addEventListener('schemeDesigner.scroll', function (e) {
       //  console.log('scroll', e.detail);
-    }, false);
-
-    canvas.addEventListener('schemeDesigner.zoom', function (e) {
-        //  console.log('zoom', e.detail);
     }, false);
 </script>
 </body>

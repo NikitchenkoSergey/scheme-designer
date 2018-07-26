@@ -49,6 +49,7 @@ var schemeObject = new SchemeDesigner.SchemeObject({
 defaultLayer.addObject(schemeObject);
 
 var canvas = document.getElementById('canvas');
+var mapCanvas = document.getElementById('canvas_map');
 var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
     options: {
         cacheSchemeRatio: 2
@@ -63,6 +64,9 @@ var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
     },
     storage: {
         treeDepth: 6
+    },
+    map: {
+        mapCanvas: mapCanvas
     }
 });
 
@@ -252,6 +256,11 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
     <tr>
         <td>getStorageManager()</td>
         <td>StorageManager</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>getMapManager()</td>
+        <td>MapManager</td>
         <td></td>
     </tr>
      <tr>
@@ -500,6 +509,24 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td>showNodesParts()</td>
         <td></td>
         <td>Draw rect of nodes for testing</td>
+    </tr>
+     <tr>
+        <td colspan=3 align=center><strong>Map manager</strong></td>
+    </tr>
+     <tr>
+        <td>drawMap()</td>
+        <td></td>
+        <td>Draw map</td>
+    </tr>
+    <tr>
+        <td>setMapCanvas(value: HTMLCanvasElement)</td>
+        <td></td>
+        <td>Set canvas for drawing map</td>
+    </tr>
+     <tr>
+        <td>resize()</td>
+        <td></td>
+        <td>Recalculate canvas dimensions</td>
     </tr>
 </table>
 

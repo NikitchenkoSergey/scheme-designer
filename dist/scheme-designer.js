@@ -175,13 +175,9 @@ var SchemeDesigner;
              */
             SchemeDesigner.Tools.disableElementSelection(this.view.getCanvas());
             /**
-             * Set dimesions
+             * Set dimensions
              */
             this.resize();
-            /**
-             * Bind events
-             */
-            this.eventManager.bindEvents();
         }
         /**
          * Resize canvas
@@ -218,6 +214,13 @@ var SchemeDesigner;
          */
         Scheme.prototype.getStorageManager = function () {
             return this.storageManager;
+        };
+        /**
+         * Get map manager
+         * @returns {MapManager}
+         */
+        Scheme.prototype.getMapManager = function () {
+            return this.mapManager;
         };
         /**
          * Get width
@@ -1352,6 +1355,7 @@ var SchemeDesigner;
                 x: this.scheme.getWidth() / 2,
                 y: this.scheme.getHeight() / 2
             });
+            this.bindEvents();
         }
         /**
          * Bind events
@@ -1739,7 +1743,7 @@ var SchemeDesigner;
             };
         };
         /**
-         *
+         * Draw map
          * @returns {boolean}
          */
         MapManager.prototype.drawMap = function () {
@@ -1748,19 +1752,32 @@ var SchemeDesigner;
                 return false;
             }
             var scaledSchemeRect = this.getScaledSchemeRect();
-            var mapWidth = this.mapView.getWidth();
-            var mapHeight = this.mapView.getHeight();
             var mapContext = this.mapView.getContext();
-            mapContext.clearRect(0, 0, mapWidth, mapHeight);
+            mapContext.clearRect(0, 0, this.mapView.getWidth(), this.mapView.getHeight());
             mapContext.drawImage(cacheView.getCanvas(), scaledSchemeRect.leftOffset, scaledSchemeRect.topOffset, scaledSchemeRect.width, scaledSchemeRect.height);
             var rectBoundingRect = this.getRectBoundingRect(scaledSchemeRect);
-            /**
-             * todo custom rect render
-             */
+            this.drawRect(rectBoundingRect);
+            return true;
+        };
+        /**
+         * Draw rect
+         * @param boundingRect
+         */
+        MapManager.prototype.drawRect = function (boundingRect) {
+            var mapContext = this.mapView.getContext();
             mapContext.lineWidth = 1;
             mapContext.strokeStyle = '#000';
-            mapContext.strokeRect(rectBoundingRect.left, rectBoundingRect.top, rectBoundingRect.right - rectBoundingRect.left, rectBoundingRect.bottom - rectBoundingRect.top);
-            return true;
+            mapContext.strokeRect(boundingRect.left, boundingRect.top, boundingRect.right - boundingRect.left, boundingRect.bottom - boundingRect.top);
+            var rectBackgroundWidth = this.mapView.getWidth() * 2;
+            var rectBackgroundHeight = this.mapView.getHeight() * 2;
+            var backgroundColor = 'rgba(0, 0, 0, 0.1)';
+            mapContext.fillStyle = backgroundColor;
+            mapContext.strokeStyle = backgroundColor;
+            mapContext.lineWidth = 0;
+            mapContext.fillRect(0, 0, boundingRect.left, rectBackgroundHeight);
+            mapContext.fillRect(boundingRect.left, 0, boundingRect.right - boundingRect.left, boundingRect.top);
+            mapContext.fillRect(boundingRect.right, 0, rectBackgroundWidth, rectBackgroundHeight);
+            mapContext.fillRect(boundingRect.left, boundingRect.bottom, boundingRect.right - boundingRect.left, rectBackgroundHeight);
         };
         /**
          * Set mapCanvas

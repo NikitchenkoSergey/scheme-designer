@@ -52,12 +52,14 @@ namespace SchemeDesigner {
                 x: this.scheme.getWidth() / 2,
                 y: this.scheme.getHeight() / 2
             });
+
+            this.bindEvents();
         }
 
         /**
          * Bind events
          */
-        public bindEvents(): void
+        protected bindEvents(): void
         {
             // mouse events
             this.scheme.getCanvas().addEventListener('mousedown', (e: MouseEvent) => {

@@ -109,7 +109,7 @@ namespace SchemeDesigner {
         }
 
         /**
-         *
+         * Draw map
          * @returns {boolean}
          */
         public drawMap(): boolean
@@ -121,16 +121,13 @@ namespace SchemeDesigner {
 
             let scaledSchemeRect = this.getScaledSchemeRect();
 
-            let mapWidth = this.mapView.getWidth();
-            let mapHeight = this.mapView.getHeight();
-
             let mapContext = this.mapView.getContext();
 
             mapContext.clearRect(
                 0,
                 0,
-                mapWidth,
-                mapHeight
+                this.mapView.getWidth(),
+                this.mapView.getHeight()
             );
 
             mapContext.drawImage(
@@ -142,20 +139,61 @@ namespace SchemeDesigner {
             );
 
             let rectBoundingRect = this.getRectBoundingRect(scaledSchemeRect);
+            this.drawRect(rectBoundingRect);
 
-            /**
-             * todo custom rect render
-             */
+            return true;
+        }
+
+        /**
+         * Draw rect
+         * @param boundingRect
+         */
+        protected drawRect(boundingRect: BoundingRect): void
+        {
+            let mapContext = this.mapView.getContext();
+
             mapContext.lineWidth = 1;
             mapContext.strokeStyle = '#000';
             mapContext.strokeRect(
-                rectBoundingRect.left,
-                rectBoundingRect.top,
-                rectBoundingRect.right - rectBoundingRect.left,
-                rectBoundingRect.bottom - rectBoundingRect.top
+                boundingRect.left,
+                boundingRect.top,
+                boundingRect.right - boundingRect.left,
+                boundingRect.bottom - boundingRect.top
             );
 
-            return true;
+            let rectBackgroundWidth = this.mapView.getWidth() * 2;
+            let rectBackgroundHeight = this.mapView.getHeight() * 2;
+
+            let backgroundColor = 'rgba(0, 0, 0, 0.1)';
+            mapContext.fillStyle = backgroundColor;
+            mapContext.strokeStyle = backgroundColor;
+            mapContext.lineWidth = 0;
+
+            mapContext.fillRect(
+                0,
+                0,
+                boundingRect.left,
+                rectBackgroundHeight
+            );
+            mapContext.fillRect(
+                boundingRect.left,
+                0,
+                boundingRect.right - boundingRect.left,
+                boundingRect.top
+            );
+            mapContext.fillRect(
+                boundingRect.right,
+                0,
+                rectBackgroundWidth,
+                rectBackgroundHeight
+            );
+            mapContext.fillRect(
+                boundingRect.left,
+                boundingRect.bottom,
+                boundingRect.right - boundingRect.left,
+                rectBackgroundHeight
+            );
+
         }
 
         /**
