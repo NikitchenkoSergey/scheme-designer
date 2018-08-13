@@ -2035,12 +2035,12 @@ var SchemeDesigner;
         ScrollManager.prototype.scroll = function (left, top) {
             var boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
             var scale = this.scheme.getZoomManager().getScale();
-            var maxScrollLeft = this.scheme.getWidth() - boundingRect.left;
-            var maxScrollTop = this.scheme.getHeight() - boundingRect.top;
-            var minScrollLeft = -boundingRect.right * scale;
-            var minScrollTop = -boundingRect.bottom * scale;
-            maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
-            maxScrollTop = maxScrollTop * this.maxHiddenPart;
+            var maxScrollLeft = -(boundingRect.left) * scale;
+            var maxScrollTop = -(boundingRect.top) * scale;
+            var minScrollLeft = -(boundingRect.right) * scale;
+            var minScrollTop = -(boundingRect.bottom) * scale;
+            maxScrollLeft = maxScrollLeft + (this.scheme.getWidth() * this.maxHiddenPart);
+            maxScrollTop = maxScrollTop + (this.scheme.getHeight() * this.maxHiddenPart);
             minScrollLeft = minScrollLeft + (this.scheme.getWidth() * (1 - this.maxHiddenPart));
             minScrollTop = minScrollTop + (this.scheme.getHeight() * (1 - this.maxHiddenPart));
             if (left > maxScrollLeft) {

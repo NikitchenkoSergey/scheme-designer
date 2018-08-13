@@ -59,22 +59,18 @@ namespace SchemeDesigner {
         public scroll(left: number, top: number): void
         {
             let boundingRect = this.scheme.getStorageManager().getObjectsBoundingRect();
-
             let scale = this.scheme.getZoomManager().getScale();
 
+            let maxScrollLeft = -(boundingRect.left) * scale;
+            let maxScrollTop = -(boundingRect.top) * scale;
 
-            let maxScrollLeft = this.scheme.getWidth() - boundingRect.left;
+            let minScrollLeft = -(boundingRect.right) * scale;
+            let minScrollTop = -(boundingRect.bottom) * scale;
 
-            let maxScrollTop = this.scheme.getHeight() - boundingRect.top;
-
-            let minScrollLeft = -boundingRect.right * scale;
-            let minScrollTop = -boundingRect.bottom * scale;
-
-            maxScrollLeft = maxScrollLeft * this.maxHiddenPart;
-            maxScrollTop = maxScrollTop * this.maxHiddenPart;
+            maxScrollLeft = maxScrollLeft + (this.scheme.getWidth() * this.maxHiddenPart);
+            maxScrollTop = maxScrollTop + (this.scheme.getHeight() * this.maxHiddenPart);
             minScrollLeft = minScrollLeft + (this.scheme.getWidth() * (1 - this.maxHiddenPart));
             minScrollTop = minScrollTop + (this.scheme.getHeight() * (1 - this.maxHiddenPart));
-
 
             if (left > maxScrollLeft) {
                 left = maxScrollLeft;
