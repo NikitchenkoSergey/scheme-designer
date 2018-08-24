@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Example</title>
-    <script src="../dist/scheme-designer.min.js?15"></script>
+    <script src="../dist/scheme-designer.min.js?23"></script>
 </head>
 <body>
 <div style="margin: 20px auto; max-width: 1000px;">
@@ -33,26 +33,27 @@
      */
     var renderPlace = function (schemeObject, schemeDesigner, view) {
         var context = view.getContext();
+        var objectParams = schemeObject.getParams();
 
         context.beginPath();
         context.lineWidth = 1;
         context.strokeStyle = '#B143B0';
 
         context.fillStyle = '#B143B0';
-        if (schemeObject.params.isSelected && schemeObject.isHovered) {
+        if (objectParams.isSelected && schemeObject.isHovered) {
             context.fillStyle = '#B143B0';
         } else if (schemeObject.isHovered) {
             context.fillStyle = 'white';
-        } else if (schemeObject.params.isSelected) {
+        } else if (objectParams.isSelected) {
             context.fillStyle = '#B143B0';
         }
 
-        var relativeX = schemeObject.x;
-        var relativeY = schemeObject.y;
+        var relativeX = schemeObject.getX();
+        var relativeY = schemeObject.getY();
 
-        var width = schemeObject.width;
-        var height = schemeObject.height;
-        if (!schemeObject.isHovered && !schemeObject.params.isSelected) {
+        var width = schemeObject.getWidth();
+        var height = schemeObject.getHeight();
+        if (!schemeObject.isHovered && !objectParams.isSelected) {
             relativeX = relativeX + 2;
             relativeY = relativeY + 2;
             width = width - 4;
@@ -66,25 +67,26 @@
 
         context.font = '6px Arial';
 
-        if (schemeObject.params.isSelected && schemeObject.isHovered) {
+        if (objectParams.isSelected && schemeObject.isHovered) {
             context.fillStyle = 'white';
         } else if (schemeObject.isHovered) {
             context.fillStyle = '#B143B0';
-        } else if (schemeObject.params.isSelected) {
+        } else if (objectParams.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (schemeObject.params.isSelected || schemeObject.isHovered) {
+        if (objectParams.isSelected || schemeObject.isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(schemeObject.params.placeNumber, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+            context.fillText(objectParams.placeNumber, relativeX + (schemeObject.getWidth() / 2), relativeY + (schemeObject.getHeight() / 2));
         }
 
     };
 
     var clickOnPlace = function (schemeObject, schemeDesigner, e)
     {
-        schemeObject.params.isSelected = !schemeObject.params.isSelected;
+        var objectParams = schemeObject.getParams();
+        objectParams.isSelected = !objectParams.isSelected;
     };
 
     /**

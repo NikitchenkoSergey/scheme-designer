@@ -126,6 +126,51 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Get x
+         * @returns {number}
+         */
+        public getX(): number
+        {
+            return this.x;
+        }
+
+        /**
+         * Get y
+         * @returns {number}
+         */
+        public getY(): number
+        {
+            return this.y;
+        }
+
+        /**
+         * Get width
+         * @returns {number}
+         */
+        public getWidth(): number
+        {
+            return this.width;
+        }
+
+        /**
+         * Get height
+         * @returns {number}
+         */
+        public getHeight(): number
+        {
+            return this.height;
+        }
+
+        /**
+         * Get params
+         * @return {any}
+         */
+        public getParams(): any
+        {
+            return this.params;
+        }
+
+        /**
          * Rendering object
          * @param scheme
          * @param view

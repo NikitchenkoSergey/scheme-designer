@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?22"></script>
+    <script src="../dist/scheme-designer.min.js?23"></script>
 
     <!-- data for scheme -->
     <script src="./sector-data.js"></script>
@@ -73,32 +73,33 @@
     var renderPlace = function (schemeObject, schemeDesigner, view) {
         var context = view.getContext();
 
-        var backgroundColor = '#' + schemeObject.params.backgroundColor;
+        var objectParams = schemeObject.getParams();
+
+        var backgroundColor = '#' + objectParams.backgroundColor;
 
         context.beginPath();
-        var borderWidth = 4;
-        context.lineWidth = borderWidth;
+        context.lineWidth = 4;
         context.strokeStyle = 'white';
 
         var isHovered = schemeObject.isHovered && !SchemeDesigner.Tools.touchSupported();
 
         context.fillStyle = backgroundColor;
 
-        if (schemeObject.params.isSelected && isHovered) {
+        if (objectParams.isSelected && isHovered) {
             context.strokeStyle = backgroundColor;
         } else if (isHovered) {
             context.fillStyle = 'white';
             context.strokeStyle = backgroundColor;
-        } else if (schemeObject.params.isSelected) {
+        } else if (objectParams.isSelected) {
             context.strokeStyle = backgroundColor;
         }
 
         var relativeX = schemeObject.x;
         var relativeY = schemeObject.y;
 
-        var width = schemeObject.width;
-        var height = schemeObject.height;
-        if (!isHovered && !schemeObject.params.isSelected) {
+        var width = schemeObject.getWidth();
+        var height = schemeObject.getHeight();
+        if (!isHovered && !objectParams.isSelected) {
             var borderOffset = 4;
             relativeX = relativeX + borderOffset;
             relativeY = relativeY + borderOffset;
@@ -107,15 +108,15 @@
         }
 
         var halfWidth = width / 2;
-        var halfHeight = height / 2
+        var halfHeight = height / 2;
 
         var circleCenterX = relativeX + halfWidth;
         var circleCenterY = relativeY + halfHeight;
 
-        if (schemeObject.rotation) {
+        if (schemeObject.getRotation()) {
             context.save();
             context.translate( relativeX + halfWidth, relativeY + halfHeight);
-            context.rotate(schemeObject.rotation * Math.PI / 180);
+            context.rotate(schemeObject.getRotation() * Math.PI / 180);
             context.rect(-halfWidth, -halfHeight, width, height);
         } else {
             context.arc(circleCenterX, circleCenterY, halfWidth, 0, Math.PI * 2);
@@ -125,26 +126,26 @@
         context.fill();
         context.stroke();
 
-        context.font = (Math.floor((schemeObject.width + schemeObject.height) / 4)) + 'px Arial';
+        context.font = (Math.floor((schemeObject.getWidth() + schemeObject.getHeight()) / 4)) + 'px Arial';
 
-        if (schemeObject.params.isSelected && isHovered) {
+        if (objectParams.isSelected && isHovered) {
             context.fillStyle = 'white';
         } else if (isHovered) {
             context.fillStyle = backgroundColor;
-        } else if (schemeObject.params.isSelected) {
+        } else if (objectParams.isSelected) {
             context.fillStyle = 'white';
         }
 
-        if (schemeObject.params.isSelected || isHovered) {
+        if (objectParams.isSelected || isHovered) {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             if (schemeObject.rotation) {
-                context.fillText(schemeObject.params.seat,
-                    -(schemeObject.width / 2) + (schemeObject.width / 2),
-                    -(schemeObject.height / 2)  + (schemeObject.height / 2)
+                context.fillText(objectParams.seat,
+                    -(schemeObject.getWidth() / 2) + (schemeObject.getWidth() / 2),
+                    -(schemeObject.getHeight() / 2)  + (schemeObject.getHeight() / 2)
                 );
             } else {
-                context.fillText(schemeObject.params.seat, relativeX + (schemeObject.width / 2), relativeY + (schemeObject.height / 2));
+                context.fillText(objectParams.seat, relativeX + (schemeObject.getWidth() / 2), relativeY + (schemeObject.getHeight() / 2));
             }
         }
 
@@ -160,21 +161,23 @@
      * @param {View} view
      */
     var renderLabel = function(schemeObject, schemeDesigner, view) {
-        var fontSize = (schemeObject.params.fontSize >> 0) * (96 / 72) * 3;
+        var objectParams = schemeObject.getParams();
+        var fontSize = (objectParams.fontSize >> 0) * (96 / 72) * 3;
 
         var context = view.getContext();
 
-        context.fillStyle = '#' + this.params.fontColor;
+        context.fillStyle = '#' + objectParams.fontColor;
         context.font = fontSize + 'px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(schemeObject.params.sectorName, schemeObject.x, schemeObject.y);
+        context.fillText(objectParams.sectorName, schemeObject.getX(), schemeObject.getY());
     };
 
 
     var clickOnPlace = function (schemeObject, schemeDesigner, view, e)
     {
-        schemeObject.params.isSelected = !schemeObject.params.isSelected;
+        var objectParams = schemeObject.getParams();
+        objectParams.isSelected = !objectParams.isSelected;
     };
 
     /**
