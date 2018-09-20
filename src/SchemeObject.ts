@@ -204,7 +204,7 @@ namespace SchemeDesigner {
         public click(e: MouseEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.clickFunction === 'function') {
-                return this.clickFunction(this, Scheme, view, e);
+                return this.clickFunction(this, schemeDesigner, view, e);
             }
             return null;
         }
@@ -219,7 +219,7 @@ namespace SchemeDesigner {
         public mouseOver(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.mouseOverFunction === 'function') {
-                return this.mouseOverFunction(this, Scheme, view, e);
+                return this.mouseOverFunction(this, schemeDesigner, view, e);
             }
             return null;
         }
@@ -234,7 +234,7 @@ namespace SchemeDesigner {
         public mouseLeave(e: MouseEvent | TouchEvent, schemeDesigner: Scheme, view: View): null|boolean
         {
             if (typeof this.mouseLeaveFunction === 'function') {
-                return this.mouseLeaveFunction(this, Scheme, view, e);
+                return this.mouseLeaveFunction(this, schemeDesigner, view, e);
             }
             return null;
         }
