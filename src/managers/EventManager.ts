@@ -103,6 +103,10 @@ namespace SchemeDesigner {
             });
 
             this.scheme.getCanvas().addEventListener('touchmove', (e: TouchEvent) => {
+                if (!e.targetTouches) {
+                    return false;
+                }
+
                 if (e.targetTouches.length == 1) {
                     // one finger - dragging
                     this.onMouseMove(e);

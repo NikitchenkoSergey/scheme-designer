@@ -1436,6 +1436,9 @@ var SchemeDesigner;
                 _this.onMouseDown(e);
             });
             this.scheme.getCanvas().addEventListener('touchmove', function (e) {
+                if (!e.targetTouches) {
+                    return false;
+                }
                 if (e.targetTouches.length == 1) {
                     // one finger - dragging
                     _this.onMouseMove(e);
