@@ -206,7 +206,7 @@ namespace SchemeDesigner {
          */
         public requestFrameAnimationApply(animation: Function): number
         {
-            return this.requestFrameAnimation.apply(window, [animation]);
+            return this.requestFrameAnimation.call(window, animation);
         }
 
         /**
@@ -215,7 +215,7 @@ namespace SchemeDesigner {
          */
         public cancelAnimationFrameApply(requestId: number): void
         {
-            return this.cancelFrameAnimation.apply(window, [requestId]);
+            return this.cancelFrameAnimation.call(window, requestId);
         }
 
         /**

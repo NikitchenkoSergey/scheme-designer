@@ -22,7 +22,7 @@ namespace SchemeDesigner {
                     let value = params[paramName];
                     let setter = 'set' + Tools.capitalizeFirstLetter(paramName);
                     if (typeof obj[setter] === 'function') {
-                        obj[setter].apply(obj, [value]);
+                        obj[setter].call(obj, value);
                     }
                 }
             }

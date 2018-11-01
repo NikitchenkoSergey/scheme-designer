@@ -53,7 +53,7 @@ namespace SchemeDesigner {
         /**
          * Render function
          */
-        protected renderFunction: Function;
+        protected renderFunction: Function = function() {};
 
         /**
          * Click function
@@ -73,7 +73,7 @@ namespace SchemeDesigner {
         /**
          * Clear function
          */
-        protected clearFunction: Function;
+        protected clearFunction: Function = function() {};
 
         /**
          * All params of object
@@ -177,9 +177,7 @@ namespace SchemeDesigner {
          */
         public render(scheme: Scheme, view: View): void
         {
-            if (typeof this.renderFunction === 'function') {
-                this.renderFunction(this, scheme, view);
-            }
+            this.renderFunction(this, scheme, view);
         }
 
         /**
@@ -189,9 +187,7 @@ namespace SchemeDesigner {
          */
         public clear(scheme: Scheme, view: View): void
         {
-            if (typeof this.clearFunction === 'function') {
-                this.clearFunction(this, scheme, view);
-            }
+            this.clearFunction(this, scheme, view);
         }
 
         /**

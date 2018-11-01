@@ -242,14 +242,14 @@ var SchemeDesigner;
          * @returns {number}
          */
         Scheme.prototype.requestFrameAnimationApply = function (animation) {
-            return this.requestFrameAnimation.apply(window, [animation]);
+            return this.requestFrameAnimation.call(window, animation);
         };
         /**
          * Cancel animation
          * @param requestId
          */
         Scheme.prototype.cancelAnimationFrameApply = function (requestId) {
-            return this.cancelFrameAnimation.apply(window, [requestId]);
+            return this.cancelFrameAnimation.call(window, requestId);
         };
         /**
          * Clear canvas context
@@ -523,6 +523,14 @@ var SchemeDesigner;
              * Cursor style
              */
             this.cursorStyle = 'pointer';
+            /**
+             * Render function
+             */
+            this.renderFunction = function () { };
+            /**
+             * Clear function
+             */
+            this.clearFunction = function () { };
             this.id = SchemeDesigner.Tools.generateUniqueId();
             SchemeDesigner.Tools.configure(this, params);
             this.params = params;
@@ -589,9 +597,7 @@ var SchemeDesigner;
          * @param view
          */
         SchemeObject.prototype.render = function (scheme, view) {
-            if (typeof this.renderFunction === 'function') {
-                this.renderFunction(this, scheme, view);
-            }
+            this.renderFunction(this, scheme, view);
         };
         /**
          * Clear object
@@ -599,9 +605,7 @@ var SchemeDesigner;
          * @param view
          */
         SchemeObject.prototype.clear = function (scheme, view) {
-            if (typeof this.clearFunction === 'function') {
-                this.clearFunction(this, scheme, view);
-            }
+            this.clearFunction(this, scheme, view);
         };
         /**
          * Click on object
@@ -921,7 +925,7 @@ var SchemeDesigner;
                     var value = params[paramName];
                     var setter = 'set' + Tools.capitalizeFirstLetter(paramName);
                     if (typeof obj[setter] === 'function') {
-                        obj[setter].apply(obj, [value]);
+                        obj[setter].call(obj, value);
                     }
                 }
             }

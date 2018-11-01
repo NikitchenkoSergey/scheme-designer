@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?23"></script>
+    <script src="../dist/scheme-designer.min.js?24"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -84,6 +84,8 @@
     var backgroundLayer = new SchemeDesigner.Layer('background', {zIndex: 0, visible: false, active: false});
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
+    var twoPi = Math.PI * 2;
+
     /**
      * Render place function
      * @param {SchemeObject} schemeObject
@@ -139,7 +141,7 @@
             context.rotate(schemeObject.getRotation() * Math.PI / 180);
             context.rect(-halfWidth, -halfHeight, width, height);
         } else {
-            context.arc(circleCenterX, circleCenterY, halfWidth, 0, Math.PI * 2);
+            context.arc(circleCenterX, circleCenterY, halfWidth, 0, twoPi);
         }
 
 
@@ -165,7 +167,9 @@
                         -(schemeObject.getHeight() / 2)  + (schemeObject.getHeight() / 2)
                 );
             } else {
-                context.fillText(objectParams.seat, relativeX + (schemeObject.getWidth() / 2), relativeY + (schemeObject.getHeight() / 2));
+                context.fillText(objectParams.seat,
+                    relativeX + (schemeObject.getWidth() / 2),
+                    relativeY + (schemeObject.getHeight() / 2));
             }
         }
 
