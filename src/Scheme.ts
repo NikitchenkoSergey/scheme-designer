@@ -61,6 +61,11 @@ namespace SchemeDesigner {
         protected cacheSchemeRatio: number = 2;
 
         /**
+         * Bacground color
+         */
+        protected background: string|null = null;
+
+        /**
          * View
          */
         protected view: View;
@@ -83,7 +88,15 @@ namespace SchemeDesigner {
          */
         constructor(canvas: HTMLCanvasElement, params?: any)
         {
-            this.view = new View(canvas);
+            this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = Polyfill.getDevicePixelRatio();
+
+            if (params) {
+                Tools.configure(this, params.options);
+            }
+
+            this.view = new View(canvas, this.background);
 
             /**
              * Managers
@@ -98,16 +111,10 @@ namespace SchemeDesigner {
 
             this.storageManager = new StorageManager(this);
 
-
-            this.requestFrameAnimation = Polyfill.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = Polyfill.getCancelAnimationFunction();
-            this.devicePixelRatio = Polyfill.getDevicePixelRatio();
-
             /**
              * Configure
              */
             if (params) {
-                Tools.configure(this, params.options);
                 Tools.configure(this.scrollManager, params.scroll);
                 Tools.configure(this.zoomManager, params.zoom);
                 Tools.configure(this.mapManager, params.map);
@@ -304,6 +311,8 @@ namespace SchemeDesigner {
 
             this.clearContext();
 
+            this.view.drawBackground();
+
             let visibleBoundingRect = this.getVisibleBoundingRect();
 
             let nodes = this.storageManager.findNodesByBoundingRect(null, visibleBoundingRect);
@@ -398,6 +407,8 @@ namespace SchemeDesigner {
 
             let boundingRect = this.storageManager.getObjectsBoundingRect();
 
+            this.view.drawBackground();
+
             this.view.getContext().drawImage(
                 this.cacheView.getCanvas(),
                 0,
@@ -433,9 +444,8 @@ namespace SchemeDesigner {
         {
             if (!this.cacheView) {
                 let storage = this.storageManager.getImageStorage('scheme-cache');
-                this.cacheView = new View(storage.getCanvas());
+                this.cacheView = new View(storage.getCanvas(), this.background);
             }
-
 
             if (onlyChanged) {
                 for (let schemeObject of this.changedObjects) {
@@ -459,6 +469,8 @@ namespace SchemeDesigner {
                 });
 
                 this.cacheView.getContext().scale(scale, scale);
+
+                this.cacheView.drawBackground();
 
                 let layers = this.storageManager.getSortedLayers();
                 for (let layer of layers) {
@@ -531,6 +543,24 @@ namespace SchemeDesigner {
         public getCacheView(): View
         {
             return this.cacheView;
+        }
+
+        /**
+         * Set background
+         * @param value
+         */
+        public setBackground(value: string|null): void
+        {
+            this.background = value;
+        }
+
+        /**
+         * Get background
+         * @returns {string|null}
+         */
+        public getBackground(): string|null
+        {
+            return this.background;
         }
     }
 }

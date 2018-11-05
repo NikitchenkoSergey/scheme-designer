@@ -39,14 +39,26 @@ namespace SchemeDesigner {
          */
         protected height: number = 0;
 
+
+        /**
+         * Background
+         */
+        protected background: string|null = null;
+
         /**
          * Constructor
          * @param canvas
+         * @param background
          */
-        constructor(canvas: HTMLCanvasElement)
+        constructor(canvas: HTMLCanvasElement, background: string|null = null)
         {
             this.canvas = canvas;
-            this.context = this.canvas.getContext('2d');
+            this.background = background;
+            if (this.background) {
+                this.context = this.canvas.getContext('2d', {alpha: false}) as CanvasRenderingContext2D;
+            } else {
+                this.context = this.canvas.getContext('2d');
+            }
         }
 
         /**
@@ -172,6 +184,29 @@ namespace SchemeDesigner {
                 width: newWidth,
                 height: newHeight
             });
+        }
+
+        /**
+         * Draw background
+         * @returns {boolean}
+         */
+        public drawBackground(): boolean
+        {
+            if (!this.background) {
+                return false;
+            }
+            let context = this.getContext();
+            context.fillStyle = this.background;
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.fillRect(
+                0,
+                0,
+                this.width,
+                this.height
+            );
+            context.restore();
+            return true;
         }
     }
 }

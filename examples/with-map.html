@@ -19,6 +19,15 @@
             height: 500px;
             position:relative;
         }
+        #canvas1_map_container {
+            width: 150px;
+            height: 150px;
+            position: absolute;
+            top: 2px;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+        }
         @media (max-width: 767px) {
             .canvas1_map_container {
                 display: none;
@@ -36,6 +45,11 @@
                 <canvas id="canvas1" style="border: 1px solid #ccc;">
                     Ваш браузер не поддерживает элемент canvas.
                 </canvas>
+            </div>
+            <div id="canvas1_map_container">
+            <canvas id="canvas1_map">
+                Ваш браузер не поддерживает элемент canvas.
+            </canvas>
             </div>
         </div>
         <div class="well">
@@ -274,6 +288,7 @@
     }));
 
     var canvas = document.getElementById('canvas1');
+    var mapCanvas = document.getElementById('canvas1_map');
 
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
         options: {
@@ -290,6 +305,9 @@
         },
         storage: {
             treeDepth: 6
+        },
+        map: {
+            mapCanvas: mapCanvas
         }
     });
 

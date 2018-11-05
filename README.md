@@ -91,6 +91,13 @@ schemeDesigner.render();
         <td>2</td>
         <td>Ratio for scheme cache. Set false to disable cache.</td>
     </tr>
+     <tr>
+            <td>background</td>
+            <td>null</td>
+            <td>Background of scheme. If define - disable alpha of context (increases performance and turn on subpixel text render).
+            Else - transparent.
+            </td>
+        </tr>
     <tr>
         <td colspan=3 align=center><strong>Scroll</strong></td>
     </tr>

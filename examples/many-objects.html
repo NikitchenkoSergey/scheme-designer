@@ -18,9 +18,9 @@
 <script>
     var defaultLayer = new SchemeDesigner.Layer('default', {zIndex: 10});
 
-    var placesCount = 20000;
-    var placesInRow = 100;
-    var placeMargin = 5;
+    var placesCount = 40000;
+    var placesInRow = 500;
+    var placeMargin = 15;
 
     var placeWidth = 13;
     var placeHeight = 13;
@@ -136,6 +136,9 @@
 
     var canvas = document.getElementById('canvas1');
     var schemeDesigner = new SchemeDesigner.Scheme(canvas, {
+        options: {
+            background: '#ffffff'
+        },
         scroll: {
             maxHiddenPart: 0.85
         },

@@ -145,10 +145,20 @@ var SchemeDesigner;
              */
             this.cacheSchemeRatio = 2;
             /**
+             * Bacground color
+             */
+            this.background = null;
+            /**
              * Changed objects
              */
             this.changedObjects = [];
-            this.view = new SchemeDesigner.View(canvas);
+            this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
+            this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
+            this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
+            if (params) {
+                SchemeDesigner.Tools.configure(this, params.options);
+            }
+            this.view = new SchemeDesigner.View(canvas, this.background);
             /**
              * Managers
              */
@@ -157,14 +167,10 @@ var SchemeDesigner;
             this.eventManager = new SchemeDesigner.EventManager(this);
             this.mapManager = new SchemeDesigner.MapManager(this);
             this.storageManager = new SchemeDesigner.StorageManager(this);
-            this.requestFrameAnimation = SchemeDesigner.Polyfill.getRequestAnimationFrameFunction();
-            this.cancelFrameAnimation = SchemeDesigner.Polyfill.getCancelAnimationFunction();
-            this.devicePixelRatio = SchemeDesigner.Polyfill.getDevicePixelRatio();
             /**
              * Configure
              */
             if (params) {
-                SchemeDesigner.Tools.configure(this, params.options);
                 SchemeDesigner.Tools.configure(this.scrollManager, params.scroll);
                 SchemeDesigner.Tools.configure(this.zoomManager, params.zoom);
                 SchemeDesigner.Tools.configure(this.mapManager, params.map);
@@ -315,6 +321,7 @@ var SchemeDesigner;
             }
             this.eventManager.sendEvent('beforeRenderAll');
             this.clearContext();
+            this.view.drawBackground();
             var visibleBoundingRect = this.getVisibleBoundingRect();
             var nodes = this.storageManager.findNodesByBoundingRect(null, visibleBoundingRect);
             var layers = this.storageManager.getSortedLayers();
@@ -388,6 +395,7 @@ var SchemeDesigner;
             }
             this.clearContext();
             var boundingRect = this.storageManager.getObjectsBoundingRect();
+            this.view.drawBackground();
             this.view.getContext().drawImage(this.cacheView.getCanvas(), 0, 0, boundingRect.right, boundingRect.bottom);
             this.mapManager.drawMap();
             return true;
@@ -410,7 +418,7 @@ var SchemeDesigner;
         Scheme.prototype.updateCache = function (onlyChanged) {
             if (!this.cacheView) {
                 var storage = this.storageManager.getImageStorage('scheme-cache');
-                this.cacheView = new SchemeDesigner.View(storage.getCanvas());
+                this.cacheView = new SchemeDesigner.View(storage.getCanvas(), this.background);
             }
             if (onlyChanged) {
                 for (var _i = 0, _a = this.changedObjects; _i < _a.length; _i++) {
@@ -432,6 +440,7 @@ var SchemeDesigner;
                     height: rectHeight
                 });
                 this.cacheView.getContext().scale(scale, scale);
+                this.cacheView.drawBackground();
                 var layers = this.storageManager.getSortedLayers();
                 for (var _b = 0, layers_2 = layers; _b < layers_2.length; _b++) {
                     var layer = layers_2[_b];
@@ -489,6 +498,20 @@ var SchemeDesigner;
          */
         Scheme.prototype.getCacheView = function () {
             return this.cacheView;
+        };
+        /**
+         * Set background
+         * @param value
+         */
+        Scheme.prototype.setBackground = function (value) {
+            this.background = value;
+        };
+        /**
+         * Get background
+         * @returns {string|null}
+         */
+        Scheme.prototype.getBackground = function () {
+            return this.background;
         };
         return Scheme;
     }());
@@ -1233,8 +1256,10 @@ var SchemeDesigner;
         /**
          * Constructor
          * @param canvas
+         * @param background
          */
-        function View(canvas) {
+        function View(canvas, background) {
+            if (background === void 0) { background = null; }
             /**
              * scroll left
              */
@@ -1255,8 +1280,18 @@ var SchemeDesigner;
              * Height
              */
             this.height = 0;
+            /**
+             * Background
+             */
+            this.background = null;
             this.canvas = canvas;
-            this.context = this.canvas.getContext('2d');
+            this.background = background;
+            if (this.background) {
+                this.context = this.canvas.getContext('2d', { alpha: false });
+            }
+            else {
+                this.context = this.canvas.getContext('2d');
+            }
         }
         /**
          * Get canvas
@@ -1354,6 +1389,22 @@ var SchemeDesigner;
                 width: newWidth,
                 height: newHeight
             });
+        };
+        /**
+         * Draw background
+         * @returns {boolean}
+         */
+        View.prototype.drawBackground = function () {
+            if (!this.background) {
+                return false;
+            }
+            var context = this.getContext();
+            context.fillStyle = this.background;
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.fillRect(0, 0, this.width, this.height);
+            context.restore();
+            return true;
         };
         return View;
     }());
