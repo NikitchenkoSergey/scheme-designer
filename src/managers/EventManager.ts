@@ -305,7 +305,7 @@ namespace SchemeDesigner {
 
                     this.scheme.addChangedObject(schemeObject);
 
-                    this.sendEvent('mouseOverObject', schemeObject);
+                    this.sendEvent('mouseOverObject', schemeObject, e);
                 }
             }
 
@@ -417,14 +417,22 @@ namespace SchemeDesigner {
          * Send event
          * @param {string} eventName
          * @param data
+         * @param {UIEvent} originalEvent
          */
-        public sendEvent(eventName: string, data?: any): void
+        public sendEvent(eventName: string, data?: any, originalEvent?: UIEvent): void
         {
             let fullEventName = `schemeDesigner.${eventName}`;
 
             if (typeof CustomEvent === 'function') {
+                let dataForSend = data;
+                if (typeof originalEvent !== 'undefined') {
+                    dataForSend = {
+                        data: data,
+                        originalEvent: originalEvent,
+                    };
+                }
                 let event = new CustomEvent(fullEventName, {
-                    detail: data
+                    detail: dataForSend
                 });
                 this.scheme.getCanvas().dispatchEvent(event);
             } else {

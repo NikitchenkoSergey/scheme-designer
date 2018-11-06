@@ -1657,7 +1657,7 @@ var SchemeDesigner;
                         mustReRender = true;
                     }
                     this.scheme.addChangedObject(schemeObject);
-                    this.sendEvent('mouseOverObject', schemeObject);
+                    this.sendEvent('mouseOverObject', schemeObject, e);
                 }
             }
             this.hoveredObjects = objects;
@@ -1745,12 +1745,20 @@ var SchemeDesigner;
          * Send event
          * @param {string} eventName
          * @param data
+         * @param {UIEvent} originalEvent
          */
-        EventManager.prototype.sendEvent = function (eventName, data) {
+        EventManager.prototype.sendEvent = function (eventName, data, originalEvent) {
             var fullEventName = "schemeDesigner." + eventName;
             if (typeof CustomEvent === 'function') {
+                var dataForSend = data;
+                if (typeof originalEvent !== 'undefined') {
+                    dataForSend = {
+                        data: data,
+                        originalEvent: originalEvent,
+                    };
+                }
                 var event_1 = new CustomEvent(fullEventName, {
-                    detail: data
+                    detail: dataForSend
                 });
                 this.scheme.getCanvas().dispatchEvent(event_1);
             }
