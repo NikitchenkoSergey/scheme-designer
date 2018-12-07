@@ -17,7 +17,12 @@ namespace SchemeDesigner {
         /**
          * Zoom coefficient
          */
-        protected zoomCoefficient = 1.04;
+        protected zoomCoefficient: number = 1.04;
+
+        /**
+         * Click zoom delta
+         */
+        protected clickZoomDelta: number = 14;
 
         /**
          * Padding for max zoom
@@ -266,6 +271,24 @@ namespace SchemeDesigner {
         public setZoomCoefficient(value: number): void
         {
             this.zoomCoefficient = value;
+        }
+
+        /**
+         * Set clickZoomDelta
+         * @param value
+         */
+        public setClickZoomDelta(value: number): void
+        {
+            this.clickZoomDelta = value;
+        }
+
+        /**
+         * Get clickZoomDelta
+         * @return {number}
+         */
+        public getClickZoomDelta(): number
+        {
+            return this.clickZoomDelta;
         }
     }
 }

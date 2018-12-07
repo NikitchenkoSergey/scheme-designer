@@ -125,6 +125,11 @@ schemeDesigner.render();
         <td>Zoom coefficient (Math.pow(zoomCoefficient, delta))</td>
     </tr>
     <tr>
+            <td>clickZoomDelta</td>
+            <td>14</td>
+            <td>Zoom delta on double click</td>
+        </tr>
+    <tr>
         <td colspan=3 align=center><strong>Storage</strong></td>
     </tr>
      <tr>

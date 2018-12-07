@@ -217,7 +217,8 @@ namespace SchemeDesigner {
          */
         protected onDoubleClick(e: MouseEvent): void
         {
-            this.scheme.getZoomManager().zoomToPointer(e, 14);
+            let zoomManager = this.scheme.getZoomManager();
+            zoomManager.zoomToPointer(e, zoomManager.getClickZoomDelta());
         }
 
         /**
