@@ -55,9 +55,18 @@ namespace SchemeDesigner {
          */
         public zoom(delta: number): boolean
         {
-            let factor = Math.pow(this.zoomCoefficient, delta);
+            let factor = this.getFactorByDelta(delta);
 
             return this.zoomByFactor(factor);
+        }
+
+        /**
+         * Get factor by delta
+         * @param {number} delta
+         */
+        public getFactorByDelta(delta: number): number
+        {
+            return Math.pow(this.zoomCoefficient, delta);
         }
 
         /**

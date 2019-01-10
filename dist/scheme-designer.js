@@ -2233,8 +2233,15 @@ var SchemeDesigner;
          * @returns {boolean}
          */
         ZoomManager.prototype.zoom = function (delta) {
-            var factor = Math.pow(this.zoomCoefficient, delta);
+            var factor = this.getFactorByDelta(delta);
             return this.zoomByFactor(factor);
+        };
+        /**
+         * Get factor by delta
+         * @param {number} delta
+         */
+        ZoomManager.prototype.getFactorByDelta = function (delta) {
+            return Math.pow(this.zoomCoefficient, delta);
         };
         /**
          * Set scale
