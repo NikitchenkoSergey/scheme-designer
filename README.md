@@ -420,6 +420,11 @@ schemeDesigner.getStorageManager().setLayerVisibility('background', true);
         <td>Get scale when all objects are visible</td>
     </tr>
     <tr>
+        <td>canZoomByFactor(factor: number)</td>
+        <td>boolean</td>
+        <td>Can by factor</td>
+    </tr>
+    <tr>
         <td>zoomByFactor(factor: number)</td>
         <td>boolean</td>
         <td>Zoom by factor if posible</td>

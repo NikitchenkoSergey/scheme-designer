@@ -2256,20 +2256,15 @@ var SchemeDesigner;
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         };
         /**
-         * Zoom by factor
+         * Can zoom by factor
          * @param factor
-         * @returns {boolean}
          */
-        ZoomManager.prototype.zoomByFactor = function (factor) {
-            var _this = this;
-            if (this.renderAllTimer) {
-                clearTimeout(this.renderAllTimer);
-            }
+        ZoomManager.prototype.canZoomByFactor = function (factor) {
             var boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
-            var canScaleX = true;
-            var canScaleY = true;
             var oldScale = this.scale;
             var newScale = oldScale * factor;
+            var canScaleX = true;
+            var canScaleY = true;
             if (factor < 1) {
                 /**
                  * Cant zoom less that 100% + padding
@@ -2284,13 +2279,28 @@ var SchemeDesigner;
                 canScaleX = this.scheme.getWidth() * this.maxScale > boundingRectDimensions.width * newScale;
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
             }
+            return canScaleX || canScaleY;
+        };
+        /**
+         * Zoom by factor
+         * @param factor
+         * @returns {boolean}
+         */
+        ZoomManager.prototype.zoomByFactor = function (factor) {
+            var _this = this;
+            if (this.renderAllTimer) {
+                clearTimeout(this.renderAllTimer);
+            }
+            var oldScale = this.scale;
+            var newScale = oldScale * factor;
+            var canZoom = this.canZoomByFactor(factor);
             this.scheme.getEventManager().sendEvent('zoom', {
                 oldScale: oldScale,
                 newScale: newScale,
                 factor: factor,
-                success: canScaleX || canScaleY
+                success: canZoom
             });
-            if (canScaleX || canScaleY) {
+            if (canZoom) {
                 this.scale = newScale;
                 this.scheme.getView().setScale(newScale);
                 this.scheme.getView().applyTransformation();

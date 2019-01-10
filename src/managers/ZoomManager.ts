@@ -86,24 +86,20 @@ namespace SchemeDesigner {
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         }
 
+
         /**
-         * Zoom by factor
+         * Can zoom by factor
          * @param factor
-         * @returns {boolean}
          */
-        public zoomByFactor(factor: number): boolean
+        public canZoomByFactor(factor: number): boolean
         {
-            if (this.renderAllTimer) {
-                clearTimeout(this.renderAllTimer);
-            }
-
             let boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
-
-            let canScaleX = true;
-            let canScaleY = true;
 
             let oldScale = this.scale;
             let newScale = oldScale * factor;
+
+            let canScaleX = true;
+            let canScaleY = true;
 
             if (factor < 1) {
                 /**
@@ -119,14 +115,33 @@ namespace SchemeDesigner {
                 canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
             }
 
+            return canScaleX || canScaleY;
+        }
+
+        /**
+         * Zoom by factor
+         * @param factor
+         * @returns {boolean}
+         */
+        public zoomByFactor(factor: number): boolean
+        {
+            if (this.renderAllTimer) {
+                clearTimeout(this.renderAllTimer);
+            }
+
+            let oldScale = this.scale;
+            let newScale = oldScale * factor;
+
+            const canZoom = this.canZoomByFactor(factor);
+
             this.scheme.getEventManager().sendEvent('zoom', {
                 oldScale: oldScale,
                 newScale: newScale,
                 factor: factor,
-                success: canScaleX || canScaleY
+                success: canZoom
             });
 
-            if (canScaleX || canScaleY) {
+            if (canZoom) {
                 this.scale = newScale;
                 this.scheme.getView().setScale(newScale);
                 this.scheme.getView().applyTransformation();
