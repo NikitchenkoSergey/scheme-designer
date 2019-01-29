@@ -95,6 +95,31 @@ namespace SchemeDesigner {
             return maxScaleX > maxScaleY ? maxScaleX : maxScaleY;
         }
 
+        /**
+         * Max zoom scale
+         */
+        public getMaxZoomScale(): number
+        {
+            const boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
+
+            const maxX = this.scheme.getWidth() * this.maxScale / boundingRectDimensions.width;
+            const maxY = this.scheme.getHeight() * this.maxScale / boundingRectDimensions.height;
+
+            return maxX > maxY ? maxX : maxY;
+        }
+
+        /**
+         * Min zoom scale
+         */
+        public getMinZoomScale(): number
+        {
+            const boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
+
+            const minX = this.scheme.getWidth() * (1 - this.padding) / boundingRectDimensions.width;
+            const minY = this.scheme.getHeight() * (1 - this.padding) / boundingRectDimensions.height;
+
+            return minX < minY ? minX : minY;
+        }
 
         /**
          * Can zoom by factor
@@ -102,29 +127,17 @@ namespace SchemeDesigner {
          */
         public canZoomByFactor(factor: number): boolean
         {
-            let boundingRectDimensions = this.scheme.getStorageManager().getObjectsDimensions();
-
             let oldScale = this.scale;
             let newScale = oldScale * factor;
 
-            let canScaleX = true;
-            let canScaleY = true;
-
+            let result = false;
             if (factor < 1) {
-                /**
-                 * Cant zoom less that 100% + padding
-                 */
-                canScaleX = this.scheme.getWidth() * (1 - this.padding) < boundingRectDimensions.width * newScale;
-                canScaleY = this.scheme.getHeight() * (1 - this.padding) < boundingRectDimensions.height * newScale;
+                result = this.getMinZoomScale() < newScale;
             } else {
-                /**
-                 * Cant zoom more that maxScale
-                 */
-                canScaleX = this.scheme.getWidth() * this.maxScale > boundingRectDimensions.width * newScale;
-                canScaleY = this.scheme.getHeight() * this.maxScale > boundingRectDimensions.height * newScale;
+                result = this.getMaxZoomScale() > newScale;
             }
 
-            return canScaleX || canScaleY;
+            return result;
         }
 
         /**
@@ -139,9 +152,20 @@ namespace SchemeDesigner {
             }
 
             let oldScale = this.scale;
-            let newScale = oldScale * factor;
+            let requestedScale = oldScale * factor;
 
-            const canZoom = this.canZoomByFactor(factor);
+            const maxScale = this.getMaxZoomScale();
+            const minScale = this.getMinZoomScale();
+
+            let newScale = requestedScale;
+            if (newScale > maxScale) {
+                newScale = maxScale;
+            }
+            if (newScale < minScale) {
+                newScale = minScale;
+            }
+
+            const canZoom = newScale != oldScale;
 
             this.scheme.getEventManager().sendEvent('zoom', {
                 oldScale: oldScale,
