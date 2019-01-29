@@ -119,6 +119,7 @@ namespace SchemeDesigner {
                 Tools.configure(this.zoomManager, params.zoom);
                 Tools.configure(this.mapManager, params.map);
                 Tools.configure(this.storageManager, params.storage);
+                Tools.configure(this.eventManager, params.event);
             }
 
             /**

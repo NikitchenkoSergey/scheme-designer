@@ -41,6 +41,11 @@ namespace SchemeDesigner {
         protected lastTouchEndTime: number = 0;
 
         /**
+         * Delay for prevent double tap
+         */
+        protected doubleTapDelay: number = 300;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -135,7 +140,7 @@ namespace SchemeDesigner {
             this.scheme.getCanvas().addEventListener('touchend', (e: TouchEvent) => {
                 // prevent double tap zoom
                 let now = (new Date()).getTime();
-                if (this.lastTouchEndTime && now - this.lastTouchEndTime <= 300) {
+                if (this.lastTouchEndTime && now - this.lastTouchEndTime <= this.doubleTapDelay) {
                     e.preventDefault();
                 } else {
                     this.onMouseUp(e);
@@ -441,6 +446,15 @@ namespace SchemeDesigner {
                 event.initCustomEvent(fullEventName, false, false, data);
                 this.scheme.getCanvas().dispatchEvent(event);
             }
+        }
+
+        /**
+         * Set doubleTapDelay
+         * @param value
+         */
+        public setDoubleTapDelay(value: number): void
+        {
+            this.doubleTapDelay = value;
         }
     }
 }
