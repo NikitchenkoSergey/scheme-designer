@@ -71,6 +71,11 @@ namespace SchemeDesigner {
         protected mouseLeaveFunction: Function;
 
         /**
+         * Check point in object
+         */
+        protected pointInObjectFunction: Function;
+
+        /**
          * Clear function
          */
         protected clearFunction: Function = function() {};
@@ -236,6 +241,22 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Check point in object
+         * @param point
+         * @param schemeDesigner
+         * @param view
+         * @return boolean
+         */
+        public checkPointInObject(point: Coordinates, schemeDesigner: Scheme, view: View): boolean
+        {
+            if (typeof this.pointInObjectFunction === 'function') {
+                return this.pointInObjectFunction(this, point, schemeDesigner, view);
+            }
+
+            return true;
+        }
+
+        /**
          * Set x
          * @param {number} value
          */
@@ -332,6 +353,15 @@ namespace SchemeDesigner {
         public setMouseLeaveFunction(value: Function): void
         {
             this.mouseLeaveFunction = value;
+        }
+
+        /**
+         * Set pointInObjectFunction
+         * @param {Function} value
+         */
+        public setPointInObjectFunction(value: Function): void
+        {
+            this.pointInObjectFunction = value;
         }
 
         /**

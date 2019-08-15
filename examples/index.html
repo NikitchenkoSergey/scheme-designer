@@ -183,6 +183,16 @@
         context.fillText(objectParams.sectorName, schemeObject.getX(), schemeObject.getY());
     };
 
+    /**
+     * Check point in place
+     */
+    var pointInObjectFunctionPlace = function(schemeObject, point, schemeDesigner, view) {
+        var width = schemeObject.getWidth();
+
+        var halfWidth = width / 2;
+        return Math.sqrt((point.x - halfWidth) ** 2 + (point.y - halfWidth) ** 2) < halfWidth;
+    };
+
 
     var clickOnPlace = function (schemeObject, schemeDesigner, view, e)
     {
@@ -212,6 +222,7 @@
             height: height,
             active: objectData.ObjectType == 'Place',
             renderFunction: objectData.ObjectType == 'Place' ? renderPlace : renderLabel,
+            pointInObjectFunction: objectData.ObjectType == 'Place' ? pointInObjectFunctionPlace : null,
             cursorStyle: objectData.ObjectType == 'Place' ? 'pointer' : 'default',
 
             /**

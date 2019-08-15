@@ -249,6 +249,8 @@ namespace SchemeDesigner {
                 nodeObjectsByLayers = node.getObjectsByLayers();
             }
 
+            const normalizeCursorCoordinates: Coordinates = {x: x, y: y};
+
             // search object in node
             for (let layerId in nodeObjectsByLayers) {
                 let layer = this.getLayerById(layerId);
@@ -264,9 +266,23 @@ namespace SchemeDesigner {
                     }
 
                     let boundingRect = schemeObject.getBoundingRect();
-                    if (Tools.pointInRect({x: x, y: y}, boundingRect, schemeObject.getRotation())) {
-                        result.push(schemeObject)
+
+                    // check point in rect
+                    if (!Tools.pointInRect(normalizeCursorCoordinates, boundingRect, schemeObject.getRotation())) {
+                        continue;
                     }
+
+                    // check point in object
+                    let normalizeCursorCoordinatesByObjectRect: Coordinates = {
+                        x: normalizeCursorCoordinates.x - schemeObject.getX(),
+                        y: normalizeCursorCoordinates.y - schemeObject.getY()
+                    };
+
+                    if (!schemeObject.checkPointInObject(normalizeCursorCoordinatesByObjectRect, this.scheme, this.scheme.getView())) {
+                        continue;
+                    }
+
+                    result.push(schemeObject);
                 }
             }
 
