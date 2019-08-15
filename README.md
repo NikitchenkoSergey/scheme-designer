@@ -206,6 +206,11 @@ schemeDesigner.render();
         <td>Function for rendering object, see examples</td>
     </tr>
     <tr>
+        <td>pointInObjectFunction: Function(schemeObject: SchemeObject, point: Coordinates, scheme: Scheme, view: View)</td>
+        <td></td>
+        <td>Defined hit region detection for object: if return true - hit. Point is normalized by object rect coordinates of cursor. See examples/index.html</td>
+    </tr>
+    <tr>
         <td>clickFunction: Function(schemeObject: SchemeObject, scheme: Scheme, view: View, e: Event)</td>
         <td></td>
         <td>Function for handle click on object</td>
