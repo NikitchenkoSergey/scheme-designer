@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-    <script src="../dist/scheme-designer.min.js?24"></script>
+    <script src="../dist/scheme-designer.min.js?25"></script>
 
     <!-- data for scheme -->
     <script src="./scheme-data.js?1"></script>
@@ -58,10 +58,26 @@
 
                 <div class="col-sm-2" style="margin-bottom: 5px;">
                     <button type="button" class="btn btn-warning btn-sm" onclick="schemeDesigner.getStorageManager().setLayerVisibility('background', !schemeDesigner.getStorageManager().getLayerById('background').isVisible())">
-                        Show/hide background
+                        Toggle background
                     </button>
                 </div>
 
+            </div>
+
+
+            <div class="row">
+                <div class="col-sm-2"></div>
+                <div class="col-sm-2" style="margin-left: 5px;margin-bottom: 5px;">
+                    <button type="button" class="btn btn-success btn-sm" onclick="schemeDesigner.getScrollManager().setDraggable(!schemeDesigner.getScrollManager().getDraggable())">
+                        Toggle draggable
+                    </button>
+                </div>
+
+                <div class="col-sm-2" style="margin-left: 5px;margin-bottom: 5px;">
+                    <button type="button" class="btn btn-success btn-sm" onclick="schemeDesigner.getZoomManager().setZoomByWheel(!schemeDesigner.getZoomManager().getZoomByWheel())">
+                        Toggle zoom by wheel
+                    </button>
+                </div>
             </div>
         </div>
     </div>

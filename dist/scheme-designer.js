@@ -2145,6 +2145,10 @@ var SchemeDesigner;
              * Max hidden part on scroll
              */
             this.maxHiddenPart = 0.5;
+            /**
+             * Scheme draggable enabled
+             */
+            this.draggable = true;
             this.scheme = scheme;
         }
         /**
@@ -2230,6 +2234,9 @@ var SchemeDesigner;
          * @param e
          */
         ScrollManager.prototype.handleDragging = function (e) {
+            if (!this.draggable) {
+                return;
+            }
             var lastClientX = this.scheme.getEventManager().getLastClientX();
             var lastClientY = this.scheme.getEventManager().getLastClientY();
             this.scheme.getEventManager().setLastClientPositionFromEvent(e);
@@ -2245,6 +2252,19 @@ var SchemeDesigner;
          */
         ScrollManager.prototype.setMaxHiddenPart = function (value) {
             this.maxHiddenPart = value;
+        };
+        /**
+         * Set draggable
+         * @param value
+         */
+        ScrollManager.prototype.setDraggable = function (value) {
+            this.draggable = value;
+        };
+        /**
+         * Get draggable
+         */
+        ScrollManager.prototype.getDraggable = function () {
+            return this.draggable;
         };
         return ScrollManager;
     }());
@@ -2871,6 +2891,10 @@ var SchemeDesigner;
              * Max scale
              */
             this.maxScale = 5;
+            /**
+             * Zoom by wheel enabled
+             */
+            this.zoomByWheel = true;
             this.scheme = scheme;
         }
         /**
@@ -3004,6 +3028,9 @@ var SchemeDesigner;
          * @returns {void|boolean}
          */
         ZoomManager.prototype.handleMouseWheel = function (e) {
+            if (!this.zoomByWheel) {
+                return;
+            }
             var delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
             if (delta) {
                 this.zoomToPointer(e, delta);
@@ -3093,6 +3120,19 @@ var SchemeDesigner;
          */
         ZoomManager.prototype.getClickZoomDelta = function () {
             return this.clickZoomDelta;
+        };
+        /**
+         * Set zoom by wheel
+         * @param value
+         */
+        ZoomManager.prototype.setZoomByWheel = function (value) {
+            this.zoomByWheel = value;
+        };
+        /**
+         * Get zoom by wheel enabled
+         */
+        ZoomManager.prototype.getZoomByWheel = function () {
+            return this.zoomByWheel;
         };
         return ZoomManager;
     }());

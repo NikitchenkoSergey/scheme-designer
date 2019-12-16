@@ -40,6 +40,11 @@ namespace SchemeDesigner {
         protected renderAllTimer: number;
 
         /**
+         * Zoom by wheel enabled
+         */
+        protected zoomByWheel: boolean = true;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -217,6 +222,10 @@ namespace SchemeDesigner {
          */
         public handleMouseWheel(e: MouseWheelEvent): void
         {
+            if (!this.zoomByWheel) {
+                return;
+            }
+
             let delta = e.wheelDelta ? e.wheelDelta / 40 : e.detail ? -e.detail : 0;
 
             if (delta) {
@@ -337,6 +346,23 @@ namespace SchemeDesigner {
         public getClickZoomDelta(): number
         {
             return this.clickZoomDelta;
+        }
+
+        /**
+         * Set zoom by wheel
+         * @param value
+         */
+        public setZoomByWheel(value: boolean): void
+        {
+            this.zoomByWheel = value;
+        }
+
+        /**
+         * Get zoom by wheel enabled
+         */
+        public getZoomByWheel(): boolean
+        {
+            return this.zoomByWheel;
         }
     }
 }

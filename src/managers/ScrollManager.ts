@@ -25,6 +25,11 @@ namespace SchemeDesigner {
         protected maxHiddenPart: number = 0.5;
 
         /**
+         * Scheme draggable enabled
+         */
+        protected draggable: boolean = true;
+
+        /**
          * Constructor
          * @param {SchemeDesigner.Scheme} scheme
          */
@@ -140,6 +145,10 @@ namespace SchemeDesigner {
          */
         public handleDragging(e: MouseEvent | TouchEvent): void
         {
+            if (!this.draggable) {
+                return;
+            }
+            
             let lastClientX = this.scheme.getEventManager().getLastClientX();
             let lastClientY = this.scheme.getEventManager().getLastClientY();
 
@@ -161,6 +170,23 @@ namespace SchemeDesigner {
         public setMaxHiddenPart(value: number): void
         {
             this.maxHiddenPart = value;
+        }
+
+        /**
+         * Set draggable
+         * @param value
+         */
+        public setDraggable(value: boolean): void
+        {
+            this.draggable = value;
+        }
+
+        /**
+         * Get draggable
+         */
+        public getDraggable(): boolean
+        {
+            return this.draggable;
         }
     }
 }
