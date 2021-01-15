@@ -117,7 +117,7 @@ schemeDesigner.render();
     <tr>
         <td>maxScale</td>
         <td>5</td>
-        <td>Max sale</td>
+        <td>Max scale</td>
     </tr>
     <tr>
         <td>zoomCoefficient</td>
