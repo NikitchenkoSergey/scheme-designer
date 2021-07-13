@@ -47,12 +47,13 @@ namespace SchemeDesigner {
         }
 
         /**
+         * Need to rebuild manually tree by calling requestBuildTree()
          * Remove object
          * @param {SchemeObject} object
          */
         public removeObject(object: SchemeObject): void
         {
-            this.objects.filter(existObject => existObject !== object);
+            this.objects = this.objects.filter(existObject => existObject !== object);
         }
 
         /**
